@@ -17,7 +17,7 @@ std::string vstrprintf(const char* fmt, va_list args)
 	std::string retVal;
 	retVal.resize(length);
 	const auto written = vsnprintf(&retVal[0], length, fmt, args2);
-	
+
 	// Remove the null terminator
 	retVal.resize(length - 1);
 

@@ -3,11 +3,12 @@
 #include "FixedWindows.h"
 #include "stdext.h"
 
-void Log::Msg(const char* fmt, ...)
+void Log::Msg(const char* str)
 {
-	va_list args;
-	va_start(args, fmt);
-	std::string result = vstrprintf(fmt, args) + '\n';
+	OutputDebugStringA(str);
+}
 
-	OutputDebugStringA(result.c_str());
+void Log::Msg(const wchar_t* str)
+{
+	OutputDebugStringW(str);
 }

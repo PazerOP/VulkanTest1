@@ -30,6 +30,9 @@
     <ClInclude Include="stdext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="StringTools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -44,5 +47,11 @@
     <ClCompile Include="stdext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StringTools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
