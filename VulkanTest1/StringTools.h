@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <string_view>
+#include <vector>
 
 using namespace std::string_literals;
 
@@ -14,61 +15,33 @@ public:
 
 	static void UnitTests();
 
-	template<class Elem, class... Args> static std::basic_string<Elem> CSFormat(std::basic_string<Elem> fmt, Args... args);
+	template<class Traits = std::char_traits<char>, class Alloc = std::allocator<char>, class... Args> static std::basic_string<char, Traits, Alloc> CSFormat(const char* fmt, Args... args);
+	template<class Traits, class Alloc, class... Args> static std::basic_string<char, Traits, Alloc> CSFormat(std::basic_string<char, Traits, Alloc> fmt, Args... args);
 
-	static bool IsEscaped(const char* str, size_t offset, char32_t escapeChar = U'\\');
-	template<class Elem, class Traits, class Allocator> static bool IsEscaped(const std::basic_string<Elem, Traits, Allocator>& str, size_t offset, Elem escapeChar = '\\');
-	template<class Elem, class Traits> static bool IsEscaped(const std::basic_string_view<Elem, Traits>& str, size_t offset, Elem escapeChar = '\\');
+	static bool IsEscaped(const char* str, size_t offset, char escapeChar = U'\\');
+	static bool IsEscaped(const std::string_view& str, size_t offset, char32_t escapeChar = U'\\');
+	static std::vector<bool> GetEscapeData(const char* str)
 
 private:
 
-	template<class Elem> struct CSToken
+	struct CSToken
 	{
 		size_t m_ID;
-		std::basic_string_view<Elem> m_Data;
-		std::basic_string_view<Elem> m_Mode;
+		std::string_view m_Data;
+		std::string_view m_Mode;
 	};
 
-	template<class Elem> static std::basic_string<Elem> ParseCSTokens(const std::basic_string<Elem>& str);
+	static std::vector<CSToken> ParseCSTokens(const std::string_view& str);
 };
 
-template<class Elem, class ...Args>
-inline std::basic_string<Elem> StringTools::CSFormat(std::basic_string<Elem> fmt, Args ...args)
+template<class Traits, class Alloc, class... Args>
+inline std::basic_string<char, Traits, Alloc> StringTools::CSFormat(const char* fmt, Args... args)
 {
-	
-
-	return fmt;
+	return CSFormat(std::basic_string<char, Traits, Alloc>(fmt), args...);
 }
 
-template<class Elem, class Traits, class Allocator>
-inline bool StringTools::IsEscaped(const std::basic_string<Elem, Traits, Allocator>& str, size_t offset, Elem escapeChar)
+template<class Traits, class Alloc, class ...Args>
+inline std::basic_string<char, Traits, Alloc> StringTools::CSFormat(std::basic_string<char, Traits, Alloc> fmt, Args... args)
 {
-	return IsEscaped(std::basic_string_view<Elem, Traits>(str), offset, escapeChar);
-}
-
-template<class Elem, class Traits>
-inline bool StringTools::IsEscaped(const std::basic_string_view<Elem, Traits>& str, size_t offset, Elem escapeChar)
-{
-	if (offset == 0)
-		return false;
-
-	if (offset >= str.size())
-		throw std::domain_error(CSFormat("offset ({0}) was greater than string length ({1})"s, offset, str.size()));
-	
-	bool escaped = false;
-	for (auto c = str.crbegin() - offset; c != str.crend(); c++)
-	{
-		if (*c == escapeChar)
-			escaped = !escaped;
-		else
-			break;
-	}
-
-	return escaped;
-}
-
-template<class Elem>
-inline std::basic_string<Elem> StringTools::ParseCSTokens(const std::basic_string<Elem>& str)
-{
-	return std::basic_string<Elem>();
+	return std::basic_string<char, Traits, Alloc>();
 }
