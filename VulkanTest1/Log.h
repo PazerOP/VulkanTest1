@@ -1,5 +1,7 @@
 #pragma once
-#include "stdext.h"
+
+#include <string>
+#include "StringTools.h"
 
 class Log final
 {
@@ -11,15 +13,19 @@ public:
 
 	template<class... Args> static void Msg(const char* fmt, Args... args)
 	{
-		Msg(StringFormat(std::string(fmt), args...).c_str());
+		MsgRaw(StringTools::CSFormat(fmt, args...).append("\n"sv));
 	}
-	static void Msg(const char* str);
+	static void Msg(const char* fmt) { Msg(std::string(fmt)); }
+	template<class... Args> static void Msg(std::string fmt) { MsgRaw(fmt.append("\n"sv)); }
 
-	template<class... Args> static void Msg(const wchar_t* fmt, Args... args)
+	template<size_t charsPerLine = 80, class... Args> static void BlockMsg(const char* fmt, Args... args)
 	{
-		Msg(StringFormat(std::wstring(fmt), args...).c_str());
+		BlockMsgRaw(StringTools::CSFormat(fmt, args...), charsPerLine);
 	}
-	static void Msg(const wchar_t* str);
+	template<size_t charsPerLine = 80> static void BlockMsg(const char* fmt) { BlockMsgRaw(std::string(fmt), charsPerLine); }
+	template<size_t charsPerLine = 80, class... Args> static void BlockMsg(const std::string& fmt) { BlockMsgRaw(fmt, charsPerLine); }
 
 private:
+	static void MsgRaw(const std::string& str);
+	static void BlockMsgRaw(std::string str, size_t charsPerLine = 80);
 };

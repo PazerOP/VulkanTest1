@@ -27,10 +27,13 @@
     <ClInclude Include="Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stdext.h">
+    <ClInclude Include="StringTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StringTools.h">
+    <ClInclude Include="StringConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utf8string.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,10 +47,10 @@
     <ClCompile Include="Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdext.cpp">
+    <ClCompile Include="StringTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StringTools.cpp">
+    <ClCompile Include="StringConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <chrono>
+#include <clocale>
 #include "FixedWindows.h"
 #include <glm/glm.hpp>
 #include "Log.h"
@@ -59,6 +60,8 @@ int CALLBACK WinMain(
 	_In_ LPSTR lpCmdLine,
 	_In_ int nCmdShow)
 {
+	Log::BlockMsg(u8"{0} EPIC MEME START 🔥🔥🔥", u8"🔥🔥🔥");
+
 	try
 	{
 		LocalMain().SetAppInstance(hInstance);
@@ -70,7 +73,7 @@ int CALLBACK WinMain(
 	}
 	catch (std::runtime_error e)
 	{
-		Log::Msg("Failed to initialize engine: %s", e.what());
+		Log::Msg("Failed to initialize engine: {0}", e.what());
 		std::exit(1);
 	}
 
@@ -182,9 +185,7 @@ void _Main::VulkanInit()
 
 		m_VKInstance = vk::createInstance(info);
 
-		Log::Msg(L"██████████████████████████████████████████████");
-		Log::Msg(L"████ Successfully created Vulkan instance ████");
-		Log::Msg(L"██████████████████████████████████████████████");
+		Log::BlockMsg("Successfully created Vulkan instance");
 	}
 }
 
