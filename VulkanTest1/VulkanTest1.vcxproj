@@ -130,7 +130,6 @@
     <ClInclude Include="Main.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="StringTools.h" />
-    <ClInclude Include="utf8string.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
