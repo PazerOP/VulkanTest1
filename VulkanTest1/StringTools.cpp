@@ -22,7 +22,7 @@ size_t StringTools::UTF8Size(const char* ptr, const char* endPtr)
 {
 	if (!ptr)
 		throw std::invalid_argument("\"ptr\" was null.");
-	
+
 	const uint8_t* const data = reinterpret_cast<const uint8_t*>(ptr);
 
 	const size_t maxBytes = endPtr ? endPtr - ptr : (size_t)-1;

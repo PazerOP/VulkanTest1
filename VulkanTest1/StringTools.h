@@ -33,8 +33,9 @@ constexpr std::wstring_view operator "" sv(const wchar_t* str, size_t len) noexc
 #pragma warning(pop)
 #endif
 
+inline std::string& to_string(std::string& str) { return str; }
+inline std::string to_string(const std::string& str) { return str; }
 inline std::string to_string(const char* str) { return std::string(str); }
-inline std::wstring to_wstring(const wchar_t* str) { return std::wstring(str); }
 
 class utf8_exception : public std::runtime_error
 {
@@ -52,8 +53,12 @@ public:
 
 	static void UnitTests();
 
-	template<class CharT, class Traits = std::char_traits<CharT>, class Alloc = std::allocator<CharT>, class... Args> static std::basic_string<CharT, Traits, Alloc> CSFormat(const CharT* fmt, Args... args);
-	template<class CharT, class Traits = std::char_traits<CharT>, class Alloc = std::allocator<CharT>, class... Args> static std::basic_string<CharT, Traits, Alloc> CSFormat(std::basic_string<CharT, Traits, Alloc> fmt, Args... args);
+	template<class... Args> static std::string CSFormat(const char* fmt, Args... args) { return CSFormat(std::string(fmt), args...); }
+	static std::string CSFormat(const char* fmt) { return std::string(fmt); }
+	template<class... Args> static std::string CSFormat(std::string fmt, Args... args);
+	static std::string CSFormat(const std::string& fmt) { return fmt; }
+	template<class... Args> static std::string CSFormat(const std::string_view& fmt, Args... args) { return CSFormat(std::string(fmt), args...); }
+	static std::string CSFormat(const std::string_view& fmt) { return std::string(fmt); }
 
 	template<class CharT> static bool IsEscaped(const CharT* str, size_t offset, CharT escapeChar = '\\');
 	template<class CharT, class Traits, class Alloc> static bool IsEscaped(const std::basic_string<CharT, Traits, Alloc>& str, size_t offset, CharT escapeChar = '\\');
@@ -74,7 +79,7 @@ public:
 		std::numeric_limits<T1>::max() == std::numeric_limits<T2>::max();*/
 
 private:
-	template<class CharT, class Traits> struct CSToken
+	struct CSToken
 	{
 		size_t m_FullTokenStart;
 		size_t m_FullTokenEnd;
@@ -88,33 +93,24 @@ private:
 		size_t m_ModeEnd;
 	};
 
-	template<class CharT, class Traits> static std::vector<CSToken<CharT, Traits>> ParseCSTokens(const std::basic_string_view<CharT, Traits>& str);
+	static std::vector<CSToken> ParseCSTokens(const std::string_view& str);
 };
 
-template<class CharT, class Traits, class Alloc, class... Args>
-inline std::basic_string<CharT, Traits, Alloc> StringTools::CSFormat(const CharT* fmt, Args... args)
+template<class... Args>
+inline std::string StringTools::CSFormat(std::string fmt, Args... args)
 {
-	return CSFormat(std::basic_string<CharT, Traits, Alloc>(fmt), args...);
-}
-
-template<class CharT, class Traits, class Alloc, class... Args>
-inline std::basic_string<CharT, Traits, Alloc> StringTools::CSFormat(std::basic_string<CharT, Traits, Alloc> fmt, Args... args)
-{
-	using StringType = std::basic_string<CharT, Traits, Alloc>;
-
 	using namespace std;
+	std::string strArgs[] = { to_string(args)... };
 
-	StringType strArgs[] = { ToString(args)... };
+	constexpr size_t argCount = sizeof...(args);
 
-	constexpr size_t argCount = sizeof(strArgs) / sizeof(strArgs[0]);
-
-	std::vector<CSToken<CharT, Traits>> tokens = ParseCSTokens(std::basic_string_view<CharT, Traits>(fmt));
+	std::vector<CSToken> tokens = ParseCSTokens(fmt);
 
 	for (auto tokenIter = tokens.crbegin(); tokenIter != tokens.crend(); tokenIter++)
 	{
 		// For now, we're lame
 		// Just replace the tokens with the stringified args based on the tokens' ID
-		const CSToken<CharT, Traits>& token = *tokenIter;
+		const CSToken& token = *tokenIter;
 
 		assert(token.m_ID < argCount);
 
@@ -122,24 +118,6 @@ inline std::basic_string<CharT, Traits, Alloc> StringTools::CSFormat(std::basic_
 	}
 
 	return fmt;
-}
-
-template<class Traits, class Alloc>
-inline std::basic_string<char32_t, Traits, Alloc> StringTools::ToU32String(const std::string_view& str)
-{
-	std::basic_string<char32_t, Traits, Alloc> retVal(str.size(), '\0');
-	//retVal.reserve(str.size());
-
-	auto& f = std::use_facet<std::codecvt<uint32_t, char, std::mbstate_t>>(std::locale());
-
-	std::mbstate_t state = {};
-	const char* from_next;
-	uint32_t* to_next;
-	f.in(state,
-		&str[0], &str[str.size() - 1] + 1, from_next,
-		(uint32_t*)&retVal[0], ((uint32_t*)&retVal[retVal.size() - 1]) + 1, to_next);
-
-	return retVal;
 }
 
 template<class CharT>
@@ -171,8 +149,7 @@ inline bool StringTools::IsEscaped(const std::basic_string_view<CharT, Traits>& 
 	return escaped;
 }
 
-template<class CharT, class Traits>
-std::vector<StringTools::CSToken<CharT, Traits>> StringTools::ParseCSTokens(const std::basic_string_view<CharT, Traits>& str)
+inline std::vector<StringTools::CSToken> StringTools::ParseCSTokens(const std::string_view& str)
 {
 	enum class GatherMode
 	{
@@ -186,18 +163,18 @@ std::vector<StringTools::CSToken<CharT, Traits>> StringTools::ParseCSTokens(cons
 		Garbage,
 	} gatherMode = GatherMode::Fresh;
 
-	std::vector<CSToken<CharT, Traits>> retVal;
+	std::vector<CSToken> retVal;
 
 	size_t i = 0;
 	size_t braceLevel = 0;
 
 	bool isEscaped = false;
 
-	CSToken<CharT, Traits> current;
+	CSToken current;
 
 	for (auto charIter = str.begin(); charIter != str.end(); charIter++)
 	{
-		const CharT c = *charIter;
+		const char c = *charIter;
 		if (isEscaped)
 			isEscaped = false;
 		else if (c == '\\')
@@ -251,7 +228,7 @@ std::vector<StringTools::CSToken<CharT, Traits>> StringTools::ParseCSTokens(cons
 			{
 				size_t charsRead;
 				bool success;
-				current.m_ID = FromString<size_t>(std::basic_string_view<CharT, Traits>(str.data() + i), &charsRead, &success);
+				current.m_ID = StringConverter::From<size_t>(std::string_view(str.data() + i, str.size() - i), &charsRead, &success);
 
 				if (!success)
 					gatherMode = GatherMode::Garbage;

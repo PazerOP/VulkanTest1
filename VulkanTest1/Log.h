@@ -15,15 +15,23 @@ public:
 	{
 		MsgRaw(StringTools::CSFormat(fmt, args...).append("\n"sv));
 	}
-	static void Msg(const char* fmt) { Msg(std::string(fmt)); }
-	template<class... Args> static void Msg(std::string fmt) { MsgRaw(fmt.append("\n"sv)); }
+	template<class... Args> static void Msg(const std::string_view& fmt, Args... args)
+	{
+		MsgRaw(StringTools::CSFormat(std::string(fmt).append("\n"sv), args...));
+	}
+	template<class... Args> static void Msg(std::string fmt, Args... args)
+	{
+		MsgRaw(StringTools::CSFormat(fmt.append("\n"sv, args...)));
+	}
 
 	template<size_t charsPerLine = 80, class... Args> static void BlockMsg(const char* fmt, Args... args)
 	{
 		BlockMsgRaw(StringTools::CSFormat(fmt, args...), charsPerLine);
 	}
-	template<size_t charsPerLine = 80> static void BlockMsg(const char* fmt) { BlockMsgRaw(std::string(fmt), charsPerLine); }
-	template<size_t charsPerLine = 80, class... Args> static void BlockMsg(const std::string& fmt) { BlockMsgRaw(fmt, charsPerLine); }
+	template<size_t charsPerLine = 80, class... Args> static void BlockMsg(const std::string& fmt, Args... args)
+	{
+		BlockMsgRaw(StringTools::CSFormat(fmt, args...), charsPerLine);
+	}
 
 private:
 	static void MsgRaw(const std::string& str);

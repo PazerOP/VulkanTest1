@@ -4,7 +4,7 @@
 
 #include <functional>
 
-#include <vulkan\vulkan.hpp>
+#include "Window.h"
 
 class IMain
 {
@@ -14,11 +14,9 @@ public:
 	virtual ~IMain() = default;
 
 	virtual HINSTANCE GetAppInstance() = 0;
-	virtual HWND GetAppWindow() = 0;
+	virtual Window& GetAppWindow() = 0;
 
 	virtual void SetGameLoopFn(const GameLoopFn& gameLoop) = 0;
-
-	virtual vk::Instance& GetVKInstance() = 0;
 };
 
 extern IMain& Main();

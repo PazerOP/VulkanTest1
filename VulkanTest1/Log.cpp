@@ -9,8 +9,8 @@ void Log::MsgRaw(const std::string& str)
 {
 	if (!str.data())
 		return;
-	
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;	
+
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 	OutputDebugStringW(converter.from_bytes(str).c_str());
 }
 
