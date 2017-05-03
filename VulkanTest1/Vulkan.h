@@ -12,9 +12,18 @@ public:
 	rkrp_vulkan_exception(const std::string& msg) : std::runtime_error(msg) {}
 };
 
+enum class QueueType
+{
+	Graphics,
+	Presentation,
+
+	Count,
+};
+
 class IVulkan
 {
 public:
+	virtual ~IVulkan() = default;
 
 	virtual void Init() = 0;
 	virtual bool IsInitialized() const = 0;
@@ -22,18 +31,7 @@ public:
 
 	virtual vk::Instance& GetInstance() = 0;
 
-	// Extensions
-	virtual std::vector<vk::ExtensionProperties> GetAvailableExtensions() = 0;
-	// Changing this has no effect after initialization
-	virtual std::set<std::string>& GetEnabledExtensions() = 0;
-
-	// Validation layers
-	virtual std::vector<vk::LayerProperties> GetAvailableInstanceLayers() = 0;
-	// Changing this has no effect after inintialization
-	virtual std::set<std::string>& GetEnabledInstanceLayers() = 0;
-
-	virtual std::vector<vk::PhysicalDevice> GetAvailablePhysicalDevices() = 0;
-	virtual void SetPreferredPhysicalDevice(const vk::PhysicalDevice& device) = 0;
+	virtual vk::Queue GetQueue(QueueType q) = 0;
 };
 
 extern IVulkan& Vulkan();

@@ -1,6 +1,9 @@
 #include "Vulkan.h"
 
+#include "FixedWindows.h"
 #include "Log.h"
+#include "Main.h"
+#include "Util.h"
 
 class _Vulkan final : public IVulkan
 {
@@ -11,31 +14,53 @@ public:
 
 	vk::Instance& GetInstance() override;
 
-	std::vector<vk::ExtensionProperties> GetAvailableExtensions() override;
-	std::set<std::string>& GetEnabledExtensions() override { return m_EnabledExtensions; }
-
-	std::vector<vk::LayerProperties> GetAvailableInstanceLayers() override;
-	std::set<std::string>& GetEnabledInstanceLayers() override { return m_EnabledInstanceLayers; }
-
-	std::vector<vk::PhysicalDevice> GetAvailablePhysicalDevices() override;
-	void SetPreferredPhysicalDevice(const vk::PhysicalDevice& device) override;
+	vk::Queue GetQueue(QueueType q) override;
 
 private:
 	void InitExtensions();
 	void InitValidationLayers();
 	void InitInstance();
-	void PostInitValidationLayers();
+	void CreateWindowSurface();
 	void AutodetectPhysicalDevice();
-	std::vector<std::pair<size_t, vk::QueueFamilyProperties>> FindQueueFamilies(const vk::PhysicalDevice& device, vk::QueueFlagBits queueFlags);
-	void CreateLogicalDevice();
+	std::vector<size_t> FindPresentationQueueFamilies(const vk::PhysicalDevice& device) const;
+	std::vector<std::pair<size_t, vk::QueueFamilyProperties>> FindQueueFamilies(const vk::PhysicalDevice& device, vk::QueueFlagBits queueFlags) const;
+	void InitDevice();
 
 	vk::Instance m_Instance;
-	vk::PhysicalDevice m_PreferredPhysicalDevice;
+	vk::PhysicalDevice m_PhysicalDevice;
 	vk::Device m_LogicalDevice;
-	vk::Queue m_GraphicsQueue;
+	vk::Queue m_Queues[underlying_value(QueueType::Count)];
+	vk::SurfaceKHR m_WindowSurface;
 
-	std::set<std::string> m_EnabledExtensions;
+	static constexpr const char TAG[] = "[VulkanImpl] ";
+
+	enum class PhysicalDeviceSuitability
+	{
+		Suitable,
+
+		NoSupport_SwapChain,
+
+		MissingQueue_Graphics,
+		MissingQueue_Presentation,
+
+		MissingExtension_SwapChain,
+	};
+	PhysicalDeviceSuitability RatePhysicalDevice(const vk::PhysicalDevice& device, float& rating, const char*& detail) const;
+
+	std::vector<vk::ExtensionProperties> GetAvailableInstanceExtensions();
+	std::vector<vk::LayerProperties> GetAvailableInstanceLayers();
+	std::vector<vk::PhysicalDevice> GetAvailablePhysicalDevices();
+
+	std::set<std::string> m_EnabledInstanceExtensions;
 	std::set<std::string> m_EnabledInstanceLayers;
+
+	struct SwapChainSupportDetails
+	{
+		vk::SurfaceCapabilitiesKHR m_Capabilities;
+		std::vector<vk::SurfaceFormatKHR> m_Formats;
+		std::vector<vk::PresentModeKHR> m_PresentModes;
+	};
+	SwapChainSupportDetails QuerySwapChainSupport(const vk::PhysicalDevice& device) const;
 
 	VkDebugReportCallbackEXT m_DebugMsgCallbackHandle;
 	void AttachDebugMsgCallback();
@@ -56,17 +81,18 @@ void _Vulkan::Init()
 
 	InitInstance();
 
-	PostInitValidationLayers();
+	AttachDebugMsgCallback();
+	CreateWindowSurface();
 
 	AutodetectPhysicalDevice();
-	CreateLogicalDevice();
+	InitDevice();
 
-	Log::BlockMsg("Vulkan: Completed initialization");
+	Log::BlockMsg("Completed initialization");
 }
 
 void _Vulkan::Shutdown()
 {
-	m_EnabledExtensions.clear();
+	m_EnabledInstanceExtensions.clear();
 	m_EnabledInstanceLayers.clear();
 	m_Instance.destroy();
 }
@@ -81,14 +107,14 @@ vk::Instance& _Vulkan::GetInstance()
 
 void _Vulkan::InitExtensions()
 {
-	Log::Msg("Vulkan: Initializing extensions...");
+	Log::TagMsg(TAG, "Initializing extensions...");
 
-	const auto& extensions = GetAvailableExtensions();
+	const auto& extensions = GetAvailableInstanceExtensions();
 
-	GetEnabledExtensions().insert("VK_KHR_surface"s);
-	GetEnabledExtensions().insert("VK_KHR_win32_surface"s);
-	GetEnabledExtensions().insert(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-	auto enabledExtensions = GetEnabledExtensions();
+	m_EnabledInstanceExtensions.insert("VK_KHR_surface"s);
+	m_EnabledInstanceExtensions.insert("VK_KHR_win32_surface"s);
+	m_EnabledInstanceExtensions.insert(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	auto enabledExtensions = m_EnabledInstanceExtensions;
 
 	std::string blockMsg = StringTools::CSFormat("{0} supported Vulkan extensions ({1} enabled):\n", extensions.size(), enabledExtensions.size());
 	for (const auto& extension : extensions)
@@ -108,18 +134,18 @@ void _Vulkan::InitExtensions()
 	for (const auto& extension : enabledExtensions)
 		blockMsg += StringTools::CSFormat("    ENABLED, not listed: {0}\n", extension);
 
-	Log::Msg(blockMsg);
+	Log::TagMsg(TAG, blockMsg);
 }
 
 void _Vulkan::InitValidationLayers()
 {
-	Log::Msg("Vulkan: Initializing validation layers...");
+	Log::TagMsg(TAG, "Initializing validation layers...");
 
 	const auto& layers = GetAvailableInstanceLayers();
 
-	GetEnabledInstanceLayers().insert("VK_LAYER_LUNARG_parameter_validation"s);
-	GetEnabledInstanceLayers().insert("VK_LAYER_LUNARG_standard_validation"s);
-	auto enabledLayers = GetEnabledInstanceLayers();
+	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_parameter_validation"s);
+	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_standard_validation"s);
+	auto enabledLayers = m_EnabledInstanceLayers;
 
 	std::string blockMsg = StringTools::CSFormat("{0} supported Vulkan instance layers ({1} enabled):\n", layers.size(), enabledLayers.size());
 	for (const auto& layer : layers)
@@ -136,15 +162,15 @@ void _Vulkan::InitValidationLayers()
 	if (enabledLayers.size())
 		blockMsg += "\n"sv;
 
-for (const auto& extension : enabledLayers)
-blockMsg += StringTools::CSFormat("    ENABLED, not listed: {0}", extension);
+	for (const auto& extension : enabledLayers)
+		blockMsg += StringTools::CSFormat("    ENABLED, not listed: {0}", extension);
 
-Log::Msg(blockMsg);
+	Log::TagMsg(TAG, blockMsg);
 }
 
 void _Vulkan::InitInstance()
 {
-	Log::Msg("Vulkan: Initializing instance...");
+	Log::TagMsg(TAG, "Initializing instance...");
 
 	vk::ApplicationInfo appInfo;
 	{
@@ -164,11 +190,11 @@ void _Vulkan::InitInstance()
 		info.setPApplicationInfo(&appInfo);
 
 		std::vector<const char*> layers;
-		for (const auto& layer : GetEnabledInstanceLayers())
+		for (const auto& layer : m_EnabledInstanceLayers)
 			layers.push_back(layer.c_str());
 
 		std::vector<const char*> extensions;
-		for (const auto& extension : GetEnabledExtensions())
+		for (const auto& extension : m_EnabledInstanceExtensions)
 			extensions.push_back(extension.c_str());
 
 		info.setEnabledLayerCount(layers.size());
@@ -181,71 +207,169 @@ void _Vulkan::InitInstance()
 	}
 }
 
-void _Vulkan::PostInitValidationLayers()
+void _Vulkan::CreateWindowSurface()
 {
-	Log::Msg("Vulkan: Additional validation layer initialization...");
+	Log::TagMsg(TAG, "Creating window surface...");
 
-	AttachDebugMsgCallback();
+	vk::Win32SurfaceCreateInfoKHR createInfo;
+	createInfo.setHwnd(Main().GetAppWindow().GetWindow());
+	createInfo.setHinstance(Main().GetAppInstance());
+
+	m_WindowSurface = m_Instance.createWin32SurfaceKHR(createInfo);
 }
 
 void _Vulkan::AutodetectPhysicalDevice()
 {
-	std::string debugMsg;
-	if (!m_PreferredPhysicalDevice)
+	Log::TagMsg(TAG, "Autodetecting the best physical device...");
+
+	const auto physicalDevices = GetAvailablePhysicalDevices();
+	if (physicalDevices.empty())
+		throw rkrp_vulkan_exception("Unable to find any physical devices supporting Vulkan.");
+
+	float bestDeviceRating = std::numeric_limits<float>::min();
+	vk::PhysicalDevice bestDevice;
+	for (auto& device : physicalDevices)
 	{
-		Log::Msg("Vulkan: Autodetecting the best physical device...");
+		const auto properties = device.getProperties();
 
-		const auto physicalDevices = GetAvailablePhysicalDevices();
-		if (physicalDevices.empty())
-			throw rkrp_vulkan_exception("Unable to find any physical devices supporting Vulkan.");
+		float deviceRating;
 
-		float bestDeviceRanking = std::numeric_limits<float>::min();
-		vk::PhysicalDevice bestDevice;
-		for (auto& physicalDevice : physicalDevices)
+		const std::string baseMsg = StringTools::CSFormat("    Device {1} (id {2})", TAG, properties.deviceName, properties.deviceID);
+
+		const char* detail = nullptr;
+		switch (RatePhysicalDevice(device, deviceRating, detail))
 		{
-			const auto properties = physicalDevice.getProperties();
-			const auto memoryProperties = physicalDevice.getMemoryProperties();
-			const auto features = physicalDevice.getFeatures();
-			const auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+		case PhysicalDeviceSuitability::MissingQueue_Graphics:
+			Log::TagMsg(TAG, "{0} unusable, no graphics queue ({1})", baseMsg, detail);
+			break;
 
-			float deviceRanking = 0;
+		case PhysicalDeviceSuitability::MissingQueue_Presentation:
+			Log::TagMsg(TAG, "{0} unusable, no presentation queue ({1})", baseMsg, detail);
+			break;
 
-			// Just pick the first dedicated gpu for now
-			if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
-				deviceRanking += 1;
+		case PhysicalDeviceSuitability::NoSupport_SwapChain:
+		case PhysicalDeviceSuitability::MissingExtension_SwapChain:
+			Log::TagMsg(TAG, "{0} unusable, no swap chain support ({1})", baseMsg, detail);
+			break;
 
-			if (FindQueueFamilies(physicalDevice, vk::QueueFlagBits::eGraphics).empty())
-				continue;	// Completely unsuitable
-
-			if (deviceRanking > bestDeviceRanking)
+		case PhysicalDeviceSuitability::Suitable:
+			Log::TagMsg(TAG, "{0} suitable, rating {1}", baseMsg, deviceRating);
+			if (deviceRating > bestDeviceRating)
 			{
-				bestDevice = physicalDevice;
-				bestDeviceRanking = deviceRanking;
+				bestDevice = device;
+				bestDeviceRating = deviceRating;
 			}
+			break;
+
+		default:
+			assert(!"Unknown PhysicalDeviceSuitability");
 		}
-
-		if (!bestDevice)
-			throw rkrp_vulkan_exception("Unable to find any suitable physical device.");
-
-		m_PreferredPhysicalDevice = bestDevice;
-
-		debugMsg += "Automatically chose \"best\" device: ";
-	}
-	else
-	{
-		debugMsg += "User specified preferred device: ";
 	}
 
-	// Debug message about what device we chose
-	{
-		const auto properties = m_PreferredPhysicalDevice.getProperties();
-		debugMsg += StringTools::CSFormat("{0} (id {1})", properties.deviceName, properties.deviceID);
-	}
+	if (!bestDevice)
+		throw rkrp_vulkan_exception("Unable to find any suitable physical device.");
 
-	Log::Msg(debugMsg);
+	m_PhysicalDevice = bestDevice;
+
+	const auto bestDeviceProperties = m_PhysicalDevice.getProperties();
+	Log::TagMsg(TAG, "Automatically chose \"best\" device: {0} (id {1})", bestDeviceProperties.deviceName, bestDeviceProperties.deviceID);
 }
 
-std::vector<std::pair<size_t, vk::QueueFamilyProperties>> _Vulkan::FindQueueFamilies(const vk::PhysicalDevice& device, vk::QueueFlagBits queueFlags)
+_Vulkan::PhysicalDeviceSuitability _Vulkan::RatePhysicalDevice(const vk::PhysicalDevice& device, float& rating, const char*& detail) const
+{
+	detail = nullptr;
+	rating = 0;
+
+	const auto properties = device.getProperties();
+	//const auto features = device.getFeatures();
+	//const auto queueFamilyProperties = device.getQueueFamilyProperties();
+
+	// Dedicated GPUs are usually significantly better than onboard
+	if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+		rating += 10;
+
+	// Software rendering is aids
+	if (properties.deviceType == vk::PhysicalDeviceType::eCpu)
+		rating -= 10;
+
+	// Bonuses for onboard memory
+	{
+		const auto memoryProperties = device.getMemoryProperties();
+		std::vector<std::pair<uint32_t, vk::MemoryHeapFlagBits>> memoryTypes;
+
+		for (size_t i = 0; i < memoryProperties.memoryHeapCount; i++)
+		{
+			const auto& heap = memoryProperties.memoryHeaps[i];
+			const auto& heapFlags = heap.flags;
+
+			float scalar;
+			if (heapFlags & vk::MemoryHeapFlagBits::eDeviceLocal)
+				scalar = 1;		// 1 point per GB of full speed, device local memory
+			else
+				scalar = 0.25;	// 0.25 points per GB of shared memory
+
+			static constexpr float BYTES_TO_GB = 1.0f / 1024 / 1024 / 1024;
+
+			rating += scalar * BYTES_TO_GB * heap.size;
+		}
+	}
+
+	if (FindQueueFamilies(device, vk::QueueFlagBits::eGraphics).empty())
+		return PhysicalDeviceSuitability::MissingQueue_Graphics;
+
+	if (FindPresentationQueueFamilies(device).empty())
+		return PhysicalDeviceSuitability::MissingQueue_Presentation;
+
+	// Check extensions
+	{
+		const auto extensions = device.enumerateDeviceExtensionProperties();
+
+		const auto HasExtension = [&extensions](const std::string_view& sv) -> bool
+		{
+			return std::find_if(extensions.begin(), extensions.end(),
+				[&sv](const vk::ExtensionProperties& ex) { return !sv.compare(ex.extensionName); }) != extensions.end();
+		};
+
+		if (!HasExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+		{
+			detail = "missing extension " VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+			return PhysicalDeviceSuitability::MissingExtension_SwapChain;
+		}
+	}
+
+	// Check swap chain support
+	{
+		const auto swapChainSupport = QuerySwapChainSupport(device);
+
+		if (swapChainSupport.m_Formats.empty())
+		{
+			detail = "no supported swap chain formats";
+			return PhysicalDeviceSuitability::NoSupport_SwapChain;
+		}
+
+		assert(false);
+	}
+
+	return PhysicalDeviceSuitability::Suitable;
+}
+
+std::vector<size_t> _Vulkan::FindPresentationQueueFamilies(const vk::PhysicalDevice& device) const
+{
+	std::vector<size_t> retVal;
+
+	const auto queueFamilyProperties = device.getQueueFamilyProperties();
+
+	for (size_t i = 0; i < queueFamilyProperties.size(); i++)
+	{
+		const auto& current = queueFamilyProperties[i];
+		if (device.getSurfaceSupportKHR(i, m_WindowSurface))
+			retVal.push_back(i);
+	}
+
+	return retVal;
+}
+
+std::vector<std::pair<size_t, vk::QueueFamilyProperties>> _Vulkan::FindQueueFamilies(const vk::PhysicalDevice& device, vk::QueueFlagBits queueFlags) const
 {
 	std::vector<std::pair<size_t, vk::QueueFamilyProperties>> retVal;
 
@@ -253,39 +377,101 @@ std::vector<std::pair<size_t, vk::QueueFamilyProperties>> _Vulkan::FindQueueFami
 
 	for (size_t i = 0; i < queueFamilyProperties.size(); i++)
 	{
-		if (queueFamilyProperties[i].queueFlags & queueFlags)
-			retVal.push_back(std::make_pair(i, queueFamilyProperties[i]));
+		const auto& current = queueFamilyProperties[i];
+
+		if (current.queueFlags & queueFlags)
+			retVal.push_back(std::make_pair(i, current));
 	}
 
 	return retVal;
 }
 
-void _Vulkan::CreateLogicalDevice()
+void _Vulkan::InitDevice()
 {
-	Log::Msg("Vulkan: Creating logical device...");
+	Log::TagMsg(TAG, "Creating logical device...");
 
-	const auto queueFamilies = FindQueueFamilies(m_PreferredPhysicalDevice, vk::QueueFlagBits::eGraphics);
+	const uint32_t graphicsQueueFamily = FindQueueFamilies(m_PhysicalDevice, vk::QueueFlagBits::eGraphics).front().first;
 
-	vk::DeviceQueueCreateInfo dqCreateInfo;
-	dqCreateInfo.setQueueCount(1);
-	dqCreateInfo.setQueueFamilyIndex((uint32_t)queueFamilies.front().first);
+	// Check if our presentation queue is the same as our graphics queue
+	const uint32_t presentationQueueFamily = [this, &graphicsQueueFamily]() -> uint32_t
+	{
+		const auto presentationQueueFamilies = FindPresentationQueueFamilies(m_PhysicalDevice);
+		for (size_t i = 0; i < presentationQueueFamilies.size(); i++)
+		{
+			if (presentationQueueFamilies[i] == graphicsQueueFamily)
+				return i;
+		}
 
-	float queuePriority = 1;
-	dqCreateInfo.setPQueuePriorities(&queuePriority);
+		return presentationQueueFamilies.front();
+	}();
+
+	std::vector<vk::DeviceQueueCreateInfo> dqCreateInfos;
+
+	const float queuePriority = 1;
+
+	// Graphics queue
+	uint32_t graphicsQueueIndex;
+	{
+		vk::DeviceQueueCreateInfo graphicsQueue;
+		graphicsQueue.setQueueCount(1);
+		graphicsQueue.setQueueFamilyIndex(graphicsQueueFamily);
+		graphicsQueue.setPQueuePriorities(&queuePriority);
+		dqCreateInfos.push_back(graphicsQueue);
+		graphicsQueueIndex = dqCreateInfos.size() - 1;
+	}
+
+	// Presentation queue, might be the same as the graphics queue
+	uint32_t presentationQueueIndex = graphicsQueueIndex;
+	if (presentationQueueFamily != graphicsQueueFamily)
+	{
+		vk::DeviceQueueCreateInfo presentationQueue;
+		presentationQueue.setQueueCount(1);
+		presentationQueue.setQueueFamilyIndex(presentationQueueFamily);
+		presentationQueue.setPQueuePriorities(&queuePriority);
+		dqCreateInfos.push_back(presentationQueue);
+		presentationQueueIndex = dqCreateInfos.size() - 1;
+	}
 
 	vk::PhysicalDeviceFeatures features;
 
 	vk::DeviceCreateInfo deviceCreateInfo;
-	deviceCreateInfo.setQueueCreateInfoCount(1);
-	deviceCreateInfo.setPQueueCreateInfos(&dqCreateInfo);
+	deviceCreateInfo.setQueueCreateInfoCount(dqCreateInfos.size());
+	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
 
-	m_LogicalDevice = m_PreferredPhysicalDevice.createDevice(deviceCreateInfo);
+	// Extensions
+	static constexpr const char* DEVICE_EXTENSIONS[] =
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	};
+	deviceCreateInfo.setPpEnabledExtensionNames(DEVICE_EXTENSIONS);
+	deviceCreateInfo.setEnabledExtensionCount(sizeof(DEVICE_EXTENSIONS) / sizeof(DEVICE_EXTENSIONS[0]));
 
-	m_GraphicsQueue = m_LogicalDevice.getQueue((uint32_t)queueFamilies.front().first, 0);
+	m_LogicalDevice = m_PhysicalDevice.createDevice(deviceCreateInfo);
+
+	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice.getQueue(graphicsQueueFamily, graphicsQueueIndex);
+
+	// Potentially shared
+	if (presentationQueueIndex == graphicsQueueIndex)
+		m_Queues[underlying_value(QueueType::Presentation)] = m_Queues[underlying_value(QueueType::Graphics)];
+	else
+		m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice.getQueue(presentationQueueFamily, presentationQueueIndex);
+}
+
+_Vulkan::SwapChainSupportDetails _Vulkan::QuerySwapChainSupport(const vk::PhysicalDevice& device) const
+{
+	SwapChainSupportDetails retVal;
+
+	retVal.m_Capabilities = device.getSurfaceCapabilitiesKHR(m_WindowSurface);
+	retVal.m_Formats = device.getSurfaceFormatsKHR(m_WindowSurface);
+	retVal.m_PresentModes = device.getSurfacePresentModesKHR(m_WindowSurface);
+
+	return retVal;
 }
 
 void _Vulkan::AttachDebugMsgCallback()
 {
+	Log::TagMsg(TAG, "Attaching debug msg callback...");
+
 	auto func = (PFN_vkCreateDebugReportCallbackEXT)m_Instance.getProcAddr("vkCreateDebugReportCallbackEXT");
 	assert(func);
 	if (func != nullptr)
@@ -296,7 +482,7 @@ void _Vulkan::AttachDebugMsgCallback()
 		createInfo.flags |= vk::DebugReportFlagBitsEXT::eWarning;
 		createInfo.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
 		createInfo.flags |= vk::DebugReportFlagBitsEXT::eError;
-		createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
+		//createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
 		createInfo.setPfnCallback(&DebugCallback);
 
 		VkResult result = func((VkInstance)m_Instance, &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &m_DebugMsgCallbackHandle);
@@ -309,24 +495,24 @@ VKAPI_ATTR VkBool32 VKAPI_CALL _Vulkan::DebugCallback(VkDebugReportFlagsEXT flag
 {
 	const vk::DebugReportFlagBitsEXT flagBits = (vk::DebugReportFlagBitsEXT)flags;
 
-	const char* msgType = "[UNKNOWN]";
+	const char* msgType = "[VULKAN UNKNOWN]";
 	if (!!(flagBits & vk::DebugReportFlagBitsEXT::eInformation))
-		msgType = "[INFO] ";
+		msgType = "[VULKAN INFO]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eWarning))
-		msgType = "[WARN] ";
+		msgType = "[VULKAN WARN]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::ePerformanceWarning))
-		msgType = "[PERF] ";
+		msgType = "[VULKAN PERF]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eError))
-		msgType = "[ERROR]";
+		msgType = "[VULKAN ERROR]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eDebug))
-		msgType = "[DEBUG]";
+		msgType = "[VULKAN DEBUG]";
 
-	Log::Msg("{0} validation layer: {2}", msgType, obj, msg);
+	Log::Msg("{0} {2}", msgType, obj, msg);
 
 	return VK_FALSE;
 }
 
-std::vector<vk::ExtensionProperties> _Vulkan::GetAvailableExtensions()
+std::vector<vk::ExtensionProperties> _Vulkan::GetAvailableInstanceExtensions()
 {
 	uint32_t extensionCount = 0;
 	vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -349,10 +535,13 @@ std::vector<vk::PhysicalDevice> _Vulkan::GetAvailablePhysicalDevices()
 	return GetInstance().enumeratePhysicalDevices();
 }
 
-void _Vulkan::SetPreferredPhysicalDevice(const vk::PhysicalDevice& device)
+vk::Queue _Vulkan::GetQueue(QueueType q)
 {
-	const std::vector<vk::PhysicalDevice> devices = GetAvailablePhysicalDevices();
-	assert(std::find(devices.begin(), devices.end(), device) != devices.end());
+	if (underlying_value(q) < 0 ||
+		underlying_value(q) >= underlying_value(QueueType::Count))
+	{
+		throw rkrp_vulkan_exception(StringTools::CSFormat("Invalid QueueType {0}", underlying_value(q)));
+	}
 
-	m_PreferredPhysicalDevice = device;
+	return m_Queues[underlying_value(q)];
 }

@@ -5,3 +5,6 @@
 #include <Windows.h>
 
 #undef CreateWindow
+
+#undef min
+#undef max

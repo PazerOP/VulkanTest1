@@ -1,5 +1,6 @@
 ﻿#include "Log.h"
 
+#include <algorithm>
 #include <clocale>
 #include <codecvt>
 #include "FixedWindows.h"
@@ -77,7 +78,7 @@ void Log::BlockMsgRaw(std::string str, size_t charsPerLine)
 		charsThisLine++;
 		dataIdx += length;
 
-		maxWidth = max(maxWidth, charsThisLine);
+		maxWidth = std::max(maxWidth, charsThisLine);
 	}
 
 	// Pad spaces until we reach maxwidth

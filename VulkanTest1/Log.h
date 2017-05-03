@@ -11,6 +11,11 @@ public:
 	Log(Log&&) = delete;
 	~Log() = delete;
 
+	template<class... Args> static void TagMsg(std::string tag, const std::string& fmt, Args... args)
+	{
+		MsgRaw(tag.append(StringTools::CSFormat(fmt, args...)).append("\n"sv));
+	}
+
 	template<class... Args> static void Msg(const char* fmt, Args... args)
 	{
 		MsgRaw(StringTools::CSFormat(fmt, args...).append("\n"sv));
