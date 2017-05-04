@@ -121,9 +121,12 @@
     <ClInclude Include="FixedWindows.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="StringTools.h" />
+    <ClInclude Include="SwapChainData.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanEnumOperators.h" />
@@ -132,8 +135,11 @@
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Log.cpp" />
+    <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="PhysicalDeviceData.cpp" />
     <ClCompile Include="StringTools.cpp" />
+    <ClCompile Include="SwapChainData.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
