@@ -53,11 +53,14 @@
     <ClInclude Include="PhysicalDeviceData.h">
       <Filter>Source\Vulkan\Data</Filter>
     </ClInclude>
-    <ClInclude Include="SwapChainData.h">
-      <Filter>Source\Vulkan\Data</Filter>
-    </ClInclude>
     <ClInclude Include="LogicalDevice.h">
       <Filter>Source\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Swapchain.h">
+      <Filter>Source\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="SwapchainData.h">
+      <Filter>Source\Vulkan\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -82,10 +85,13 @@
     <ClCompile Include="PhysicalDeviceData.cpp">
       <Filter>Source\Vulkan\Data</Filter>
     </ClCompile>
-    <ClCompile Include="SwapChainData.cpp">
+    <ClCompile Include="LogicalDevice.cpp">
+      <Filter>Source\Vulkan\ObjectWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="SwapchainData.cpp">
       <Filter>Source\Vulkan\Data</Filter>
     </ClCompile>
-    <ClCompile Include="LogicalDevice.cpp">
+    <ClCompile Include="Swapchain.cpp">
       <Filter>Source\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
   </ItemGroup>

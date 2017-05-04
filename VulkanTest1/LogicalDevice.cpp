@@ -2,14 +2,11 @@
 
 #include "Log.h"
 
-LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
+LogicalDevice::LogicalDevice(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
 {
-	Log::TagMsg(TAG, "Creating logical device...");
+	m_PhysicalDevice = physicalDevice;
 
-	const uint32_t graphicsQueueFamily = physicalDevice->GetQueueFamilies(vk::QueueFlagBits::eGraphics).front().first;
-
-	// Check if our presentation queue is the same as our graphics queue
-	const uint32_t presentationQueueFamily = physicalDevice->GetPresentationQueueFamilies().front();
+	ChooseQueueFamilies();
 
 	std::vector<vk::DeviceQueueCreateInfo> dqCreateInfos;
 
@@ -20,7 +17,7 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 	{
 		vk::DeviceQueueCreateInfo graphicsQueue;
 		graphicsQueue.setQueueCount(1);
-		graphicsQueue.setQueueFamilyIndex(graphicsQueueFamily);
+		graphicsQueue.setQueueFamilyIndex(GetQueueFamily(QueueType::Graphics));
 		graphicsQueue.setPQueuePriorities(&queuePriority);
 		dqCreateInfos.push_back(graphicsQueue);
 		graphicsQueueIndex = dqCreateInfos.size() - 1;
@@ -28,11 +25,11 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 
 	// Presentation queue, might be the same as the graphics queue
 	uint32_t presentationQueueIndex = graphicsQueueIndex;
-	if (presentationQueueFamily != graphicsQueueFamily)
+	if (GetQueueFamily(QueueType::Graphics) != GetQueueFamily(QueueType::Presentation))
 	{
 		vk::DeviceQueueCreateInfo presentationQueue;
 		presentationQueue.setQueueCount(1);
-		presentationQueue.setQueueFamilyIndex(presentationQueueFamily);
+		presentationQueue.setQueueFamilyIndex(GetQueueFamily(QueueType::Presentation));
 		presentationQueue.setPQueuePriorities(&queuePriority);
 		dqCreateInfos.push_back(presentationQueue);
 		presentationQueueIndex = dqCreateInfos.size() - 1;
@@ -45,20 +42,39 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
 
 	// Extensions
-	static constexpr const char* DEVICE_EXTENSIONS[] =
+	deviceCreateInfo.setPpEnabledExtensionNames(m_PhysicalDevice->ChooseBestExtensionSet().data());
+	deviceCreateInfo.setEnabledExtensionCount(m_PhysicalDevice->ChooseBestExtensionSet().size());
+
+	m_LogicalDevice = m_PhysicalDevice->GetPhysicalDevice().createDevice(deviceCreateInfo);
+
+	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice.getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
+	m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice.getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
+}
+
+const vk::Queue& LogicalDevice::GetQueue(QueueType q) const
+{
+	assert(underlying_value(q) < 0 || underlying_value(q) >= underlying_value(QueueType::Count));
+	return m_Queues[underlying_value(q)];
+}
+
+uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
+{
+	assert(underlying_value(q) >= 0 && underlying_value(q) < underlying_value(QueueType::Count));
+	return m_QueueFamilies[underlying_value(q)];
+}
+
+void LogicalDevice::ChooseQueueFamilies()
+{
+	// Try to use a single queue for everything
+	const auto bestEverythingQueue = m_PhysicalDevice->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics);
+	if (bestEverythingQueue.has_value())
 	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	};
-	deviceCreateInfo.setPpEnabledExtensionNames(DEVICE_EXTENSIONS);
-	deviceCreateInfo.setEnabledExtensionCount(sizeof(DEVICE_EXTENSIONS) / sizeof(DEVICE_EXTENSIONS[0]));
-
-	m_LogicalDevice = m_PhysicalDeviceData->GetPhysicalDevice().createDevice(deviceCreateInfo);
-
-	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice.getQueue(graphicsQueueFamily, graphicsQueueIndex);
-
-	// Potentially shared
-	if (presentationQueueIndex == graphicsQueueIndex)
-		m_Queues[underlying_value(QueueType::Presentation)] = m_Queues[underlying_value(QueueType::Graphics)];
+		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_QueueFamilies[underlying_value(QueueType::Presentation)] = bestEverythingQueue->first;
+	}
 	else
-		m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice.getQueue(presentationQueueFamily, presentationQueueIndex);
+	{
+		// Separate queues
+		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_PhysicalDevice->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
+		m_QueueFamilies[underlying_value(QueueType::Presentation)] = m_PhysicalDevice->ChooseBestQueue(true)->first;
+	}
 }

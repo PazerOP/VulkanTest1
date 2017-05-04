@@ -5,19 +5,13 @@
 
 VULKAN_ENUM_OPERATORS(VkDebugReportFlagBitsEXT, vk::DebugReportFlagBitsEXT);
 
+class LogicalDevice;
+
 class rkrp_vulkan_exception : public std::runtime_error
 {
 public:
 	rkrp_vulkan_exception(const char* msg) : std::runtime_error(msg) {}
 	rkrp_vulkan_exception(const std::string& msg) : std::runtime_error(msg) {}
-};
-
-enum class QueueType
-{
-	Graphics,
-	Presentation,
-
-	Count,
 };
 
 class IVulkan
@@ -31,7 +25,7 @@ public:
 
 	virtual vk::Instance& GetInstance() = 0;
 
-	virtual vk::Queue GetQueue(QueueType q) = 0;
+	virtual const std::shared_ptr<LogicalDevice>& GetLogicalDevice() = 0;
 };
 
 extern IVulkan& Vulkan();

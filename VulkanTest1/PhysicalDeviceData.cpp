@@ -1,19 +1,36 @@
 #include "PhysicalDeviceData.h"
 #include "StringTools.h"
 
-PhysicalDeviceData::PhysicalDeviceData(const vk::PhysicalDevice& physicalDevice, const vk::SurfaceKHR& windowSurface)
+PhysicalDeviceData::PhysicalDeviceData()
 {
-	m_Device = physicalDevice;
+	m_Init = false;
+}
 
-	m_SupportedExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-	m_SupportedLayers = physicalDevice.enumerateDeviceLayerProperties();
-	m_Properties = physicalDevice.getProperties();
-	m_Features = physicalDevice.getFeatures();
-	m_QueueFamilies = physicalDevice.getQueueFamilyProperties();
+void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+{
+	if (m_Init)
+		throw programmer_error("Attempted to init PhysicalDeviceData twice!");
 
-	FindPresentationQueueFamilies(windowSurface);
+	m_Device = device;
+
+	m_SupportedExtensions = device.enumerateDeviceExtensionProperties();
+	m_SupportedLayers = device.enumerateDeviceLayerProperties();
+	m_Properties = device.getProperties();
+	m_Features = device.getFeatures();
+	m_QueueFamilies = device.getQueueFamilyProperties();
+
+	FindPresentationQueueFamilies(*windowSurface);
 
 	RateDeviceSuitability(windowSurface);
+
+	m_Init = true;
+}
+
+std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+{
+	auto retVal = std::shared_ptr<PhysicalDeviceData>(new PhysicalDeviceData());
+	retVal->Init(device, windowSurface);
+	return retVal;
 }
 
 bool PhysicalDeviceData::HasExtension(const std::string_view& name) const
@@ -42,7 +59,30 @@ std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData::
 	return retVal;
 }
 
-void PhysicalDeviceData::RateDeviceSuitability(const vk::SurfaceKHR& windowSurface)
+std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData::ChooseBestQueue(bool presentation, vk::QueueFlags flags) const
+{
+	for (size_t i = 0; i < GetQueueFamilies().size(); i++)
+	{
+		const auto& current = GetQueueFamilies().at(i);
+		if (current.queueFlags & flags)
+			return std::make_pair(i, current);
+	}
+
+	return std::nullopt;
+}
+
+std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData::ChooseBestQueue(bool presentation) const
+{
+	if (!GetPresentationQueueFamilies().empty())
+	{
+		const auto first = GetPresentationQueueFamilies().front();
+		return std::make_pair(first, GetQueueFamilies().at(first));
+	}
+
+	return std::nullopt;
+}
+
+void PhysicalDeviceData::RateDeviceSuitability(const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
 {
 	m_Rating = 0;
 
@@ -88,7 +128,7 @@ void PhysicalDeviceData::RateDeviceSuitability(const vk::SurfaceKHR& windowSurfa
 			return;
 		}
 
-		m_ExtensionsToEnable.push_back(REQUIRED_EXTENSIONS[i]);
+		m_BestExtensionSet.push_back(REQUIRED_EXTENSIONS[i]);
 	}
 
 	// Optional extensions
@@ -98,7 +138,7 @@ void PhysicalDeviceData::RateDeviceSuitability(const vk::SurfaceKHR& windowSurfa
 		if (HasExtension(current.first))
 		{
 			m_Rating += current.second;
-			m_ExtensionsToEnable.push_back(current.first);
+			m_BestExtensionSet.push_back(current.first);
 		}
 	}
 
@@ -124,13 +164,14 @@ void PhysicalDeviceData::RateDeviceSuitability(const vk::SurfaceKHR& windowSurfa
 	}
 
 	// Check swap chain support
-	m_SwapChainData = std::make_shared<SwapChainData>(shared_from_this(), windowSurface);
-	if (m_SwapChainData->GetSuitability() != SwapChainData::Suitability::Suitable)
+	m_SwapChainData = std::make_shared<SwapchainData>(shared_from_this(), windowSurface);
+	if (m_SwapChainData->GetSuitability() != SwapchainData::Suitability::Suitable)
 	{
 		m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, swap chain says: {0}", m_SwapChainData->GetSuitabilityMessage());
 		m_Suitability = Suitability::SwapChain_Unsuitable;
 		return;
 	}
+	m_Rating += m_SwapChainData->GetRating();
 
 	m_SuitabilityMessage += StringTools::CSFormat(" suitable, rating {0}", m_Rating);
 	m_Suitability = Suitability::Suitable;

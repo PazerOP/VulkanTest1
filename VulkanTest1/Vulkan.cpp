@@ -2,8 +2,10 @@
 
 #include "FixedWindows.h"
 #include "Log.h"
+#include "LogicalDevice.h"
 #include "Main.h"
 #include "PhysicalDeviceData.h"
+#include "Swapchain.h"
 #include "Util.h"
 
 class _Vulkan final : public IVulkan
@@ -15,7 +17,7 @@ public:
 
 	vk::Instance& GetInstance() override;
 
-	vk::Queue GetQueue(QueueType q) override;
+	const std::shared_ptr<LogicalDevice>& GetLogicalDevice();
 
 private:
 	void InitExtensions();
@@ -27,10 +29,12 @@ private:
 	void InitSwapChain();
 
 	vk::Instance m_Instance;
-	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
-	vk::Device m_LogicalDevice;
-	vk::Queue m_Queues[underlying_value(QueueType::Count)];
-	vk::SurfaceKHR m_WindowSurface;
+	std::shared_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
+	std::shared_ptr<LogicalDevice> m_LogicalDevice;
+	std::shared_ptr<Swapchain> m_Swapchain;
+	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
+
+	static void SurfaceKHRDeleter(vk::SurfaceKHR* s) { Vulkan().GetInstance().destroySurfaceKHR(*s); delete s; }
 
 	static constexpr const char TAG[] = "[VulkanImpl] ";
 
@@ -77,10 +81,14 @@ void _Vulkan::Shutdown()
 
 vk::Instance& _Vulkan::GetInstance()
 {
-	if (!IsInitialized())
-		throw rkrp_vulkan_exception(StringTools::CSFormat("Attempted to call {0}() when IsInitialized() returned false", __FUNCTION__));
-
+	assert(IsInitialized());
 	return m_Instance;
+}
+
+const std::shared_ptr<LogicalDevice>& _Vulkan::GetLogicalDevice()
+{
+	assert(IsInitialized());
+	return m_LogicalDevice;
 }
 
 void _Vulkan::InitExtensions()
@@ -193,7 +201,7 @@ void _Vulkan::CreateWindowSurface()
 	createInfo.setHwnd(Main().GetAppWindow().GetWindow());
 	createInfo.setHinstance(Main().GetAppInstance());
 
-	m_WindowSurface = m_Instance.createWin32SurfaceKHR(createInfo);
+	m_WindowSurface = std::make_shared<vk::SurfaceKHR>(m_Instance.createWin32SurfaceKHR(createInfo));
 }
 
 void _Vulkan::AutodetectPhysicalDevice()
@@ -202,7 +210,7 @@ void _Vulkan::AutodetectPhysicalDevice()
 
 	std::vector<std::shared_ptr<PhysicalDeviceData>> physicalDevices;
 	for (const auto& rawDevice : m_Instance.enumeratePhysicalDevices())
-		physicalDevices.push_back(std::make_shared<PhysicalDeviceData>(rawDevice, m_WindowSurface));
+		physicalDevices.push_back(PhysicalDeviceData::Create(rawDevice, m_WindowSurface));
 
 	if (physicalDevices.empty())
 		throw rkrp_vulkan_exception("Unable to find any physical devices supporting Vulkan.");
@@ -232,66 +240,14 @@ void _Vulkan::InitDevice()
 {
 	Log::TagMsg(TAG, "Creating logical device...");
 
-	const uint32_t graphicsQueueFamily = m_PhysicalDeviceData->GetQueueFamilies(vk::QueueFlagBits::eGraphics).front().first;
-
-	// Check if our presentation queue is the same as our graphics queue
-	const uint32_t presentationQueueFamily = m_PhysicalDeviceData->GetPresentationQueueFamilies().front();
-
-	std::vector<vk::DeviceQueueCreateInfo> dqCreateInfos;
-
-	const float queuePriority = 1;
-
-	// Graphics queue
-	uint32_t graphicsQueueIndex;
-	{
-		vk::DeviceQueueCreateInfo graphicsQueue;
-		graphicsQueue.setQueueCount(1);
-		graphicsQueue.setQueueFamilyIndex(graphicsQueueFamily);
-		graphicsQueue.setPQueuePriorities(&queuePriority);
-		dqCreateInfos.push_back(graphicsQueue);
-		graphicsQueueIndex = dqCreateInfos.size() - 1;
-	}
-
-	// Presentation queue, might be the same as the graphics queue
-	uint32_t presentationQueueIndex = graphicsQueueIndex;
-	if (presentationQueueFamily != graphicsQueueFamily)
-	{
-		vk::DeviceQueueCreateInfo presentationQueue;
-		presentationQueue.setQueueCount(1);
-		presentationQueue.setQueueFamilyIndex(presentationQueueFamily);
-		presentationQueue.setPQueuePriorities(&queuePriority);
-		dqCreateInfos.push_back(presentationQueue);
-		presentationQueueIndex = dqCreateInfos.size() - 1;
-	}
-
-	vk::PhysicalDeviceFeatures features;
-
-	vk::DeviceCreateInfo deviceCreateInfo;
-	deviceCreateInfo.setQueueCreateInfoCount(dqCreateInfos.size());
-	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
-
-	// Extensions
-	static constexpr const char* DEVICE_EXTENSIONS[] =
-	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	};
-	deviceCreateInfo.setPpEnabledExtensionNames(DEVICE_EXTENSIONS);
-	deviceCreateInfo.setEnabledExtensionCount(sizeof(DEVICE_EXTENSIONS) / sizeof(DEVICE_EXTENSIONS[0]));
-
-	m_LogicalDevice = m_PhysicalDeviceData->GetPhysicalDevice().createDevice(deviceCreateInfo);
-
-	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice.getQueue(graphicsQueueFamily, graphicsQueueIndex);
-
-	// Potentially shared
-	if (presentationQueueIndex == graphicsQueueIndex)
-		m_Queues[underlying_value(QueueType::Presentation)] = m_Queues[underlying_value(QueueType::Graphics)];
-	else
-		m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice.getQueue(presentationQueueFamily, presentationQueueIndex);
+	m_LogicalDevice = std::make_shared<LogicalDevice>(m_PhysicalDeviceData);
 }
 
 void _Vulkan::InitSwapChain()
 {
+	Log::TagMsg(TAG, "Creating swap chain...");
 
+	m_Swapchain = std::make_shared<Swapchain>(m_LogicalDevice);
 }
 
 void _Vulkan::AttachDebugMsgCallback()
@@ -354,15 +310,4 @@ std::vector<vk::ExtensionProperties> _Vulkan::GetAvailableInstanceExtensions()
 std::vector<vk::LayerProperties> _Vulkan::GetAvailableInstanceLayers()
 {
 	return vk::enumerateInstanceLayerProperties();
-}
-
-vk::Queue _Vulkan::GetQueue(QueueType q)
-{
-	if (underlying_value(q) < 0 ||
-		underlying_value(q) >= underlying_value(QueueType::Count))
-	{
-		throw rkrp_vulkan_exception(StringTools::CSFormat("Invalid QueueType {0}", underlying_value(q)));
-	}
-
-	return m_Queues[underlying_value(q)];
 }

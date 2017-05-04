@@ -2,13 +2,14 @@
 #include "SwapChainData.h"
 #include "Util.h"
 
+#include <optional>
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
-class PhysicalDeviceData : std::enable_shared_from_this<PhysicalDeviceData>
+class PhysicalDeviceData : public std::enable_shared_from_this<PhysicalDeviceData>
 {
 public:
-	PhysicalDeviceData(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface);
+	static std::shared_ptr<PhysicalDeviceData> Create(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
 
 	enum class Suitability
 	{
@@ -22,6 +23,7 @@ public:
 
 		SwapChain_Unsuitable,
 	};
+
 
 	float GetRating() const { return m_Rating; }
 	Suitability GetSuitability() const { return m_Suitability; }
@@ -41,13 +43,21 @@ public:
 	std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> GetQueueFamilies(const vk::QueueFlags& queueFlags);
 	const std::vector<uint32_t>& GetPresentationQueueFamilies() const { return m_PresentationQueueFamilies; }
 
-	const std::shared_ptr<SwapChainData> GetSwapChainData() const { return m_SwapChainData; }
+	const std::shared_ptr<const SwapchainData> GetSwapChainData() const { return m_SwapChainData; }
 
-	const std::vector<const char*>& GetExtensionsToEnable() const { return m_ExtensionsToEnable; }
+	const std::vector<const char*>& ChooseBestExtensionSet() const { return m_BestExtensionSet; }
+
+	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation, vk::QueueFlags flags) const;
+	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation) const;
 
 private:
-	void RateDeviceSuitability(const vk::SurfaceKHR& windowSurface);
+	PhysicalDeviceData();
+	void Init(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
+
+	void RateDeviceSuitability(const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
 	void FindPresentationQueueFamilies(const vk::SurfaceKHR& windowSurface);
+
+	bool m_Init;
 
 	float m_Rating;
 	Suitability m_Suitability;
@@ -63,7 +73,7 @@ private:
 	std::vector<vk::QueueFamilyProperties> m_QueueFamilies;
 	std::vector<uint32_t> m_PresentationQueueFamilies;
 
-	std::shared_ptr<SwapChainData> m_SwapChainData;
+	std::shared_ptr<const SwapchainData> m_SwapChainData;
 
 	static constexpr const char* REQUIRED_EXTENSIONS[] =
 	{
@@ -76,5 +86,5 @@ private:
 		{ "placeholder", 0.0f }
 	};
 
-	std::vector<const char*> m_ExtensionsToEnable;
+	std::vector<const char*> m_BestExtensionSet;
 };

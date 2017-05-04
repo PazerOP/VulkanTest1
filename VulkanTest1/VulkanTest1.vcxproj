@@ -94,13 +94,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -111,6 +112,8 @@
     <ClCompile>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -126,7 +129,8 @@
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="StringTools.h" />
-    <ClInclude Include="SwapChainData.h" />
+    <ClInclude Include="Swapchain.h" />
+    <ClInclude Include="SwapchainData.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanEnumOperators.h" />
@@ -139,7 +143,8 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PhysicalDeviceData.cpp" />
     <ClCompile Include="StringTools.cpp" />
-    <ClCompile Include="SwapChainData.cpp" />
+    <ClCompile Include="Swapchain.cpp" />
+    <ClCompile Include="SwapchainData.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
