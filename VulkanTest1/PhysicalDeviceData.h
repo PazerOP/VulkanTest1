@@ -4,7 +4,6 @@
 
 #include <optional>
 #include <vector>
-#include <vulkan/vulkan.hpp>
 
 class PhysicalDeviceData : public std::enable_shared_from_this<PhysicalDeviceData>
 {

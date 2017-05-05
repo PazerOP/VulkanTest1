@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "PhysicalDeviceData.h"
 #include "StringTools.h"
 

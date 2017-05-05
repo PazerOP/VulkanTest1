@@ -1,4 +1,5 @@
-﻿#include "Main.h"
+﻿#include "stdafx.h"
+#include "Main.h"
 
 #include <assert.h>
 #include <chrono>

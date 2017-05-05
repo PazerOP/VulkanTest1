@@ -16,6 +16,9 @@ public:
 
 	bool Destroyed() const;
 
+	void SetTitle(const std::string& title);
+	std::string GetWindowTitle() const;
+
 	HWND GetWindow();
 
 private:

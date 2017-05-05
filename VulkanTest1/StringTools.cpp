@@ -1,4 +1,5 @@
-﻿#include "StringTools.h"
+﻿#include "stdafx.h"
+#include "StringTools.h"
 
 #include <cassert>
 #include <cuchar>

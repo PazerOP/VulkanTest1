@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <vulkan/vulkan.hpp>	// For all the to_string goodness
 
 #include "StringConverter.h"
 

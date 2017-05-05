@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "LogicalDevice.h"
 
 #include "Log.h"

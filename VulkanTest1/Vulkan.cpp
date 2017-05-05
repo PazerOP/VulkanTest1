@@ -1,6 +1,8 @@
+#include "stdafx.h"
 #include "Vulkan.h"
 
 #include "FixedWindows.h"
+#include "Game.h"
 #include "Log.h"
 #include "LogicalDevice.h"
 #include "Main.h"
@@ -8,16 +10,22 @@
 #include "Swapchain.h"
 #include "Util.h"
 
+#include <chrono>
+
 class _Vulkan final : public IVulkan
 {
 public:
+	_Vulkan();
+
 	void Init() override;
-	bool IsInitialized() const override { return !!m_Instance; }
+	bool IsInitialized() const override { return m_Init; }
 	void Shutdown() override;
 
 	vk::Instance& GetInstance() override;
 
-	const std::shared_ptr<LogicalDevice>& GetLogicalDevice();
+	const std::shared_ptr<LogicalDevice>& GetLogicalDevice() override;
+
+	const std::shared_ptr<Swapchain>& GetSwapchain() override;
 
 private:
 	void InitExtensions();
@@ -28,6 +36,7 @@ private:
 	void InitDevice();
 	void InitSwapChain();
 
+	bool m_Init;
 	vk::Instance m_Instance;
 	std::shared_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
 	std::shared_ptr<LogicalDevice> m_LogicalDevice;
@@ -56,20 +65,57 @@ IVulkan& Vulkan()
 	return s_Vulkan;
 }
 
+_Vulkan::_Vulkan()
+{
+	m_Init = false;
+}
+
 void _Vulkan::Init()
 {
+	constexpr auto total = 9;
+	auto updateTitle = [&total](int current)
+	{
+		Main().GetAppWindow().SetTitle(StringTools::CSFormat("{0}Initialization progress: {1}%", TAG, int(current / (float)total * 100)));
+	};
+
+	const auto startTime = std::chrono::high_resolution_clock::now();
+
+	int progress = 0;
+	updateTitle(progress++);
+
 	InitExtensions();
+	updateTitle(progress++);
+
 	InitValidationLayers();
+	updateTitle(progress++);
 
 	InitInstance();
+	updateTitle(progress++);
 
 	AttachDebugMsgCallback();
+	updateTitle(progress++);
+
 	CreateWindowSurface();
+	updateTitle(progress++);
 
 	AutodetectPhysicalDevice();
-	InitDevice();
+	updateTitle(progress++);
 
-	Log::BlockMsg("Completed initialization");
+	InitDevice();
+	updateTitle(progress++);
+
+	InitSwapChain();
+	updateTitle(progress++);
+
+	const auto endTime = std::chrono::high_resolution_clock::now();
+
+	// Completed vulkan initialization
+	m_Init = true;
+	Log::BlockMsg("Completed initialization in {0} seconds.", std::chrono::duration<float>(endTime - startTime).count());
+
+	// temp: init game
+	Game().InitGame();
+	updateTitle(progress++);
 }
 
 void _Vulkan::Shutdown()
@@ -89,6 +135,12 @@ const std::shared_ptr<LogicalDevice>& _Vulkan::GetLogicalDevice()
 {
 	assert(IsInitialized());
 	return m_LogicalDevice;
+}
+
+const std::shared_ptr<Swapchain>& _Vulkan::GetSwapchain()
+{
+	assert(IsInitialized());
+	return m_Swapchain;
 }
 
 void _Vulkan::InitExtensions()

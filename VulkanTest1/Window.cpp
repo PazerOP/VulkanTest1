@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Window.h"
 
 #include "Log.h"
@@ -40,6 +41,20 @@ bool Window::Destroyed() const
 	return m_WindowData->m_WindowDestroyed;
 }
 
+void Window::SetTitle(const std::string& title)
+{
+	::SetWindowTextA(GetWindow(), title.c_str());
+}
+
+std::string Window::GetWindowTitle() const
+{
+	const auto length = GetWindowTextLengthA(m_WindowData->m_Window.get());
+	std::string retVal;
+	retVal.resize(length);
+	GetWindowTextA(m_WindowData->m_Window.get(), retVal.data(), length);
+	return retVal;
+}
+
 HWND Window::GetWindow()
 {
 	WindowData* const data = GetWindowData();
@@ -73,7 +88,7 @@ void Window::CreateWindowClass()
 	bool existing = GetClassInfoExA(Main().GetAppInstance(), WINDOW_CLASS_NAME, &windowClass);
 	if (existing)
 		return;
-	
+
 	memset(&windowClass, 0, sizeof(windowClass));
 	windowClass.cbSize = sizeof(windowClass);
 	windowClass.cbClsExtra = 0;
@@ -91,7 +106,7 @@ HBRUSH Window::GetBackgroundBrush()
 
 	if (!data->m_BackgroundBrush)
 		data->m_BackgroundBrush.reset(CreateSolidBrush(RGB(0, 255, 0)));
-	
+
 	return data->m_BackgroundBrush.get();
 }
 

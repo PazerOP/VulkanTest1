@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Swapchain.h"
 
 #include "LogicalDevice.h"
@@ -11,7 +12,7 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 	vk::SwapchainCreateInfoKHR createInfo;
 	createInfo.setSurface(*m_Data->GetWindowSurface());
 
-	createInfo.setMinImageCount(m_Data->GetAllSurfaceCapabilities().minImageCount);
+	createInfo.setMinImageCount(m_Data->GetSurfaceCapabilities().minImageCount);
 	createInfo.setImageFormat(m_Data->ChooseBestSurfaceFormat().format);
 	createInfo.setImageColorSpace(m_Data->ChooseBestSurfaceFormat().colorSpace);
 	createInfo.setImageExtent(m_Data->ChooseBestExtent2D());
@@ -31,7 +32,7 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 		createInfo.setImageSharingMode(vk::SharingMode::eExclusive);
 	}
 
-	createInfo.setPreTransform(m_Data->GetAllSurfaceCapabilities().currentTransform);
+	createInfo.setPreTransform(m_Data->GetSurfaceCapabilities().currentTransform);
 
 	createInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
@@ -39,4 +40,36 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 	createInfo.setClipped(true);
 
 	m_Swapchain = device->GetDevice().createSwapchainKHR(createInfo);
+
+	m_SwapchainImages = device->GetDevice().getSwapchainImagesKHR(m_Swapchain);
+
+	CreateImageViews();
+}
+
+void Swapchain::CreateImageViews()
+{
+	for (auto& img : m_SwapchainImages)
+	{
+		vk::ImageViewCreateInfo createInfo;
+
+		createInfo.setImage(img);
+
+		createInfo.setViewType(vk::ImageViewType::e2D);
+		createInfo.format = m_Data->ChooseBestSurfaceFormat().format;
+
+		createInfo.components.r = vk::ComponentSwizzle::eIdentity;
+		createInfo.components.g = vk::ComponentSwizzle::eIdentity;
+		createInfo.components.b = vk::ComponentSwizzle::eIdentity;
+		createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+
+		createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		m_SwapchainImageViews.push_back(std::shared_ptr<vk::ImageView>(
+			new vk::ImageView(m_Device.lock()->GetDevice().createImageView(createInfo)),
+			[this](vk::ImageView* iv) { m_Device.lock()->GetDevice().destroyImageView(*iv); }));
+	}
 }
