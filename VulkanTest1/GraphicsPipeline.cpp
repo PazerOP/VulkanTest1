@@ -11,12 +11,51 @@ GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineC
 
 	CreateRenderPass();
 	CreatePipeline();
-
-
 }
 
 void GraphicsPipeline::CreateRenderPass()
 {
+	vk::AttachmentDescription colorAttachment;
+	{
+		colorAttachment.setFormat(m_CreateInfo->GetSwapchain()->GetFormat());
+
+		colorAttachment.setLoadOp(vk::AttachmentLoadOp::eClear);
+		colorAttachment.setStoreOp(vk::AttachmentStoreOp::eStore);
+
+		colorAttachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+		colorAttachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+		colorAttachment.setInitialLayout(vk::ImageLayout::eUndefined);
+		colorAttachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+	}
+
+	vk::AttachmentReference colorAttachmentRef;
+	{
+		colorAttachmentRef.setAttachment(0);
+		colorAttachmentRef.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	}
+
+	vk::SubpassDescription subpass;
+	{
+		subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+		subpass.setColorAttachmentCount(1);
+		subpass.setPColorAttachments(&colorAttachmentRef);
+	}
+
+	vk::RenderPassCreateInfo rpCreateInfo;
+	{
+		rpCreateInfo.setAttachmentCount(1);
+		rpCreateInfo.setPAttachments(&colorAttachment);
+		rpCreateInfo.setSubpassCount(1);
+		rpCreateInfo.setPSubpasses(&subpass);
+	}
+
+	const auto device = m_CreateInfo->GetDevice();
+	m_RenderPass = std::shared_ptr<vk::RenderPass>(
+		new vk::RenderPass(device->GetDevice().createRenderPass(rpCreateInfo)),
+		[device](vk::RenderPass* rp) {device->GetDevice().destroyRenderPass(*rp); delete rp; }
+	);
 }
 
 void GraphicsPipeline::CreatePipeline()
@@ -122,7 +161,18 @@ void GraphicsPipeline::CreatePipeline()
 		gpCreateInfo.setPDynamicState(&dynamicState);
 
 		gpCreateInfo.setLayout(*m_Layout);
+
+		gpCreateInfo.setRenderPass(*m_RenderPass);
+		gpCreateInfo.setSubpass(0);
+
+		gpCreateInfo.setBasePipelineHandle(nullptr);
+		gpCreateInfo.setBasePipelineIndex(-1);
 	}
+
+	m_Pipeline = std::shared_ptr<vk::Pipeline>(
+		new vk::Pipeline(device->GetDevice().createGraphicsPipeline(nullptr, gpCreateInfo)),
+		[device](vk::Pipeline* rp) { device->GetDevice().destroyPipeline(*rp); delete rp; }
+	);
 }
 
 vk::ShaderStageFlagBits GraphicsPipeline::ConvertShaderType(ShaderType type)
@@ -152,6 +202,8 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 	for (std::underlying_type_t<ShaderType> i = 0; i < underlying_value(ShaderType::Count); i++)
 	{
 		const auto& current = m_CreateInfo->GetShader((ShaderType)i);
+		if (!current)
+			continue;
 
 		createInfos.emplace_back();
 		auto& currentInfo = createInfos.back();

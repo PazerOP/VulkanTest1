@@ -8,6 +8,9 @@ public:
 
 	const std::shared_ptr<const GraphicsPipelineCreateInfo>& GetCreateInfo() const { return m_CreateInfo; }
 
+	const std::shared_ptr<const vk::RenderPass> GetRenderPass() const { return m_RenderPass; }
+	const std::shared_ptr<vk::RenderPass>& GetRenderPass() { return m_RenderPass; }
+
 private:
 	void CreateRenderPass();
 	void CreatePipeline();

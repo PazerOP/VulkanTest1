@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Swapchain.h"
 
+#include "GraphicsPipeline.h"
 #include "LogicalDevice.h"
 #include "PhysicalDeviceData.h"
 
@@ -9,16 +10,23 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 	m_Data = device->GetData()->GetSwapChainData();
 	m_Device = device;
 
+	CreateSwapchain();
+	CreateImageViews();
+}
+
+void Swapchain::CreateSwapchain()
+{
 	vk::SwapchainCreateInfoKHR createInfo;
 	createInfo.setSurface(*m_Data->GetWindowSurface());
 
 	createInfo.setMinImageCount(m_Data->GetSurfaceCapabilities().minImageCount);
-	createInfo.setImageFormat(m_Data->ChooseBestSurfaceFormat().format);
+	createInfo.setImageFormat(m_Format = m_Data->ChooseBestSurfaceFormat().format);
 	createInfo.setImageColorSpace(m_Data->ChooseBestSurfaceFormat().colorSpace);
 	createInfo.setImageExtent(m_Extent = m_Data->ChooseBestExtent2D());
 	createInfo.setImageArrayLayers(1);
 	createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
+	const auto device = m_Device.lock();
 	const uint32_t queueFamilyIndices[] = { device->GetQueueFamily(QueueType::Graphics), device->GetQueueFamily(QueueType::Presentation) };
 	if (queueFamilyIndices[0] != queueFamilyIndices[1])
 	{
@@ -42,8 +50,6 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 	m_Swapchain = device->GetDevice().createSwapchainKHR(createInfo);
 
 	m_SwapchainImages = device->GetDevice().getSwapchainImagesKHR(m_Swapchain);
-
-	CreateImageViews();
 }
 
 void Swapchain::CreateImageViews()
@@ -72,4 +78,26 @@ void Swapchain::CreateImageViews()
 			new vk::ImageView(m_Device.lock()->GetDevice().createImageView(createInfo)),
 			[this](vk::ImageView* iv) { m_Device.lock()->GetDevice().destroyImageView(*iv); }));
 	}
+}
+
+void Swapchain::CreateFramebuffers(const std::shared_ptr<GraphicsPipeline>& pipeline)
+{
+	const auto& device = m_Device.lock();
+	for (const auto& imgView : m_SwapchainImageViews)
+	{
+		vk::FramebufferCreateInfo createInfo;
+		createInfo.setRenderPass(*Vulkan().GetGraphicsPipeline()->GetRenderPass());
+		createInfo.setAttachmentCount(1);
+		createInfo.setPAttachments(imgView.get());
+		createInfo.setWidth(m_Extent.width);
+		createInfo.setHeight(m_Extent.height);
+		createInfo.setLayers(1);
+
+		m_Framebuffers.push_back(std::shared_ptr<vk::Framebuffer>(
+			new vk::Framebuffer(device->GetDevice().createFramebuffer(createInfo)),
+			[device](vk::Framebuffer* fb) { device->GetDevice().destroyFramebuffer(*fb); delete fb; }
+		));
+	}
+
+	return;
 }

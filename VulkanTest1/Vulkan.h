@@ -5,6 +5,7 @@
 
 VULKAN_ENUM_OPERATORS(VkDebugReportFlagBitsEXT, vk::DebugReportFlagBitsEXT);
 
+class GraphicsPipeline;
 class LogicalDevice;
 class Swapchain;
 
@@ -29,6 +30,8 @@ public:
 	virtual const std::shared_ptr<LogicalDevice>& GetLogicalDevice() = 0;
 
 	virtual const std::shared_ptr<Swapchain>& GetSwapchain() = 0;
+
+	virtual const std::shared_ptr<GraphicsPipeline>& GetGraphicsPipeline() = 0;
 };
 
 extern IVulkan& Vulkan();

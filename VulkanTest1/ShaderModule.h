@@ -39,7 +39,7 @@ public:
 	const std::shared_ptr<const LogicalDevice>& GetDevice() const { return m_Device; }
 	const std::shared_ptr<LogicalDevice>& GetDevice() { return m_Device; }
 
-	const std::shared_ptr<const vk::ShaderModule>& GetShader() const { return m_Shader; }
+	const std::shared_ptr<const vk::ShaderModule> GetShader() const { return m_Shader; }
 	const std::shared_ptr<vk::ShaderModule>& GetShader() { return m_Shader; }
 
 private:

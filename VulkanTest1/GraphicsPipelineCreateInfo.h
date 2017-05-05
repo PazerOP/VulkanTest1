@@ -2,6 +2,7 @@
 #include "ShaderModule.h"
 
 class LogicalDevice;
+class Swapchain;
 
 class GraphicsPipelineCreateInfo
 {
@@ -9,7 +10,7 @@ public:
 	GraphicsPipelineCreateInfo();
 	GraphicsPipelineCreateInfo(const std::shared_ptr<LogicalDevice>& device, const std::shared_ptr<Swapchain>& swapchain);
 
-	const std::shared_ptr<const LogicalDevice>& GetDevice() const { return m_Device; }
+	const std::shared_ptr<const LogicalDevice> GetDevice() const { return m_Device; }
 	const std::shared_ptr<LogicalDevice>& GetDevice() { return m_Device; }
 
 	const std::shared_ptr<const Swapchain>& GetSwapchain() const { return m_Swapchain; }

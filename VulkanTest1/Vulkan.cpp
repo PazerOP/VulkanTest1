@@ -3,6 +3,7 @@
 
 #include "FixedWindows.h"
 #include "Game.h"
+#include "GraphicsPipeline.h"
 #include "Log.h"
 #include "LogicalDevice.h"
 #include "Main.h"
@@ -15,10 +16,8 @@
 class _Vulkan final : public IVulkan
 {
 public:
-	_Vulkan();
-
 	void Init() override;
-	bool IsInitialized() const override { return m_Init; }
+	bool IsInitialized() const override { return !!m_Instance; }
 	void Shutdown() override;
 
 	vk::Instance& GetInstance() override;
@@ -26,6 +25,8 @@ public:
 	const std::shared_ptr<LogicalDevice>& GetLogicalDevice() override;
 
 	const std::shared_ptr<Swapchain>& GetSwapchain() override;
+
+	const std::shared_ptr<GraphicsPipeline>& GetGraphicsPipeline() override;
 
 private:
 	void InitExtensions();
@@ -35,12 +36,15 @@ private:
 	void AutodetectPhysicalDevice();
 	void InitDevice();
 	void InitSwapChain();
+	void InitGraphicsPipeline();
+	void InitFramebuffers();
+	void InitTestCommandBuffer();
 
-	bool m_Init;
 	vk::Instance m_Instance;
 	std::shared_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
 	std::shared_ptr<LogicalDevice> m_LogicalDevice;
 	std::shared_ptr<Swapchain> m_Swapchain;
+	std::shared_ptr<GraphicsPipeline> m_GraphicsPipeline;
 	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
 
 	static void SurfaceKHRDeleter(vk::SurfaceKHR* s) { Vulkan().GetInstance().destroySurfaceKHR(*s); delete s; }
@@ -65,17 +69,12 @@ IVulkan& Vulkan()
 	return s_Vulkan;
 }
 
-_Vulkan::_Vulkan()
-{
-	m_Init = false;
-}
-
 void _Vulkan::Init()
 {
-	constexpr auto total = 9;
+	constexpr auto total = 12;
 	auto updateTitle = [&total](int current)
 	{
-		Main().GetAppWindow().SetTitle(StringTools::CSFormat("{0}Initialization progress: {1}%", TAG, int(current / (float)total * 100)));
+		//Main().GetAppWindow().SetTitle(StringTools::CSFormat("{0}Initialization progress: {1}%", TAG, int(current / (float)total * 100)));
 	};
 
 	const auto startTime = std::chrono::high_resolution_clock::now();
@@ -107,15 +106,25 @@ void _Vulkan::Init()
 	InitSwapChain();
 	updateTitle(progress++);
 
-	const auto endTime = std::chrono::high_resolution_clock::now();
+	InitGraphicsPipeline();
+	updateTitle(progress++);
 
-	// Completed vulkan initialization
-	m_Init = true;
-	Log::BlockMsg("Completed initialization in {0} seconds.", std::chrono::duration<float>(endTime - startTime).count());
+	InitFramebuffers();
+	updateTitle(progress++);
+
+	InitTestCommandBuffer();
+	updateTitle(progress++);
+
+	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// temp: init game
 	Game().InitGame();
 	updateTitle(progress++);
+
+	assert(progress == (total + 1));
+
+	// Completed vulkan initialization
+	Log::BlockMsg("Completed initialization ({0} steps) in {1} seconds.", total, std::chrono::duration<float>(endTime - startTime).count());
 }
 
 void _Vulkan::Shutdown()
@@ -127,20 +136,26 @@ void _Vulkan::Shutdown()
 
 vk::Instance& _Vulkan::GetInstance()
 {
-	assert(IsInitialized());
+	assert(m_Instance);
 	return m_Instance;
 }
 
 const std::shared_ptr<LogicalDevice>& _Vulkan::GetLogicalDevice()
 {
-	assert(IsInitialized());
+	assert(m_LogicalDevice);
 	return m_LogicalDevice;
 }
 
 const std::shared_ptr<Swapchain>& _Vulkan::GetSwapchain()
 {
-	assert(IsInitialized());
+	assert(m_Swapchain);
 	return m_Swapchain;
+}
+
+const std::shared_ptr<GraphicsPipeline>& _Vulkan::GetGraphicsPipeline()
+{
+	assert(m_GraphicsPipeline);
+	return m_GraphicsPipeline;
 }
 
 void _Vulkan::InitExtensions()
@@ -300,6 +315,25 @@ void _Vulkan::InitSwapChain()
 	Log::TagMsg(TAG, "Creating swap chain...");
 
 	m_Swapchain = std::make_shared<Swapchain>(m_LogicalDevice);
+}
+
+void _Vulkan::InitGraphicsPipeline()
+{
+	Log::TagMsg(TAG, "Creating graphics pipeline...");
+
+	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(m_LogicalDevice, m_Swapchain);
+
+	createInfo->SetShader(ShaderType::Vertex, std::make_shared<ShaderModule>("shaders/vert.spv", m_LogicalDevice));
+	createInfo->SetShader(ShaderType::Pixel, std::make_shared<ShaderModule>("shaders/frag.spv", m_LogicalDevice));
+
+	m_GraphicsPipeline = std::make_shared<GraphicsPipeline>(createInfo);
+}
+
+void _Vulkan::InitFramebuffers()
+{
+	Log::TagMsg(TAG, "Creating framebuffers...");
+
+	((ISwapchain_VulkanFriends*)m_Swapchain.get())->CreateFramebuffers(m_GraphicsPipeline);
 }
 
 void _Vulkan::AttachDebugMsgCallback()

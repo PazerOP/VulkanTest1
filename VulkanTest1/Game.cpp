@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Game.h"
 
+#include "GraphicsPipeline.h"
 #include "Main.h"
 #include "ShaderModule.h"
 #include "Vulkan.h"
@@ -34,8 +35,6 @@ GamePlaceholder::GamePlaceholder()
 
 void GamePlaceholder::InitGame()
 {
-	m_Vertex = std::make_shared<ShaderModule>("shaders/vert.spv");
-	m_Pixel = std::make_shared<ShaderModule>("shaders/frag.spv");
 }
 
 void GamePlaceholder::GameLoopFn(float /*dt*/)
