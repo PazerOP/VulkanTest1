@@ -54,13 +54,13 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<const PhysicalDeviceData>& ph
 
 const vk::Queue& LogicalDevice::GetQueue(QueueType q) const
 {
-	assert(underlying_value(q) < 0 || underlying_value(q) >= underlying_value(QueueType::Count));
+	assert(validate_enum_value(q));
 	return m_Queues[underlying_value(q)];
 }
 
 uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
 {
-	assert(underlying_value(q) >= 0 && underlying_value(q) < underlying_value(QueueType::Count));
+	assert(validate_enum_value(q));
 	return m_QueueFamilies[underlying_value(q)];
 }
 

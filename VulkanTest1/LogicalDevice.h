@@ -12,6 +12,10 @@ enum class QueueType
 
 	Count,
 };
+__forceinline bool validate_enum_value(QueueType value)
+{
+	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(QueueType::Count);
+}
 
 class LogicalDevice : public std::enable_shared_from_this<LogicalDevice>
 {
@@ -24,7 +28,7 @@ public:
 	vk::Device& GetDevice() { return m_LogicalDevice; }
 
 	const vk::Queue& GetQueue(QueueType q) const;
-	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(const_cast<const LogicalDevice*>(this)->GetQueue(q)); }
+	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(const_this(this)->GetQueue(q)); }
 
 	uint32_t GetQueueFamily(QueueType q) const;
 

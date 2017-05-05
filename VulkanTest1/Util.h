@@ -64,3 +64,9 @@ __forceinline constexpr float RemapClamped(float a, float b, float x, float y, f
 {
 	return (a < b) ? std::clamp(Remap(a, b, x, y, t), a, b) : std::clamp(Remap(a, b, x, y, t), b, a);
 }
+
+// Easier to read than const_cast<const SomeClass*>(this)
+template<class T> __forceinline constexpr const T* const_this(const T* thisPtr)
+{
+	return thisPtr;
+}

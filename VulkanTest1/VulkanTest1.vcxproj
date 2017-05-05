@@ -123,6 +123,7 @@
   <ItemGroup>
     <ClInclude Include="FixedWindows.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GraphicsPipelineCreateInfo.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
@@ -141,6 +142,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GraphicsPipeline.cpp" />
+    <ClCompile Include="GraphicsPipelineCreateInfo.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />

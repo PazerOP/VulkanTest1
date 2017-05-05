@@ -15,7 +15,7 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 	createInfo.setMinImageCount(m_Data->GetSurfaceCapabilities().minImageCount);
 	createInfo.setImageFormat(m_Data->ChooseBestSurfaceFormat().format);
 	createInfo.setImageColorSpace(m_Data->ChooseBestSurfaceFormat().colorSpace);
-	createInfo.setImageExtent(m_Data->ChooseBestExtent2D());
+	createInfo.setImageExtent(m_Extent = m_Data->ChooseBestExtent2D());
 	createInfo.setImageArrayLayers(1);
 	createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
