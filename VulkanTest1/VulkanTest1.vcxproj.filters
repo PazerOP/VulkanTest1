@@ -65,12 +65,14 @@
     <ClInclude Include="ShaderModule.h">
       <Filter>Source\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="GraphicsPipeline.h">
       <Filter>Source\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
     <ClInclude Include="GraphicsPipelineCreateInfo.h">
       <Filter>Source\Vulkan\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -119,5 +121,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="AppManifest.manifest" />
   </ItemGroup>
 </Project>

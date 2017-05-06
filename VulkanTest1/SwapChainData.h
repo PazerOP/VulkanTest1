@@ -28,9 +28,15 @@ public:
 	const std::vector<vk::SurfaceFormatKHR>& GetSurfaceFormats() const { return m_AllSurfaceFormats; }
 	const std::vector<vk::PresentModeKHR>& GetPresentModes() const { return m_AllPresentModes; }
 
-	const vk::SurfaceFormatKHR& ChooseBestSurfaceFormat() const { return m_BestSurfaceFormat; }
-	vk::PresentModeKHR ChooseBestPresentMode() const { return m_BestPresentMode; }
-	const vk::Extent2D& ChooseBestExtent2D() const { return m_BestExtent2D; }
+	struct BestValues
+	{
+		uint32_t m_ImageCount;
+		vk::SurfaceFormatKHR m_SurfaceFormat;
+		vk::PresentModeKHR m_PresentMode;
+		vk::Extent2D m_Extent2D;
+	};
+
+	const std::shared_ptr<const BestValues> GetBestValues() const { return m_BestValues; }
 
 private:
 	void RateSuitability();
@@ -38,6 +44,17 @@ private:
 	void ChooseAndRateSurfaceFormat();
 	void ChooseAndRatePresentMode();
 	void ChooseAndRateExtent2D();
+	void ChooseAndRateImageCount();
+
+	static constexpr std::pair<vk::PresentModeKHR, float> PRIORITIZED_SYNC_MODES[] =
+	{
+		{ vk::PresentModeKHR::eFifoRelaxed, 10.0f },	// nvidia adaptive vsync
+		{ vk::PresentModeKHR::eFifo, 0.0f },			// vsync
+
+		// Effectively disabled (eFifo is guarenteed in vulkan)
+		{ vk::PresentModeKHR::eMailbox, 20.0f },		// nvidia fast vsync
+		{ vk::PresentModeKHR::eImmediate, 10.0f },		// no vsync
+	};
 
 	float m_Rating;
 	Suitability m_Suitability;
@@ -47,9 +64,7 @@ private:
 
 	std::weak_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
 
-	vk::SurfaceFormatKHR m_BestSurfaceFormat;
-	vk::PresentModeKHR m_BestPresentMode;
-	vk::Extent2D m_BestExtent2D;
+	std::shared_ptr<BestValues> m_BestValues;
 
 	vk::SurfaceCapabilitiesKHR m_AllSurfaceCapabilities;
 	std::vector<vk::SurfaceFormatKHR> m_AllSurfaceFormats;

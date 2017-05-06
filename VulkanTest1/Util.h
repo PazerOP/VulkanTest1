@@ -50,16 +50,17 @@ constexpr std::array<T, sizeof...(Args)> make_array(Args&&... t)
 	return { std::forward<Args>(t)... };
 }
 
+// Remaps x from [0, 1] to [a, b]
 __forceinline constexpr float Lerp(float a, float b, float x)
 {
 	return a + (b - a) * x;
 }
+// Remaps t from [x, y] to [a, b]
 __forceinline constexpr float Remap(float a, float b, float x, float y, float t)
 {
 	return Lerp(a, b, (t - x) / (y - x));
 }
-// Interpolates linearly from a to b as t goes from x to y, clamping the output between
-// a and b.
+// Remaps t from [x, y] to [a, b], clamping output between [a, b]
 __forceinline constexpr float RemapClamped(float a, float b, float x, float y, float t)
 {
 	return (a < b) ? std::clamp(Remap(a, b, x, y, t), a, b) : std::clamp(Remap(a, b, x, y, t), b, a);

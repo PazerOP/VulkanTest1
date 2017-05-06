@@ -31,7 +31,7 @@ ShaderModule::ShaderModule(const std::filesystem::path& path, const std::shared_
 	createInfo.setPCode(alignedCode.data());
 
 	m_Shader = std::shared_ptr<vk::ShaderModule>(
-		new vk::ShaderModule(m_Device->GetDevice().createShaderModule(createInfo)),
-		[device](vk::ShaderModule* sm) { device->GetDevice().destroyShaderModule(*sm); delete sm; }
+		new vk::ShaderModule(m_Device->Get().createShaderModule(createInfo)),
+		[device](vk::ShaderModule* sm) { device->Get().destroyShaderModule(*sm); delete sm; }
 		);
 }

@@ -17,7 +17,8 @@ void GraphicsPipeline::CreateRenderPass()
 {
 	vk::AttachmentDescription colorAttachment;
 	{
-		colorAttachment.setFormat(m_CreateInfo->GetSwapchain()->GetFormat());
+		colorAttachment.setFormat(m_CreateInfo->GetDevice()->GetSwapchain()->GetInitValues()->m_SurfaceFormat.format);
+		colorAttachment.setSamples(vk::SampleCountFlagBits::e1);
 
 		colorAttachment.setLoadOp(vk::AttachmentLoadOp::eClear);
 		colorAttachment.setStoreOp(vk::AttachmentStoreOp::eStore);
@@ -43,18 +44,32 @@ void GraphicsPipeline::CreateRenderPass()
 		subpass.setPColorAttachments(&colorAttachmentRef);
 	}
 
+	vk::SubpassDependency dependency;
+	{
+		dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
+		dependency.setDstSubpass(0);
+
+		dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+		//dependency.setSrcAccessMask(0);
+
+		dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+		dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
+	}
+
 	vk::RenderPassCreateInfo rpCreateInfo;
 	{
 		rpCreateInfo.setAttachmentCount(1);
 		rpCreateInfo.setPAttachments(&colorAttachment);
 		rpCreateInfo.setSubpassCount(1);
 		rpCreateInfo.setPSubpasses(&subpass);
+		rpCreateInfo.setDependencyCount(1);
+		rpCreateInfo.setPDependencies(&dependency);
 	}
 
 	const auto device = m_CreateInfo->GetDevice();
 	m_RenderPass = std::shared_ptr<vk::RenderPass>(
-		new vk::RenderPass(device->GetDevice().createRenderPass(rpCreateInfo)),
-		[device](vk::RenderPass* rp) {device->GetDevice().destroyRenderPass(*rp); delete rp; }
+		new vk::RenderPass(device->Get().createRenderPass(rpCreateInfo)),
+		[device](vk::RenderPass* rp) { device->Get().destroyRenderPass(*rp); delete rp; }
 	);
 }
 
@@ -65,7 +80,7 @@ void GraphicsPipeline::CreatePipeline()
 	vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
 	inputAssemblyState.setTopology(vk::PrimitiveTopology::eTriangleList);
 
-	const auto& swapchainExtent = m_CreateInfo->GetSwapchain()->GetExtent();
+	const auto& swapchainExtent = m_CreateInfo->GetDevice()->GetSwapchain()->GetInitValues()->m_Extent2D;
 
 	vk::Viewport viewport;
 	viewport.setWidth(swapchainExtent.width);
@@ -141,8 +156,8 @@ void GraphicsPipeline::CreatePipeline()
 
 	const auto device = m_CreateInfo->GetDevice();
 	m_Layout = std::shared_ptr<vk::PipelineLayout>(
-		new vk::PipelineLayout(device->GetDevice().createPipelineLayout(plCreateInfo)),
-		[device](vk::PipelineLayout* pl) { device->GetDevice().destroyPipelineLayout(*pl); delete pl; }
+		new vk::PipelineLayout(device->Get().createPipelineLayout(plCreateInfo)),
+		[device](vk::PipelineLayout* pl) { device->Get().destroyPipelineLayout(*pl); delete pl; }
 	);
 
 	const auto shaderStages = GenerateShaderStageCreateInfos();
@@ -158,7 +173,7 @@ void GraphicsPipeline::CreatePipeline()
 		gpCreateInfo.setPMultisampleState(&multisampleState);
 		gpCreateInfo.setPDepthStencilState(nullptr);
 		gpCreateInfo.setPColorBlendState(&colorBlendState);
-		gpCreateInfo.setPDynamicState(&dynamicState);
+		//gpCreateInfo.setPDynamicState(&dynamicState);
 
 		gpCreateInfo.setLayout(*m_Layout);
 
@@ -170,8 +185,8 @@ void GraphicsPipeline::CreatePipeline()
 	}
 
 	m_Pipeline = std::shared_ptr<vk::Pipeline>(
-		new vk::Pipeline(device->GetDevice().createGraphicsPipeline(nullptr, gpCreateInfo)),
-		[device](vk::Pipeline* rp) { device->GetDevice().destroyPipeline(*rp); delete rp; }
+		new vk::Pipeline(device->Get().createGraphicsPipeline(nullptr, gpCreateInfo)),
+		[device](vk::Pipeline* rp) { device->Get().destroyPipeline(*rp); delete rp; }
 	);
 }
 

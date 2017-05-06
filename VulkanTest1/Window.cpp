@@ -5,8 +5,6 @@
 #include "Main.h"
 #include "Util.h"
 
-#pragma comment(lib, "vulkan-1.lib")
-
 std::map<HWND, std::shared_ptr<Window::WindowData>> Window::m_Windows;
 
 Window::Window()
@@ -15,6 +13,10 @@ Window::Window()
 
 void Window::Show()
 {
+	WindowData* const data = GetWindowData();
+	if (!data->m_Window)
+		CreateWindow();
+
 	::ShowWindow(GetWindow(), SW_SHOW);
 }
 
@@ -58,28 +60,10 @@ std::string Window::GetWindowTitle() const
 HWND Window::GetWindow()
 {
 	WindowData* const data = GetWindowData();
+	if (data)
+		return data->m_Window.get();
 
-	if (!data->m_Window)
-	{
-		CreateWindowClass();
-
-		data->m_Window.reset(CreateWindowExA(
-			CS_HREDRAW | CS_VREDRAW,
-			WINDOW_CLASS_NAME,
-			"RKRP Game",
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-			CW_USEDEFAULT, CW_USEDEFAULT,
-			CW_USEDEFAULT, CW_USEDEFAULT,
-			nullptr,
-			nullptr,
-			Main().GetAppInstance(),
-			nullptr
-		));
-
-		data->m_WindowDestroyed = false;
-	}
-
-	return data->m_Window.get();
+	return nullptr;
 }
 
 void Window::CreateWindowClass()
@@ -100,6 +84,39 @@ void Window::CreateWindowClass()
 	AssertAR(, RegisterClassExA(&windowClass), );
 }
 
+void Window::CreateWindow()
+{
+	WindowData* const data = GetWindowData();
+	if (data->m_Window)
+		return;
+
+	CreateWindowClass();
+
+	auto newWindow = CreateWindowExA(
+		CS_HREDRAW | CS_VREDRAW,
+		WINDOW_CLASS_NAME,
+		"RKRP Game",
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		nullptr,
+		nullptr,
+		Main().GetAppInstance(),
+		nullptr
+	);
+
+	auto deleter = [](HWND hWnd)
+	{
+		auto it = m_Windows.find(hWnd);
+		if (it != m_Windows.end() && !it->second->m_WindowDestroyed)
+			AssertAR(, DestroyWindow(hWnd), );
+	};
+	data->m_Window = shared_hwnd(newWindow, deleter);
+	data->m_WindowDestroyed = false;
+
+	m_Windows.insert(std::make_pair(data->m_Window.get(), m_WindowData));
+}
+
 HBRUSH Window::GetBackgroundBrush()
 {
 	WindowData* const data = GetWindowData();
@@ -108,11 +125,6 @@ HBRUSH Window::GetBackgroundBrush()
 		data->m_BackgroundBrush.reset(CreateSolidBrush(RGB(0, 255, 0)));
 
 	return data->m_BackgroundBrush.get();
-}
-
-void Window::WindowDeleter(HWND window)
-{
-	AssertAR(, DestroyWindow(window), );
 }
 
 void Window::BrushDeleter(HBRUSH brush)
@@ -126,12 +138,20 @@ LRESULT Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_DESTROY:
 	{
-		auto windowData = FindWindowData(hWnd);
-		assert(windowData);
-		if (windowData)
+		auto it = m_Windows.find(hWnd);
+		assert(it != m_Windows.end());
+		if (it != m_Windows.end())
 		{
-			windowData->m_Window.reset();
-			windowData->m_WindowDestroyed = true;
+			auto windowData = it->second;
+			assert(windowData);
+			assert(!windowData->m_WindowDestroyed);
+			if (windowData)
+			{
+				windowData->m_WindowDestroyed = true;
+				windowData->m_Window.reset();
+			}
+
+			m_Windows.erase(it);
 		}
 
 		PostQuitMessage(0);
@@ -164,10 +184,9 @@ std::shared_ptr<Window::WindowData> Window::FindWindowData(HWND window)
 }
 
 Window::WindowData::WindowData() :
-	m_Window(nullptr, &WindowDeleter),
 	m_BackgroundBrush(nullptr, &BrushDeleter)
 {
-	m_WindowDestroyed = false;
+	m_WindowDestroyed = true;
 }
 
 Window::WindowData::~WindowData()

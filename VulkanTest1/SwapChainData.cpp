@@ -8,11 +8,13 @@ SwapchainData::SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& de
 {
 	m_WindowSurface = windowSurface;
 	m_PhysicalDeviceData = deviceData;
-	const auto& physicalDevice = deviceData->GetPhysicalDevice();
 
+	const auto& physicalDevice = deviceData->GetPhysicalDevice();
 	m_AllSurfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*m_WindowSurface);
 	m_AllSurfaceFormats = physicalDevice.getSurfaceFormatsKHR(*m_WindowSurface);
 	m_AllPresentModes = physicalDevice.getSurfacePresentModesKHR(*m_WindowSurface);
+
+	m_BestValues = std::make_shared<BestValues>();
 
 	RateSuitability();
 }
@@ -37,6 +39,7 @@ void SwapchainData::RateSuitability()
 	ChooseAndRateSurfaceFormat();
 	ChooseAndRatePresentMode();
 	ChooseAndRateExtent2D();
+	ChooseAndRateImageCount();
 
 	m_SuitabilityMessage = StringTools::CSFormat("suitable, rating {0}", m_Rating);
 	m_Suitability = Suitability::Suitable;
@@ -47,60 +50,45 @@ void SwapchainData::ChooseAndRateSurfaceFormat()
 	if (GetSurfaceFormats().size() == 1 && GetSurfaceFormats().front().format == vk::Format::eUndefined)
 	{
 		// We can pick whatever we want
-		m_BestSurfaceFormat.format = vk::Format::eB8G8R8A8Unorm;
-		m_BestSurfaceFormat.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+		m_BestValues->m_SurfaceFormat.format = vk::Format::eB8G8R8A8Unorm;
+		m_BestValues->m_SurfaceFormat.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 	}
 
-	m_BestSurfaceFormat.format = vk::Format::eUndefined;
+	m_BestValues->m_SurfaceFormat.format = vk::Format::eUndefined;
 	for (const auto& format : GetSurfaceFormats())
 	{
 		if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 		{
 			m_Rating += 10;
-			m_BestSurfaceFormat = format;
+			m_BestValues->m_SurfaceFormat = format;
 		}
 	}
 
-	if (m_BestSurfaceFormat.format == vk::Format::eUndefined)
+	if (m_BestValues->m_SurfaceFormat.format == vk::Format::eUndefined)
 		throw rkrp_vulkan_exception(StringTools::CSFormat("Need a better way to handle this ({0})", __FUNCTION__));
 }
 
 void SwapchainData::ChooseAndRatePresentMode()
 {
-	m_BestPresentMode = vk::PresentModeKHR::eFifo;	// vsync, support for this is required in vulkan
+	const auto begin = std::begin(PRIORITIZED_SYNC_MODES);
+	const auto end = std::end(PRIORITIZED_SYNC_MODES);
+
+	size_t lowestIndex = std::distance(begin, std::find_if(begin, end, [](const auto& lhs) { return lhs.first == vk::PresentModeKHR::eFifo; }));
 	for (const vk::PresentModeKHR mode : GetPresentModes())
 	{
-		switch (mode)
-		{
-		case vk::PresentModeKHR::eImmediate:
-			{
-				m_Rating += 5;	// No vsync
+		const auto found = std::find_if(begin, end, [mode](const auto& lhs) { return lhs.first == mode; });
+		assert(found != end);
+		if (found == end)
+			continue;
 
-				if (m_BestPresentMode == vk::PresentModeKHR::eFifo)
-					m_BestPresentMode = mode;
+		m_Rating += found->second;
 
-				break;
-			}
+		const size_t index = std::distance(begin, found);
 
-		case vk::PresentModeKHR::eFifoRelaxed:
-			{
-				m_Rating += 10;	// Functionally identical to nvidia's adaptive vsync
-
-				if (m_BestPresentMode == vk::PresentModeKHR::eFifo || m_BestPresentMode == vk::PresentModeKHR::eImmediate)
-					m_BestPresentMode = mode;
-
-				break;
-			}
-		case vk::PresentModeKHR::eMailbox:
-			{
-				m_Rating += 20;	// Functionally identical to nvidia's "fast" vsync
-
-				m_BestPresentMode = mode;
-
-				break;
-			}
-		}
+		lowestIndex = std::min(lowestIndex, index);
 	}
+
+	m_BestValues->m_PresentMode = PRIORITIZED_SYNC_MODES[lowestIndex].first;
 }
 
 void SwapchainData::ChooseAndRateExtent2D()
@@ -110,6 +98,15 @@ void SwapchainData::ChooseAndRateExtent2D()
 	m_Rating += Remap(0, 5, 16384 * 16384, 1, surfaceCaps.minImageExtent.width * surfaceCaps.minImageExtent.height);
 	m_Rating += Remap(0, 5, 1, 16384 * 16384, surfaceCaps.maxImageExtent.width * surfaceCaps.maxImageExtent.height);
 
-	m_BestExtent2D.width = std::clamp(surfaceCaps.currentExtent.width, surfaceCaps.minImageExtent.width, surfaceCaps.maxImageExtent.width);
-	m_BestExtent2D.height = std::clamp(surfaceCaps.currentExtent.height, surfaceCaps.minImageExtent.height, surfaceCaps.maxImageExtent.height);
+	m_BestValues->m_Extent2D.width = std::clamp(surfaceCaps.currentExtent.width, surfaceCaps.minImageExtent.width, surfaceCaps.maxImageExtent.width);
+	m_BestValues->m_Extent2D.height = std::clamp(surfaceCaps.currentExtent.height, surfaceCaps.minImageExtent.height, surfaceCaps.maxImageExtent.height);
+}
+
+void SwapchainData::ChooseAndRateImageCount()
+{
+	const auto& surfaceCaps = GetSurfaceCapabilities();
+
+	m_Rating += Remap(0, 5, 3, 2, (float)surfaceCaps.minImageCount);
+
+	m_BestValues->m_ImageCount = std::clamp(surfaceCaps.minImageCount + 1, surfaceCaps.minImageCount, surfaceCaps.maxImageCount);
 }

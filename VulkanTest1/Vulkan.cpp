@@ -13,65 +13,34 @@
 
 #include <chrono>
 
-class _Vulkan final : public IVulkan
+static _Vulkan* s_VulkanInstance = nullptr;
+_Vulkan& Vulkan()
 {
-public:
-	void Init() override;
-	bool IsInitialized() const override { return !!m_Instance; }
-	void Shutdown() override;
+	assert(s_VulkanInstance);
+	if (!s_VulkanInstance)
+		throw std::runtime_error("Attempted to access the vulkan instance before it was created or after it was destroyed!");
 
-	vk::Instance& GetInstance() override;
+	return *s_VulkanInstance;
+}
 
-	const std::shared_ptr<LogicalDevice>& GetLogicalDevice() override;
-
-	const std::shared_ptr<Swapchain>& GetSwapchain() override;
-
-	const std::shared_ptr<GraphicsPipeline>& GetGraphicsPipeline() override;
-
-private:
-	void InitExtensions();
-	void InitValidationLayers();
-	void InitInstance();
-	void CreateWindowSurface();
-	void AutodetectPhysicalDevice();
-	void InitDevice();
-	void InitSwapChain();
-	void InitGraphicsPipeline();
-	void InitFramebuffers();
-	void InitTestCommandBuffer();
-
-	vk::Instance m_Instance;
-	std::shared_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
-	std::shared_ptr<LogicalDevice> m_LogicalDevice;
-	std::shared_ptr<Swapchain> m_Swapchain;
-	std::shared_ptr<GraphicsPipeline> m_GraphicsPipeline;
-	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
-
-	static void SurfaceKHRDeleter(vk::SurfaceKHR* s) { Vulkan().GetInstance().destroySurfaceKHR(*s); delete s; }
-
-	static constexpr const char TAG[] = "[VulkanImpl] ";
-
-	std::vector<vk::ExtensionProperties> GetAvailableInstanceExtensions();
-	std::vector<vk::LayerProperties> GetAvailableInstanceLayers();
-
-	std::set<std::string> m_EnabledInstanceExtensions;
-	std::set<std::string> m_EnabledInstanceLayers;
-
-	VkDebugReportCallbackEXT m_DebugMsgCallbackHandle;
-	void AttachDebugMsgCallback();
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,
-		uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
-};
-
-IVulkan& Vulkan()
+_Vulkan::_Vulkan()
 {
-	static _Vulkan s_Vulkan;
-	return s_Vulkan;
+	assert(!s_VulkanInstance);
+	if (s_VulkanInstance)
+		throw std::runtime_error("Only 1 vulkan instance may exist at a time!");
+
+	s_VulkanInstance = this;
+}
+
+_Vulkan::~_Vulkan()
+{
+	assert(s_VulkanInstance == this);
+	s_VulkanInstance = nullptr;
 }
 
 void _Vulkan::Init()
 {
-	constexpr auto total = 12;
+	constexpr auto total = 7;
 	auto updateTitle = [&total](int current)
 	{
 		//Main().GetAppWindow().SetTitle(StringTools::CSFormat("{0}Initialization progress: {1}%", TAG, int(current / (float)total * 100)));
@@ -97,22 +66,7 @@ void _Vulkan::Init()
 	CreateWindowSurface();
 	updateTitle(progress++);
 
-	AutodetectPhysicalDevice();
-	updateTitle(progress++);
-
 	InitDevice();
-	updateTitle(progress++);
-
-	InitSwapChain();
-	updateTitle(progress++);
-
-	InitGraphicsPipeline();
-	updateTitle(progress++);
-
-	InitFramebuffers();
-	updateTitle(progress++);
-
-	InitTestCommandBuffer();
 	updateTitle(progress++);
 
 	const auto endTime = std::chrono::high_resolution_clock::now();
@@ -144,18 +98,6 @@ const std::shared_ptr<LogicalDevice>& _Vulkan::GetLogicalDevice()
 {
 	assert(m_LogicalDevice);
 	return m_LogicalDevice;
-}
-
-const std::shared_ptr<Swapchain>& _Vulkan::GetSwapchain()
-{
-	assert(m_Swapchain);
-	return m_Swapchain;
-}
-
-const std::shared_ptr<GraphicsPipeline>& _Vulkan::GetGraphicsPipeline()
-{
-	assert(m_GraphicsPipeline);
-	return m_GraphicsPipeline;
 }
 
 void _Vulkan::InitExtensions()
@@ -198,6 +140,8 @@ void _Vulkan::InitValidationLayers()
 
 	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_parameter_validation"s);
 	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_standard_validation"s);
+	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_core_validation"s);
+	m_EnabledInstanceLayers.insert("VK_LAYER_LUNARG_swapchain"s);
 	auto enabledLayers = m_EnabledInstanceLayers;
 
 	std::string blockMsg = StringTools::CSFormat("{0} supported Vulkan instance layers ({1} enabled):\n", layers.size(), enabledLayers.size());
@@ -271,7 +215,7 @@ void _Vulkan::CreateWindowSurface()
 	m_WindowSurface = std::make_shared<vk::SurfaceKHR>(m_Instance.createWin32SurfaceKHR(createInfo));
 }
 
-void _Vulkan::AutodetectPhysicalDevice()
+void _Vulkan::InitDevice()
 {
 	Log::TagMsg(TAG, "Autodetecting the best physical device...");
 
@@ -298,42 +242,11 @@ void _Vulkan::AutodetectPhysicalDevice()
 	std::sort(physicalDevices.begin(), physicalDevices.end(),
 		[](const auto& a, const auto& b) { return a->GetRating() < b->GetRating(); });
 
-	m_PhysicalDeviceData = physicalDevices.back();
+	const auto physicalDevice = physicalDevices.back();
 
-	Log::TagMsg(TAG, "Automatically chose \"best\" device: {0}", m_PhysicalDeviceData->GetSuitabilityMessage());
-}
+	Log::TagMsg(TAG, "Creating logical device with \"best\" physical device \"{0}\"...", physicalDevice->GetSuitabilityMessage());
 
-void _Vulkan::InitDevice()
-{
-	Log::TagMsg(TAG, "Creating logical device...");
-
-	m_LogicalDevice = std::make_shared<LogicalDevice>(m_PhysicalDeviceData);
-}
-
-void _Vulkan::InitSwapChain()
-{
-	Log::TagMsg(TAG, "Creating swap chain...");
-
-	m_Swapchain = std::make_shared<Swapchain>(m_LogicalDevice);
-}
-
-void _Vulkan::InitGraphicsPipeline()
-{
-	Log::TagMsg(TAG, "Creating graphics pipeline...");
-
-	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(m_LogicalDevice, m_Swapchain);
-
-	createInfo->SetShader(ShaderType::Vertex, std::make_shared<ShaderModule>("shaders/vert.spv", m_LogicalDevice));
-	createInfo->SetShader(ShaderType::Pixel, std::make_shared<ShaderModule>("shaders/frag.spv", m_LogicalDevice));
-
-	m_GraphicsPipeline = std::make_shared<GraphicsPipeline>(createInfo);
-}
-
-void _Vulkan::InitFramebuffers()
-{
-	Log::TagMsg(TAG, "Creating framebuffers...");
-
-	((ISwapchain_VulkanFriends*)m_Swapchain.get())->CreateFramebuffers(m_GraphicsPipeline);
+	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
 }
 
 void _Vulkan::AttachDebugMsgCallback()
@@ -371,11 +284,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL _Vulkan::DebugCallback(VkDebugReportFlagsEXT flag
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::ePerformanceWarning))
 		msgType = "[VULKAN PERF]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eError))
+	{
 		msgType = "[VULKAN ERROR]";
+	}
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eDebug))
 		msgType = "[VULKAN DEBUG]";
 
 	Log::Msg("{0} {2}", msgType, obj, msg);
+	//assert(!(flagBits & vk::DebugReportFlagBitsEXT::eError));
 
 	return VK_FALSE;
 }

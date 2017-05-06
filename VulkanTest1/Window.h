@@ -25,19 +25,21 @@ private:
 	static constexpr char WINDOW_CLASS_NAME[] = "RKRPWindowClass";
 
 	void CreateWindowClass();
+	void CreateWindow();
 	HBRUSH GetBackgroundBrush();
 
-	static void WindowDeleter(HWND window);
 	static void BrushDeleter(HBRUSH brush);
 
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+	using shared_hwnd = std::shared_ptr<std::remove_pointer_t<HWND>>;
 
 	struct WindowData
 	{
 		WindowData();
 		~WindowData();
 
-		std::unique_ptr<std::remove_pointer_t<HWND>, decltype(&WindowDeleter)> m_Window;
+		shared_hwnd m_Window;
 		std::unique_ptr<std::remove_pointer_t<HBRUSH>, decltype(&BrushDeleter)> m_BackgroundBrush;
 		bool m_WindowDestroyed;
 	};

@@ -16,22 +16,45 @@ public:
 	rkrp_vulkan_exception(const std::string& msg) : std::runtime_error(msg) {}
 };
 
-class IVulkan
+class _Vulkan final
 {
 public:
-	virtual ~IVulkan() = default;
+	_Vulkan();
+	~_Vulkan();
 
-	virtual void Init() = 0;
-	virtual bool IsInitialized() const = 0;
-	virtual void Shutdown() = 0;
+	void Init();
+	bool IsInitialized() const { return !!m_Instance; }
+	void Shutdown();
 
-	virtual vk::Instance& GetInstance() = 0;
+	vk::Instance& GetInstance();
 
-	virtual const std::shared_ptr<LogicalDevice>& GetLogicalDevice() = 0;
+	const std::shared_ptr<LogicalDevice>& GetLogicalDevice();
 
-	virtual const std::shared_ptr<Swapchain>& GetSwapchain() = 0;
+private:
+	void InitExtensions();
+	void InitValidationLayers();
+	void InitInstance();
+	void CreateWindowSurface();
+	void InitDevice();
 
-	virtual const std::shared_ptr<GraphicsPipeline>& GetGraphicsPipeline() = 0;
+	vk::Instance m_Instance;
+	std::shared_ptr<LogicalDevice> m_LogicalDevice;
+	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
+
+	static void SurfaceKHRDeleter(vk::SurfaceKHR* s) { Vulkan().GetInstance().destroySurfaceKHR(*s); delete s; }
+
+	static constexpr const char TAG[] = "[VulkanImpl] ";
+
+	std::vector<vk::ExtensionProperties> GetAvailableInstanceExtensions();
+	std::vector<vk::LayerProperties> GetAvailableInstanceLayers();
+
+	std::set<std::string> m_EnabledInstanceExtensions;
+	std::set<std::string> m_EnabledInstanceLayers;
+
+	VkDebugReportCallbackEXT m_DebugMsgCallbackHandle;
+	void AttachDebugMsgCallback();
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,
+														uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
 };
 
-extern IVulkan& Vulkan();
+extern _Vulkan& Vulkan();

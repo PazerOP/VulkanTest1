@@ -6,23 +6,23 @@
 class GraphicsPipeline;
 class LogicalDevice;
 
-class ISwapchain_VulkanFriends
+class ISwapchain_LogicalDeviceFriends
 {
 public:
-	virtual ~ISwapchain_VulkanFriends() = default;
+	virtual ~ISwapchain_LogicalDeviceFriends() = default;
 
-	virtual void CreateFramebuffers(const std::shared_ptr<GraphicsPipeline>& pipeline) = 0;
+	virtual void CreateFramebuffers() = 0;
 
-	friend class _Vulkan;
+	friend class LogicalDevice;
 };
 
-class Swapchain : public ISwapchain_VulkanFriends
+class Swapchain : public ISwapchain_LogicalDeviceFriends
 {
 public:
 	Swapchain(const std::shared_ptr<LogicalDevice>& device);
 
-	const vk::SwapchainKHR& GetSwapchain() const { return m_Swapchain; }
-	vk::SwapchainKHR& GetSwapchain() { return m_Swapchain; }
+	const vk::SwapchainKHR& Get() const { return m_Swapchain; }
+	vk::SwapchainKHR& Get() { return m_Swapchain; }
 
 	const std::vector<vk::Image>& GetSwapchainImages() const { return m_SwapchainImages; }
 
@@ -31,18 +31,15 @@ public:
 
 	const std::shared_ptr<const SwapchainData>& GetData() const { return m_Data; }
 
-	const vk::Extent2D& GetExtent() const { return m_Extent; }
-	vk::Format GetFormat() const { return m_Format; }
+	const std::shared_ptr<const SwapchainData::BestValues>& GetInitValues() const { return m_InitValues; }
 
 private:
 	void CreateSwapchain();
 	void CreateImageViews();
-	void CreateFramebuffers(const std::shared_ptr<GraphicsPipeline>& pipeline) override;
-
-	vk::Extent2D m_Extent;
-	vk::Format m_Format;
+	void CreateFramebuffers() override;
 
 	std::shared_ptr<const SwapchainData> m_Data;
+	std::shared_ptr<const SwapchainData::BestValues> m_InitValues;
 	std::weak_ptr<LogicalDevice> m_Device;
 
 	std::vector<vk::Image> m_SwapchainImages;

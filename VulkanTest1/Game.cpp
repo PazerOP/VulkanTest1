@@ -2,6 +2,7 @@
 #include "Game.h"
 
 #include "GraphicsPipeline.h"
+#include "LogicalDevice.h"
 #include "Main.h"
 #include "ShaderModule.h"
 #include "Vulkan.h"
@@ -39,4 +40,5 @@ void GamePlaceholder::InitGame()
 
 void GamePlaceholder::GameLoopFn(float /*dt*/)
 {
+	Vulkan().GetLogicalDevice()->DrawFrame();
 }

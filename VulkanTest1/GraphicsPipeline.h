@@ -11,6 +11,9 @@ public:
 	const std::shared_ptr<const vk::RenderPass> GetRenderPass() const { return m_RenderPass; }
 	const std::shared_ptr<vk::RenderPass>& GetRenderPass() { return m_RenderPass; }
 
+	const std::shared_ptr<const vk::Pipeline> GetPipeline() const { return m_Pipeline; }
+	const std::shared_ptr<vk::Pipeline>& GetPipeline() { return m_Pipeline; }
+
 private:
 	void CreateRenderPass();
 	void CreatePipeline();
