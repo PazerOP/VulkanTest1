@@ -9,20 +9,20 @@ GraphicsPipelineCreateInfo::GraphicsPipelineCreateInfo() :
 {
 }
 
-GraphicsPipelineCreateInfo::GraphicsPipelineCreateInfo(const std::shared_ptr<LogicalDevice>& device)
+GraphicsPipelineCreateInfo::GraphicsPipelineCreateInfo(LogicalDevice& device)
 {
-	m_Device = device;
+	m_Device = &device;
 }
 
-const std::shared_ptr<const ShaderModule> GraphicsPipelineCreateInfo::GetShader(ShaderType type) const
+const ShaderModule* GraphicsPipelineCreateInfo::GetShader(ShaderType type) const
 {
 	assert(validate_enum_value(type));
-	return m_Shaders[underlying_value(type)];
+	return m_Shaders[underlying_value(type)].get();
 }
 
 void GraphicsPipelineCreateInfo::SetShader(ShaderType type, const std::shared_ptr<ShaderModule>& shader)
 {
 	assert(validate_enum_value(type));
-	assert(shader->GetDevice() == GetDevice());
+	assert(&shader->GetDevice() == &GetDevice());
 	m_Shaders[underlying_value(type)] = shader;
 }

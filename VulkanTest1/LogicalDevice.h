@@ -17,37 +17,38 @@ __forceinline bool validate_enum_value(QueueType value)
 	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(QueueType::Count);
 }
 
-class LogicalDevice : public std::enable_shared_from_this<LogicalDevice>
+class LogicalDevice
 {
 public:
-	static std::shared_ptr<LogicalDevice> Create(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice);
+	static std::unique_ptr<LogicalDevice> Create(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice);
+	~LogicalDevice();
 
-	const std::shared_ptr<const PhysicalDeviceData>& GetData() const { return m_PhysicalDevice; }
+	const PhysicalDeviceData& GetData() const { assert(m_PhysicalDevice); return *m_PhysicalDevice; }
 
-	const vk::Device& Get() const { return m_LogicalDevice; }
-	vk::Device& Get() { return m_LogicalDevice; }
+	const vk::Device* operator->() const { return m_LogicalDevice.operator->(); }
+	//vk::Device* operator->() { return &m_LogicalDevice.get(); }
+
+	const vk::Device Get() const { return m_LogicalDevice.get(); }
+	vk::Device Get() { return m_LogicalDevice.get(); }
 
 	const vk::Queue& GetQueue(QueueType q) const;
 	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(const_this(this)->GetQueue(q)); }
 
 	uint32_t GetQueueFamily(QueueType q) const;
 
-	const std::shared_ptr<const Swapchain> GetSwapchain() const { return m_Swapchain; }
-	const std::shared_ptr<Swapchain>& GetSwapchain() { return m_Swapchain; }
+	const Swapchain& GetSwapchain() const { assert(m_Swapchain); return *m_Swapchain; }
+	Swapchain& GetSwapchain() { assert(m_Swapchain); return *m_Swapchain; }
 
-	const std::shared_ptr<const GraphicsPipeline> GetGraphicsPipeline() const { return m_GraphicsPipeline; }
-	const std::shared_ptr<GraphicsPipeline>& GetGraphicsPipeline() { return m_GraphicsPipeline; }
+	const GraphicsPipeline& GetGraphicsPipeline() const { assert(m_GraphicsPipeline); return *m_GraphicsPipeline; }
+	GraphicsPipeline& GetGraphicsPipeline() { assert(m_GraphicsPipeline); return *m_GraphicsPipeline; }
 
 	void DrawFrame();
+
+	void WindowResized();
 
 private:
 	LogicalDevice() = default;
 	void Init(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice);
-
-#if _MSC_VER == 1910
-	std::weak_ptr<const LogicalDevice> weak_from_this() const { return shared_from_this(); }
-	std::weak_ptr<LogicalDevice> weak_from_this() { return shared_from_this(); }
-#endif
 
 	void InitDevice();
 	void InitSwapchain();
@@ -57,21 +58,23 @@ private:
 	void InitCommandBuffers();
 	void InitSemaphores();
 
+	void RecreateSwapChain();
+
 	static constexpr const char TAG[] = "[LogicalDevice] ";
 
 	void ChooseQueueFamilies();
 
 	std::shared_ptr<const PhysicalDeviceData> m_PhysicalDevice;
-	vk::Device m_LogicalDevice;
+	vk::UniqueDevice m_LogicalDevice;
 
 	uint32_t m_QueueFamilies[underlying_value(QueueType::Count)];
 	vk::Queue m_Queues[underlying_value(QueueType::Count)];
 
-	std::shared_ptr<Swapchain> m_Swapchain;
-	std::shared_ptr<GraphicsPipeline> m_GraphicsPipeline;
-	std::shared_ptr<vk::CommandPool> m_CommandPool;
-	std::vector<std::shared_ptr<vk::CommandBuffer>> m_CommandBuffers;
+	std::unique_ptr<Swapchain> m_Swapchain;
+	std::unique_ptr<GraphicsPipeline> m_GraphicsPipeline;
+	vk::UniqueCommandPool m_CommandPool;
+	std::vector<vk::UniqueCommandBuffer> m_CommandBuffers;
 
-	std::shared_ptr<vk::Semaphore> m_ImageAvailableSemaphore;
-	std::shared_ptr<vk::Semaphore> m_RenderFinishedSemaphore;
+	vk::UniqueSemaphore m_ImageAvailableSemaphore;
+	vk::UniqueSemaphore m_RenderFinishedSemaphore;
 };

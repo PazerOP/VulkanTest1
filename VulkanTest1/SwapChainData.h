@@ -7,7 +7,7 @@ class PhysicalDeviceData;
 class SwapchainData
 {
 public:
-	SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& deviceData, const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
+	SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& deviceData, vk::SurfaceKHR& windowSurface);
 
 	enum class Suitability
 	{
@@ -18,7 +18,7 @@ public:
 	};
 
 	std::shared_ptr<const PhysicalDeviceData> GetPhysicalDeviceData() const { return m_PhysicalDeviceData.lock(); }
-	const std::shared_ptr<vk::SurfaceKHR> GetWindowSurface() const { return m_WindowSurface; }
+	const vk::SurfaceKHR& GetWindowSurface() const { return *m_WindowSurface; }
 
 	float GetRating() const { return m_Rating; }
 	Suitability GetSuitability() const { return m_Suitability; }
@@ -60,7 +60,7 @@ private:
 	Suitability m_Suitability;
 	std::string m_SuitabilityMessage;
 
-	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
+	vk::SurfaceKHR* m_WindowSurface;
 
 	std::weak_ptr<const PhysicalDeviceData> m_PhysicalDeviceData;
 

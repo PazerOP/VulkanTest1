@@ -4,9 +4,9 @@
 #include "SwapChainData.h"
 #include "Vulkan.h"
 
-SwapchainData::SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& deviceData, const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+SwapchainData::SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& deviceData, vk::SurfaceKHR& windowSurface)
 {
-	m_WindowSurface = windowSurface;
+	m_WindowSurface = &windowSurface;
 	m_PhysicalDeviceData = deviceData;
 
 	const auto& physicalDevice = deviceData->GetPhysicalDevice();
@@ -108,5 +108,7 @@ void SwapchainData::ChooseAndRateImageCount()
 
 	m_Rating += Remap(0, 5, 3, 2, (float)surfaceCaps.minImageCount);
 
-	m_BestValues->m_ImageCount = std::clamp(surfaceCaps.minImageCount + 1, surfaceCaps.minImageCount, surfaceCaps.maxImageCount);
+	m_BestValues->m_ImageCount = surfaceCaps.maxImageCount ?
+		std::min(surfaceCaps.minImageCount + 1, surfaceCaps.maxImageCount) :
+		surfaceCaps.minImageCount + 1;
 }

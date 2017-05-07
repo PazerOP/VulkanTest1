@@ -16,32 +16,33 @@ public:
 	rkrp_vulkan_exception(const std::string& msg) : std::runtime_error(msg) {}
 };
 
-class _Vulkan final
+class VulkanInstance final
 {
 public:
-	_Vulkan();
-	~_Vulkan();
+	VulkanInstance();
+	~VulkanInstance();
 
-	void Init();
 	bool IsInitialized() const { return !!m_Instance; }
-	void Shutdown();
 
-	vk::Instance& GetInstance();
+	const vk::Instance* operator->() const { return m_Instance.operator->(); }
+	//vk::Instance* operator->() { return &m_Instance; }
 
-	const std::shared_ptr<LogicalDevice>& GetLogicalDevice();
+	vk::Instance Get() { return m_Instance.get(); }
+
+	LogicalDevice& GetLogicalDevice() { return *m_LogicalDevice; }
 
 private:
+	void Init();
+
 	void InitExtensions();
 	void InitValidationLayers();
 	void InitInstance();
 	void CreateWindowSurface();
 	void InitDevice();
 
-	vk::Instance m_Instance;
-	std::shared_ptr<LogicalDevice> m_LogicalDevice;
-	std::shared_ptr<vk::SurfaceKHR> m_WindowSurface;
-
-	static void SurfaceKHRDeleter(vk::SurfaceKHR* s) { Vulkan().GetInstance().destroySurfaceKHR(*s); delete s; }
+	vk::UniqueInstance m_Instance;
+	std::unique_ptr<LogicalDevice> m_LogicalDevice;
+	vk::UniqueSurfaceKHR m_WindowSurface;
 
 	static constexpr const char TAG[] = "[VulkanImpl] ";
 
@@ -57,4 +58,4 @@ private:
 														uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
 };
 
-extern _Vulkan& Vulkan();
+extern VulkanInstance& Vulkan();

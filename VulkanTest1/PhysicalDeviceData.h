@@ -8,7 +8,7 @@
 class PhysicalDeviceData : public std::enable_shared_from_this<PhysicalDeviceData>
 {
 public:
-	static std::shared_ptr<PhysicalDeviceData> Create(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
+	static std::shared_ptr<PhysicalDeviceData> Create(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface);
 
 	enum class Suitability
 	{
@@ -51,9 +51,9 @@ public:
 
 private:
 	PhysicalDeviceData();
-	void Init(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
+	void Init(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface);
 
-	void RateDeviceSuitability(const std::shared_ptr<vk::SurfaceKHR>& windowSurface);
+	void RateDeviceSuitability(vk::SurfaceKHR& windowSurface);
 	void FindPresentationQueueFamilies(const vk::SurfaceKHR& windowSurface);
 
 	bool m_Init;

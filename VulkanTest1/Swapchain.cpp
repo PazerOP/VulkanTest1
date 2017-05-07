@@ -5,10 +5,25 @@
 #include "LogicalDevice.h"
 #include "PhysicalDeviceData.h"
 
-Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
+std::unique_ptr<Swapchain> Swapchain::Create(LogicalDevice& device)
 {
-	m_Data = device->GetData()->GetSwapChainData();
-	m_Device = device;
+	return std::unique_ptr<Swapchain>(new Swapchain(device));
+}
+
+std::vector<vk::Framebuffer> Swapchain::GetFramebuffers() const
+{
+	std::vector<vk::Framebuffer> retVal;
+
+	for (const auto& fb : m_Framebuffers)
+		retVal.push_back(*fb);
+
+	return retVal;
+}
+
+Swapchain::Swapchain(LogicalDevice& weakDevice)
+{
+	m_Device = &weakDevice;
+	m_Data = weakDevice.GetData().GetSwapChainData();
 	m_InitValues = m_Data->GetBestValues();
 
 	CreateSwapchain();
@@ -18,7 +33,7 @@ Swapchain::Swapchain(const std::shared_ptr<LogicalDevice>& device)
 void Swapchain::CreateSwapchain()
 {
 	vk::SwapchainCreateInfoKHR createInfo;
-	createInfo.setSurface(*m_Data->GetWindowSurface());
+	createInfo.setSurface(m_Data->GetWindowSurface());
 
 	createInfo.setMinImageCount(m_InitValues->m_ImageCount);
 	createInfo.setImageFormat(m_InitValues->m_SurfaceFormat.format);
@@ -27,8 +42,7 @@ void Swapchain::CreateSwapchain()
 	createInfo.setImageArrayLayers(1);
 	createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
-	const auto device = m_Device.lock();
-	const uint32_t queueFamilyIndices[] = { device->GetQueueFamily(QueueType::Graphics), device->GetQueueFamily(QueueType::Presentation) };
+	const uint32_t queueFamilyIndices[] = { GetDevice().GetQueueFamily(QueueType::Graphics), GetDevice().GetQueueFamily(QueueType::Presentation) };
 	if (queueFamilyIndices[0] != queueFamilyIndices[1])
 	{
 		createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
@@ -48,13 +62,18 @@ void Swapchain::CreateSwapchain()
 	createInfo.setPresentMode(m_InitValues->m_PresentMode);
 	createInfo.setClipped(true);
 
-	m_Swapchain = device->Get().createSwapchainKHR(createInfo);
+	auto oldSwapchain = std::move(m_Swapchain);
+	createInfo.setOldSwapchain(*oldSwapchain);
 
-	m_SwapchainImages = device->Get().getSwapchainImagesKHR(m_Swapchain);
+	auto device = GetDevice().Get();
+	m_Swapchain = GetDevice()->createSwapchainKHRUnique(createInfo);
+
+	m_SwapchainImages = device.getSwapchainImagesKHR(*m_Swapchain);
 }
 
 void Swapchain::CreateImageViews()
 {
+	auto device = GetDevice().Get();
 	for (auto& img : m_SwapchainImages)
 	{
 		vk::ImageViewCreateInfo createInfo;
@@ -75,30 +94,29 @@ void Swapchain::CreateImageViews()
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		m_SwapchainImageViews.push_back(std::shared_ptr<vk::ImageView>(
-			new vk::ImageView(m_Device.lock()->Get().createImageView(createInfo)),
-			[this](vk::ImageView* iv) { m_Device.lock()->Get().destroyImageView(*iv); }));
+		m_SwapchainImageViews.push_back(device.createImageViewUnique(createInfo));
 	}
 }
 
 void Swapchain::CreateFramebuffers()
 {
-	const auto& device = m_Device.lock();
+	auto device = GetDevice().Get();
 	for (const auto& imgView : m_SwapchainImageViews)
 	{
 		vk::FramebufferCreateInfo createInfo;
-		createInfo.setRenderPass(*device->GetGraphicsPipeline()->GetRenderPass());
+		createInfo.setRenderPass(GetDevice().GetGraphicsPipeline().GetRenderPass());
 		createInfo.setAttachmentCount(1);
-		createInfo.setPAttachments(imgView.get());
-		createInfo.setWidth(GetInitValues()->m_Extent2D.width);
-		createInfo.setHeight(GetInitValues()->m_Extent2D.height);
+		createInfo.setPAttachments(&imgView.get());
+		createInfo.setWidth(GetInitValues().m_Extent2D.width);
+		createInfo.setHeight(GetInitValues().m_Extent2D.height);
 		createInfo.setLayers(1);
 
-		m_Framebuffers.push_back(std::shared_ptr<vk::Framebuffer>(
-			new vk::Framebuffer(device->Get().createFramebuffer(createInfo)),
-			[device](vk::Framebuffer* fb) { device->Get().destroyFramebuffer(*fb); delete fb; }
-		));
+		m_Framebuffers.push_back(device.createFramebufferUnique(createInfo));
 	}
 
 	return;
+}
+
+void Swapchain::Recreate()
+{
 }

@@ -5,6 +5,11 @@
 
 #include "Vulkan.h"
 
+std::unique_ptr<GraphicsPipeline> GraphicsPipeline::Create(const std::shared_ptr<GraphicsPipelineCreateInfo>& createInfo)
+{
+	return std::unique_ptr<GraphicsPipeline>(new GraphicsPipeline(createInfo));
+}
+
 GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo)
 {
 	m_CreateInfo = createInfo;
@@ -17,7 +22,7 @@ void GraphicsPipeline::CreateRenderPass()
 {
 	vk::AttachmentDescription colorAttachment;
 	{
-		colorAttachment.setFormat(m_CreateInfo->GetDevice()->GetSwapchain()->GetInitValues()->m_SurfaceFormat.format);
+		colorAttachment.setFormat(m_CreateInfo->GetDevice().GetSwapchain().GetInitValues().m_SurfaceFormat.format);
 		colorAttachment.setSamples(vk::SampleCountFlagBits::e1);
 
 		colorAttachment.setLoadOp(vk::AttachmentLoadOp::eClear);
@@ -66,11 +71,8 @@ void GraphicsPipeline::CreateRenderPass()
 		rpCreateInfo.setPDependencies(&dependency);
 	}
 
-	const auto device = m_CreateInfo->GetDevice();
-	m_RenderPass = std::shared_ptr<vk::RenderPass>(
-		new vk::RenderPass(device->Get().createRenderPass(rpCreateInfo)),
-		[device](vk::RenderPass* rp) { device->Get().destroyRenderPass(*rp); delete rp; }
-	);
+	const auto device = GetCreateInfo().GetDevice().Get();
+	m_RenderPass = device.createRenderPassUnique(rpCreateInfo);
 }
 
 void GraphicsPipeline::CreatePipeline()
@@ -80,7 +82,7 @@ void GraphicsPipeline::CreatePipeline()
 	vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
 	inputAssemblyState.setTopology(vk::PrimitiveTopology::eTriangleList);
 
-	const auto& swapchainExtent = m_CreateInfo->GetDevice()->GetSwapchain()->GetInitValues()->m_Extent2D;
+	const auto& swapchainExtent = m_CreateInfo->GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
 
 	vk::Viewport viewport;
 	viewport.setWidth(swapchainExtent.width);
@@ -154,11 +156,8 @@ void GraphicsPipeline::CreatePipeline()
 
 	vk::PipelineLayoutCreateInfo plCreateInfo;
 
-	const auto device = m_CreateInfo->GetDevice();
-	m_Layout = std::shared_ptr<vk::PipelineLayout>(
-		new vk::PipelineLayout(device->Get().createPipelineLayout(plCreateInfo)),
-		[device](vk::PipelineLayout* pl) { device->Get().destroyPipelineLayout(*pl); delete pl; }
-	);
+	const auto device = GetCreateInfo().GetDevice().Get();
+	m_Layout = device.createPipelineLayoutUnique(plCreateInfo);
 
 	const auto shaderStages = GenerateShaderStageCreateInfos();
 	vk::GraphicsPipelineCreateInfo gpCreateInfo;
@@ -184,10 +183,7 @@ void GraphicsPipeline::CreatePipeline()
 		gpCreateInfo.setBasePipelineIndex(-1);
 	}
 
-	m_Pipeline = std::shared_ptr<vk::Pipeline>(
-		new vk::Pipeline(device->Get().createGraphicsPipeline(nullptr, gpCreateInfo)),
-		[device](vk::Pipeline* rp) { device->Get().destroyPipeline(*rp); delete rp; }
-	);
+	m_Pipeline = device.createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
 vk::ShaderStageFlagBits GraphicsPipeline::ConvertShaderType(ShaderType type)
@@ -225,7 +221,7 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 
 		currentInfo.setStage(ConvertShaderType((ShaderType)i));
 
-		currentInfo.setModule(*current->GetShader());
+		currentInfo.setModule(current->Get());
 		currentInfo.setPName("main");
 	}
 	return createInfos;

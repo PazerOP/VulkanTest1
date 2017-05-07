@@ -57,6 +57,11 @@ std::string Window::GetWindowTitle() const
 	return retVal;
 }
 
+void Window::SetWindowResizedCallback(const std::function<void(Window&)>& fn)
+{
+	GetWindowData()->m_OnResizedFn = fn;
+}
+
 HWND Window::GetWindow()
 {
 	WindowData* const data = GetWindowData();
@@ -96,7 +101,7 @@ void Window::CreateWindow()
 		CS_HREDRAW | CS_VREDRAW,
 		WINDOW_CLASS_NAME,
 		"RKRP Game",
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		nullptr,
@@ -155,14 +160,49 @@ LRESULT Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		PostQuitMessage(0);
+		return 0;
+	}
+
+	case WM_ENTERSIZEMOVE:
+	{
+		const auto data = FindWindowData(hWnd);
+		assert(!data->m_IsResizing);
+		data->m_IsResizing = true;
+
+		GetWindowRect(hWnd, &data->m_StartRect);
+
 		break;
 	}
 
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+	case WM_SIZE:
+	case WM_EXITSIZEMOVE:
+	{
+		const auto data = FindWindowData(hWnd);
+		data->m_IsResizing = false;
+
+		if (data->m_OnResizedFn)
+		{
+			RECT endRect;
+			GetWindowRect(hWnd, &endRect);
+
+			const auto startH = data->m_StartRect.bottom - data->m_StartRect.top;
+			const auto startW = data->m_StartRect.right - data->m_StartRect.left;
+			const auto endH = endRect.bottom - endRect.top;
+			const auto endW = endRect.right - endRect.left;
+
+			if (startH != endH || startW != endW)
+			{
+				// Window was resized
+				Window temp(data);
+				data->m_OnResizedFn(temp);
+			}
+		}
+
+		break;
+	}
 	}
 
-	return 0;
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 Window::WindowData* Window::GetWindowData()
@@ -172,6 +212,11 @@ Window::WindowData* Window::GetWindowData()
 
 	assert(m_WindowData);
 	return m_WindowData.get();
+}
+
+Window::Window(const std::shared_ptr<WindowData>& data)
+{
+	m_WindowData = data;
 }
 
 std::shared_ptr<Window::WindowData> Window::FindWindowData(HWND window)

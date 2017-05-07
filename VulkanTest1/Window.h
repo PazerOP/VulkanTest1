@@ -19,6 +19,8 @@ public:
 	void SetTitle(const std::string& title);
 	std::string GetWindowTitle() const;
 
+	void SetWindowResizedCallback(const std::function<void(Window&)>& fn);
+
 	HWND GetWindow();
 
 private:
@@ -42,9 +44,16 @@ private:
 		shared_hwnd m_Window;
 		std::unique_ptr<std::remove_pointer_t<HBRUSH>, decltype(&BrushDeleter)> m_BackgroundBrush;
 		bool m_WindowDestroyed;
+
+		bool m_IsResizing;
+		RECT m_StartRect;
+
+		std::function<void(Window&)> m_OnResizedFn;
 	};
 	std::shared_ptr<WindowData> m_WindowData;
 	WindowData* GetWindowData();
+
+	Window(const std::shared_ptr<WindowData>& data);
 
 	static std::shared_ptr<WindowData> FindWindowData(HWND window);
 	static std::map<HWND, std::shared_ptr<WindowData>> m_Windows;

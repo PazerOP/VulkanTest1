@@ -40,5 +40,5 @@ void GamePlaceholder::InitGame()
 
 void GamePlaceholder::GameLoopFn(float /*dt*/)
 {
-	Vulkan().GetLogicalDevice()->DrawFrame();
+	Vulkan().GetLogicalDevice().DrawFrame();
 }

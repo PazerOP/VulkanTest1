@@ -13,8 +13,8 @@
 
 #include <chrono>
 
-static _Vulkan* s_VulkanInstance = nullptr;
-_Vulkan& Vulkan()
+static VulkanInstance* s_VulkanInstance = nullptr;
+VulkanInstance& Vulkan()
 {
 	assert(s_VulkanInstance);
 	if (!s_VulkanInstance)
@@ -23,22 +23,33 @@ _Vulkan& Vulkan()
 	return *s_VulkanInstance;
 }
 
-_Vulkan::_Vulkan()
+VulkanInstance::VulkanInstance()
 {
 	assert(!s_VulkanInstance);
 	if (s_VulkanInstance)
 		throw std::runtime_error("Only 1 vulkan instance may exist at a time!");
 
 	s_VulkanInstance = this;
+
+	Init();
 }
 
-_Vulkan::~_Vulkan()
+VulkanInstance::~VulkanInstance()
 {
+	// Logical device wrapper
+	m_LogicalDevice.reset();
+
+	// Window surface
+	m_WindowSurface.reset();
+
+	// Vulkan instance
+	m_Instance.reset();
+
 	assert(s_VulkanInstance == this);
 	s_VulkanInstance = nullptr;
 }
 
-void _Vulkan::Init()
+void VulkanInstance::Init()
 {
 	constexpr auto total = 7;
 	auto updateTitle = [&total](int current)
@@ -81,26 +92,7 @@ void _Vulkan::Init()
 	Log::BlockMsg("Completed initialization ({0} steps) in {1} seconds.", total, std::chrono::duration<float>(endTime - startTime).count());
 }
 
-void _Vulkan::Shutdown()
-{
-	m_EnabledInstanceExtensions.clear();
-	m_EnabledInstanceLayers.clear();
-	m_Instance.destroy();
-}
-
-vk::Instance& _Vulkan::GetInstance()
-{
-	assert(m_Instance);
-	return m_Instance;
-}
-
-const std::shared_ptr<LogicalDevice>& _Vulkan::GetLogicalDevice()
-{
-	assert(m_LogicalDevice);
-	return m_LogicalDevice;
-}
-
-void _Vulkan::InitExtensions()
+void VulkanInstance::InitExtensions()
 {
 	Log::TagMsg(TAG, "Initializing extensions...");
 
@@ -132,7 +124,7 @@ void _Vulkan::InitExtensions()
 	Log::TagMsg(TAG, blockMsg);
 }
 
-void _Vulkan::InitValidationLayers()
+void VulkanInstance::InitValidationLayers()
 {
 	Log::TagMsg(TAG, "Initializing validation layers...");
 
@@ -165,7 +157,7 @@ void _Vulkan::InitValidationLayers()
 	Log::TagMsg(TAG, blockMsg);
 }
 
-void _Vulkan::InitInstance()
+void VulkanInstance::InitInstance()
 {
 	Log::TagMsg(TAG, "Initializing instance...");
 
@@ -200,11 +192,11 @@ void _Vulkan::InitInstance()
 		info.setEnabledExtensionCount(extensions.size());
 		info.setPpEnabledExtensionNames(extensions.data());
 
-		m_Instance = vk::createInstance(info);
+		m_Instance = vk::createInstanceUnique(info);
 	}
 }
 
-void _Vulkan::CreateWindowSurface()
+void VulkanInstance::CreateWindowSurface()
 {
 	Log::TagMsg(TAG, "Creating window surface...");
 
@@ -212,16 +204,16 @@ void _Vulkan::CreateWindowSurface()
 	createInfo.setHwnd(Main().GetAppWindow().GetWindow());
 	createInfo.setHinstance(Main().GetAppInstance());
 
-	m_WindowSurface = std::make_shared<vk::SurfaceKHR>(m_Instance.createWin32SurfaceKHR(createInfo));
+	m_WindowSurface = m_Instance->createWin32SurfaceKHRUnique(createInfo);
 }
 
-void _Vulkan::InitDevice()
+void VulkanInstance::InitDevice()
 {
 	Log::TagMsg(TAG, "Autodetecting the best physical device...");
 
 	std::vector<std::shared_ptr<PhysicalDeviceData>> physicalDevices;
-	for (const auto& rawDevice : m_Instance.enumeratePhysicalDevices())
-		physicalDevices.push_back(PhysicalDeviceData::Create(rawDevice, m_WindowSurface));
+	for (const auto& rawDevice : m_Instance->enumeratePhysicalDevices())
+		physicalDevices.push_back(PhysicalDeviceData::Create(rawDevice, m_WindowSurface.get()));
 
 	if (physicalDevices.empty())
 		throw rkrp_vulkan_exception("Unable to find any physical devices supporting Vulkan.");
@@ -249,11 +241,11 @@ void _Vulkan::InitDevice()
 	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
 }
 
-void _Vulkan::AttachDebugMsgCallback()
+void VulkanInstance::AttachDebugMsgCallback()
 {
 	Log::TagMsg(TAG, "Attaching debug msg callback...");
 
-	auto func = (PFN_vkCreateDebugReportCallbackEXT)m_Instance.getProcAddr("vkCreateDebugReportCallbackEXT");
+	auto func = (PFN_vkCreateDebugReportCallbackEXT)m_Instance->getProcAddr("vkCreateDebugReportCallbackEXT");
 	assert(func);
 	if (func != nullptr)
 	{
@@ -266,13 +258,13 @@ void _Vulkan::AttachDebugMsgCallback()
 		//createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
 		createInfo.setPfnCallback(&DebugCallback);
 
-		VkResult result = func((VkInstance)m_Instance, &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &m_DebugMsgCallbackHandle);
+		VkResult result = func((VkInstance)m_Instance.get(), &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &m_DebugMsgCallbackHandle);
 		if (result != VK_SUCCESS)
 			throw rkrp_vulkan_exception("Failed to attach debug callback!");
 	}
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL _Vulkan::DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData)
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData)
 {
 	const vk::DebugReportFlagBitsEXT flagBits = (vk::DebugReportFlagBitsEXT)flags;
 
@@ -296,7 +288,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL _Vulkan::DebugCallback(VkDebugReportFlagsEXT flag
 	return VK_FALSE;
 }
 
-std::vector<vk::ExtensionProperties> _Vulkan::GetAvailableInstanceExtensions()
+std::vector<vk::ExtensionProperties> VulkanInstance::GetAvailableInstanceExtensions()
 {
 	uint32_t extensionCount = 0;
 	vk::enumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -309,7 +301,7 @@ std::vector<vk::ExtensionProperties> _Vulkan::GetAvailableInstanceExtensions()
 	return retVal;
 }
 
-std::vector<vk::LayerProperties> _Vulkan::GetAvailableInstanceLayers()
+std::vector<vk::LayerProperties> VulkanInstance::GetAvailableInstanceLayers()
 {
 	return vk::enumerateInstanceLayerProperties();
 }

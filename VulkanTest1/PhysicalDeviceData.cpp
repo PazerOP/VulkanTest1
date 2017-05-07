@@ -7,7 +7,7 @@ PhysicalDeviceData::PhysicalDeviceData()
 	m_Init = false;
 }
 
-void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface)
 {
 	if (m_Init)
 		throw programmer_error("Attempted to init PhysicalDeviceData twice!");
@@ -20,14 +20,14 @@ void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const std::share
 	m_Features = device.getFeatures();
 	m_QueueFamilies = device.getQueueFamilyProperties();
 
-	FindPresentationQueueFamilies(*windowSurface);
+	FindPresentationQueueFamilies(windowSurface);
 
 	RateDeviceSuitability(windowSurface);
 
 	m_Init = true;
 }
 
-std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface)
 {
 	auto retVal = std::shared_ptr<PhysicalDeviceData>(new PhysicalDeviceData());
 	retVal->Init(device, windowSurface);
@@ -54,7 +54,7 @@ std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData::
 		const auto& current = m_QueueFamilies[i];
 
 		if ((current.queueFlags & queueFlags) == queueFlags)
-			retVal.push_back(std::make_pair(i, current));
+			retVal.push_back(std::make_pair((uint32_t)i, current));
 	}
 
 	return retVal;
@@ -66,7 +66,7 @@ std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData
 	{
 		const auto& current = GetQueueFamilies().at(i);
 		if (current.queueFlags & flags)
-			return std::make_pair(i, current);
+			return std::make_pair((uint32_t)i, current);
 	}
 
 	return std::nullopt;
@@ -83,7 +83,7 @@ std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData
 	return std::nullopt;
 }
 
-void PhysicalDeviceData::RateDeviceSuitability(const std::shared_ptr<vk::SurfaceKHR>& windowSurface)
+void PhysicalDeviceData::RateDeviceSuitability(vk::SurfaceKHR& windowSurface)
 {
 	m_Rating = 0;
 

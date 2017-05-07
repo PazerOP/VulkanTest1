@@ -6,14 +6,19 @@
 
 #include <fstream>
 
-ShaderModule::ShaderModule(const std::filesystem::path & path) :
-	ShaderModule(path, Vulkan().GetLogicalDevice())
+std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path)
 {
+	return Create(path, Vulkan().GetLogicalDevice());
 }
 
-ShaderModule::ShaderModule(const std::filesystem::path& path, const std::shared_ptr<LogicalDevice>& device)
+std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, LogicalDevice& device)
 {
-	m_Device = device;
+	return std::unique_ptr<ShaderModule>(new ShaderModule(path, device));
+}
+
+ShaderModule::ShaderModule(const std::filesystem::path& path, LogicalDevice& device)
+{
+	m_Device = &device;
 
 	std::ifstream stream(path.string(), std::ios::ate | std::ios::binary);
 
@@ -30,8 +35,5 @@ ShaderModule::ShaderModule(const std::filesystem::path& path, const std::shared_
 	memcpy(alignedCode.data(), codeBytes.data(), codeBytes.size());
 	createInfo.setPCode(alignedCode.data());
 
-	m_Shader = std::shared_ptr<vk::ShaderModule>(
-		new vk::ShaderModule(m_Device->Get().createShaderModule(createInfo)),
-		[device](vk::ShaderModule* sm) { device->Get().destroyShaderModule(*sm); delete sm; }
-		);
+	m_Shader = device->createShaderModuleUnique(createInfo);
 }

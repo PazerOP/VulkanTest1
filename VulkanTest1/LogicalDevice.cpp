@@ -6,9 +6,9 @@
 #include "Log.h"
 #include "Swapchain.h"
 
-std::shared_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
+std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
 {
-	auto retVal = std::shared_ptr<LogicalDevice>(new LogicalDevice());
+	auto retVal = std::unique_ptr<LogicalDevice>(new LogicalDevice());
 	retVal->Init(physicalDevice);
 	return retVal;
 }
@@ -35,14 +35,14 @@ void LogicalDevice::DrawFrame()
 	const vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	{
 		submitInfo.setWaitSemaphoreCount(1);
-		submitInfo.setPWaitSemaphores(m_ImageAvailableSemaphore.get());
+		submitInfo.setPWaitSemaphores(&m_ImageAvailableSemaphore.get());
 		submitInfo.setPWaitDstStageMask(waitStages);
 
 		submitInfo.setCommandBufferCount(1);
-		submitInfo.setPCommandBuffers(m_CommandBuffers[imageIndex].get());
+		submitInfo.setPCommandBuffers(&m_CommandBuffers[imageIndex].get());
 
 		submitInfo.setSignalSemaphoreCount(1);
-		submitInfo.setPSignalSemaphores(m_RenderFinishedSemaphore.get());
+		submitInfo.setPSignalSemaphores(&m_RenderFinishedSemaphore.get());
 	}
 
 	GetQueue(QueueType::Graphics).submit(submitInfo, nullptr);
@@ -51,7 +51,7 @@ void LogicalDevice::DrawFrame()
 	vk::Result presentResult = vk::Result::eSuccess;
 	{
 		presentInfo.setWaitSemaphoreCount(1);
-		presentInfo.setPWaitSemaphores(m_RenderFinishedSemaphore.get());
+		presentInfo.setPWaitSemaphores(&m_RenderFinishedSemaphore.get());
 
 		presentInfo.setSwapchainCount(1);
 		presentInfo.setPSwapchains(&m_Swapchain->Get());
@@ -64,6 +64,33 @@ void LogicalDevice::DrawFrame()
 	vk::Result mainPresentResult = GetQueue(QueueType::Presentation).presentKHR(presentInfo);
 	assert(mainPresentResult == vk::Result::eSuccess);
 	assert(presentResult == vk::Result::eSuccess);
+}
+
+void LogicalDevice::WindowResized()
+{
+	Log::TagMsg(TAG, "Window resized");
+}
+
+LogicalDevice::~LogicalDevice()
+{
+	Get().waitIdle();
+
+	// Semaphores
+	m_ImageAvailableSemaphore.reset();
+	m_RenderFinishedSemaphore.reset();
+
+	// Graphics pipeline and swap chain wrappers
+	m_GraphicsPipeline.reset();
+	m_Swapchain.reset();
+
+	// Command buffers
+	m_CommandBuffers.clear();
+
+	// Command pool
+	m_CommandPool.reset();
+
+	// Device
+	m_LogicalDevice.reset();
 }
 
 void LogicalDevice::Init(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
@@ -120,31 +147,29 @@ void LogicalDevice::InitDevice()
 	deviceCreateInfo.setPpEnabledExtensionNames(m_PhysicalDevice->ChooseBestExtensionSet().data());
 	deviceCreateInfo.setEnabledExtensionCount(m_PhysicalDevice->ChooseBestExtensionSet().size());
 
-	m_LogicalDevice = m_PhysicalDevice->GetPhysicalDevice().createDevice(deviceCreateInfo);
+	m_LogicalDevice = m_PhysicalDevice->GetPhysicalDevice().createDeviceUnique(deviceCreateInfo);
 
-	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice.getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
-	m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice.getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
+	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
+	m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
 }
 
 void LogicalDevice::InitSwapchain()
 {
 	Log::TagMsg(TAG, "Creating swap chain...");
 
-	m_Swapchain = std::make_shared<Swapchain>(shared_from_this());
+	m_Swapchain = Swapchain::Create(*this);
 }
 
 void LogicalDevice::InitGraphicsPipeline()
 {
 	Log::TagMsg(TAG, "Creating graphics pipeline...");
 
-	const auto shared_this = shared_from_this();
+	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(*this);
 
-	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(shared_this);
+	createInfo->SetShader(ShaderType::Vertex, ShaderModule::Create("shaders/vert.spv", *this));
+	createInfo->SetShader(ShaderType::Pixel, ShaderModule::Create("shaders/frag.spv", *this));
 
-	createInfo->SetShader(ShaderType::Vertex, std::make_shared<ShaderModule>("shaders/vert.spv", shared_this));
-	createInfo->SetShader(ShaderType::Pixel, std::make_shared<ShaderModule>("shaders/frag.spv", shared_this));
-
-	m_GraphicsPipeline = std::make_shared<GraphicsPipeline>(createInfo);
+	m_GraphicsPipeline = GraphicsPipeline::Create(createInfo);
 }
 
 void LogicalDevice::InitFramebuffers()
@@ -161,11 +186,7 @@ void LogicalDevice::InitCommandPool()
 	vk::CommandPoolCreateInfo createInfo;
 	createInfo.queueFamilyIndex = GetQueueFamily(QueueType::Graphics);
 
-	const auto weak_this = weak_from_this();
-	m_CommandPool = std::shared_ptr<vk::CommandPool>(
-		new vk::CommandPool(m_LogicalDevice.createCommandPool(createInfo)),
-		[weak_this](vk::CommandPool* cp) { weak_this.lock()->Get().destroyCommandPool(*cp); delete cp; }
-	);
+	m_CommandPool = Get().createCommandPoolUnique(createInfo);
 }
 
 void LogicalDevice::InitCommandBuffers()
@@ -179,20 +200,13 @@ void LogicalDevice::InitCommandBuffers()
 	allocInfo.setLevel(vk::CommandBufferLevel::ePrimary);
 	allocInfo.setCommandBufferCount(framebuffers.size());
 
-	const auto weak_this = weak_from_this();
-	const auto& cmdPool = m_CommandPool;
-	for (const auto& buffer : Get().allocateCommandBuffers(allocInfo))
-	{
-		m_CommandBuffers.push_back(std::shared_ptr<vk::CommandBuffer>(
-			new vk::CommandBuffer(buffer),
-			[weak_this, cmdPool](vk::CommandBuffer* cb) { weak_this.lock()->Get().freeCommandBuffers(*cmdPool, 1, cb); delete cb; }
-		));
-	}
+	assert(m_CommandBuffers.empty());
+	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{
 		const auto& cmdBuffer = m_CommandBuffers[i];
-		const auto& framebuffer = m_Swapchain->GetFramebuffers()[i];
+		const auto& framebuffer = framebuffers[i];
 
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
@@ -202,9 +216,9 @@ void LogicalDevice::InitCommandBuffers()
 		// Not too sure about this one...
 		{
 			vk::RenderPassBeginInfo renderPassInfo;
-			renderPassInfo.setRenderPass(*m_GraphicsPipeline->GetRenderPass());
-			renderPassInfo.setFramebuffer(*framebuffer);
-			renderPassInfo.renderArea.setExtent(m_Swapchain->GetInitValues()->m_Extent2D);
+			renderPassInfo.setRenderPass(m_GraphicsPipeline->GetRenderPass());
+			renderPassInfo.setFramebuffer(framebuffer);
+			renderPassInfo.renderArea.setExtent(m_Swapchain->GetInitValues().m_Extent2D);
 
 			vk::ClearValue clearColor;
 			clearColor.setColor(vk::ClearColorValue(std::array<float, 4>{ 0, 0, 0, 1 }));
@@ -214,7 +228,7 @@ void LogicalDevice::InitCommandBuffers()
 
 			cmdBuffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-			cmdBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_GraphicsPipeline->GetPipeline());
+			cmdBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, m_GraphicsPipeline->GetPipeline());
 
 			cmdBuffer->draw(3, 1, 0, 0);
 
@@ -230,16 +244,18 @@ void LogicalDevice::InitSemaphores()
 {
 	vk::SemaphoreCreateInfo createInfo;
 
-	const auto weak_this = weak_from_this();
-	m_ImageAvailableSemaphore = std::shared_ptr<vk::Semaphore>(
-		new vk::Semaphore(Get().createSemaphore(createInfo)),
-		[weak_this](vk::Semaphore* s) { weak_this.lock()->Get().destroySemaphore(*s); delete s; }
-		);
+	m_ImageAvailableSemaphore = Get().createSemaphoreUnique(createInfo);
+	m_RenderFinishedSemaphore = Get().createSemaphoreUnique(createInfo);
+}
 
-	m_RenderFinishedSemaphore = std::shared_ptr<vk::Semaphore>(
-		new vk::Semaphore(Get().createSemaphore(createInfo)),
-		[weak_this](vk::Semaphore* s) { weak_this.lock()->Get().destroySemaphore(*s); delete s; }
-	);
+void LogicalDevice::RecreateSwapChain()
+{
+	Get().waitIdle();
+
+	InitSwapchain();
+	InitGraphicsPipeline();
+	InitFramebuffers();
+	InitCommandBuffers();
 }
 
 void LogicalDevice::ChooseQueueFamilies()

@@ -7,6 +7,7 @@
 #include "FixedWindows.h"
 #include <glm/glm.hpp>
 #include "Log.h"
+#include "LogicalDevice.h"
 #include "StringTools.h"
 #include "Vulkan.h"
 
@@ -58,14 +59,15 @@ int CALLBACK WinMain(
 		LocalMain().SetAppInstance(hInstance);
 
 		LocalMain().GetAppWindow().Show();
-
-		Vulkan().Init();
 	}
 	catch (std::runtime_error e)
 	{
-		Log::Msg("Failed to initialize engine: {0}", e.what());
+		Log::Msg("Failed to initialize window: {0}", e.what());
 		std::exit(1);
 	}
+
+	VulkanInstance instance;
+	LocalMain().GetAppWindow().SetWindowResizedCallback([&instance](Window&) { instance.GetLogicalDevice().WindowResized(); });
 
 	// Main loop
 	{

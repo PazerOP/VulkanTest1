@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 
 #ifdef _DEBUG
 #include <cassert>
@@ -70,4 +71,13 @@ __forceinline constexpr float RemapClamped(float a, float b, float x, float y, f
 template<class T> __forceinline constexpr const T* const_this(const T* thisPtr)
 {
 	return thisPtr;
+}
+
+template<class T> __forceinline std::weak_ptr<T> weaken(const std::shared_ptr<T>& strong)
+{
+	return strong;
+}
+template<class T> __forceinline const std::weak_ptr<T>& weaken(const std::weak_ptr<T>& weak)
+{
+	return weak;
 }
