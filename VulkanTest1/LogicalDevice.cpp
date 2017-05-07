@@ -240,7 +240,6 @@ void LogicalDevice::InitCommandBuffers()
 
 		cmdBuffer->end();
 	}
-
 }
 
 void LogicalDevice::InitSemaphores()

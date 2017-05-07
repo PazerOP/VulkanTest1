@@ -48,11 +48,11 @@ private:
 	static constexpr std::pair<vk::PresentModeKHR, float> PRIORITIZED_SYNC_MODES[] =
 	{
 		{ vk::PresentModeKHR::eFifoRelaxed, 10.0f },	// nvidia adaptive vsync
+		{ vk::PresentModeKHR::eImmediate, 10.0f },		// no vsync
 		{ vk::PresentModeKHR::eFifo, 0.0f },			// vsync
 
 		// Effectively disabled (eFifo is guarenteed in vulkan)
 		{ vk::PresentModeKHR::eMailbox, 20.0f },		// nvidia fast vsync
-		{ vk::PresentModeKHR::eImmediate, 10.0f },		// no vsync
 	};
 
 	float m_Rating;

@@ -42,6 +42,9 @@ VulkanInstance::~VulkanInstance()
 	// Window surface
 	m_WindowSurface.reset();
 
+	// Debug callback
+	m_DebugMsgCallbackHandle.reset();
+
 	// Vulkan instance
 	m_Instance.reset();
 
@@ -241,6 +244,26 @@ void VulkanInstance::InitDevice()
 	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback)
+{
+	auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, __FUNCTION__);
+	assert(func);
+	if (!func)
+		return VkResult::VK_INCOMPLETE;
+
+	return func(instance, pCreateInfo, pAllocator, pCallback);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator)
+{
+	auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, __FUNCTION__);
+	assert(func);
+	if (!func)
+		return;
+
+	return func(instance, callback, pAllocator);
+}
+
 void VulkanInstance::AttachDebugMsgCallback()
 {
 	Log::TagMsg(TAG, "Attaching debug msg callback...");
@@ -258,9 +281,13 @@ void VulkanInstance::AttachDebugMsgCallback()
 		//createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
 		createInfo.setPfnCallback(&DebugCallback);
 
-		VkResult result = func((VkInstance)m_Instance.get(), &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &m_DebugMsgCallbackHandle);
+		VkDebugReportCallbackEXT callbackHandle;
+		VkResult result = func((VkInstance)m_Instance.get(), &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &callbackHandle);
 		if (result != VK_SUCCESS)
 			throw rkrp_vulkan_exception("Failed to attach debug callback!");
+
+		m_DebugMsgCallbackHandle.getDeleter() = vk::DebugReportCallbackEXTDeleter(m_Instance.get());
+		m_DebugMsgCallbackHandle.reset(vk::DebugReportCallbackEXT(callbackHandle));
 	}
 }
 
