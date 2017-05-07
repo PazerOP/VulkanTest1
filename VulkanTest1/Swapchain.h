@@ -13,7 +13,7 @@ public:
 
 private:
 	virtual void CreateFramebuffers() = 0;
-	virtual void Recreate() = 0;
+	virtual void Recreate(const std::shared_ptr<const SwapchainData>& data) = 0;
 
 	friend class LogicalDevice;
 };
@@ -21,7 +21,7 @@ private:
 class Swapchain : public ISwapchain_LogicalDeviceFriends
 {
 public:
-	static std::unique_ptr<Swapchain> Create(LogicalDevice& device);
+	static std::unique_ptr<Swapchain> Create(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
 
 	const vk::SwapchainKHR* operator->() const { return m_Swapchain.operator->(); }
 	//vk::SwapchainKHR* operator->() { return &m_Swapchain.get(); }
@@ -38,20 +38,20 @@ public:
 	const SwapchainData::BestValues& GetInitValues() const { return *m_InitValues; }
 
 	const LogicalDevice& GetDevice() const { return *m_Device; }
-	LogicalDevice& GetDevice() { return *m_Device; }
 
 private:
-	Swapchain(LogicalDevice& device);
+	Swapchain(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
+	void Init(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
 
 	void CreateSwapchain();
 	void CreateImageViews();
 	void CreateFramebuffers() override;
 
-	void Recreate() override;
+	void Recreate(const std::shared_ptr<const SwapchainData>& data) override;
 
 	std::shared_ptr<const SwapchainData> m_Data;
 	std::shared_ptr<const SwapchainData::BestValues> m_InitValues;
-	LogicalDevice* m_Device;
+	const LogicalDevice* m_Device;
 
 	std::vector<vk::Image> m_SwapchainImages;
 	std::vector<vk::UniqueImageView> m_SwapchainImageViews;

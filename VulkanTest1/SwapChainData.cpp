@@ -4,15 +4,13 @@
 #include "SwapChainData.h"
 #include "Vulkan.h"
 
-SwapchainData::SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& deviceData, vk::SurfaceKHR& windowSurface)
+SwapchainData::SwapchainData(const vk::PhysicalDevice& physicalDevice, const vk::SurfaceKHR& windowSurface)
 {
-	m_WindowSurface = &windowSurface;
-	m_PhysicalDeviceData = deviceData;
+	m_WindowSurface = windowSurface;
 
-	const auto& physicalDevice = deviceData->GetPhysicalDevice();
-	m_AllSurfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*m_WindowSurface);
-	m_AllSurfaceFormats = physicalDevice.getSurfaceFormatsKHR(*m_WindowSurface);
-	m_AllPresentModes = physicalDevice.getSurfacePresentModesKHR(*m_WindowSurface);
+	m_AllSurfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_WindowSurface);
+	m_AllSurfaceFormats = physicalDevice.getSurfaceFormatsKHR(m_WindowSurface);
+	m_AllPresentModes = physicalDevice.getSurfacePresentModesKHR(m_WindowSurface);
 
 	m_BestValues = std::make_shared<BestValues>();
 
@@ -21,12 +19,6 @@ SwapchainData::SwapchainData(const std::shared_ptr<const PhysicalDeviceData>& de
 
 void SwapchainData::RateSuitability()
 {
-	if (m_PhysicalDeviceData.expired())
-		throw std::runtime_error("PhysicalDeviceData weak_ptr was expired");
-
-	//const auto deviceData = m_PhysicalDeviceData.lock();
-	const auto& surfaceCaps = GetSurfaceCapabilities();
-
 	m_Rating = 0;
 
 	if (m_AllSurfaceFormats.empty())
@@ -95,8 +87,8 @@ void SwapchainData::ChooseAndRateExtent2D()
 {
 	const auto& surfaceCaps = GetSurfaceCapabilities();
 
-	m_Rating += Remap(0, 5, 16384 * 16384, 1, surfaceCaps.minImageExtent.width * surfaceCaps.minImageExtent.height);
-	m_Rating += Remap(0, 5, 1, 16384 * 16384, surfaceCaps.maxImageExtent.width * surfaceCaps.maxImageExtent.height);
+	m_Rating += Remap(0, 5, 16384 * 16384, 1, (float)surfaceCaps.minImageExtent.width * surfaceCaps.minImageExtent.height);
+	m_Rating += Remap(0, 5, 1, 16384 * 16384, (float)surfaceCaps.maxImageExtent.width * surfaceCaps.maxImageExtent.height);
 
 	m_BestValues->m_Extent2D.width = std::clamp(surfaceCaps.currentExtent.width, surfaceCaps.minImageExtent.width, surfaceCaps.maxImageExtent.width);
 	m_BestValues->m_Extent2D.height = std::clamp(surfaceCaps.currentExtent.height, surfaceCaps.minImageExtent.height, surfaceCaps.maxImageExtent.height);

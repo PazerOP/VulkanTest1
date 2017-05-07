@@ -25,6 +25,7 @@ public:
 
 private:
 	static constexpr char WINDOW_CLASS_NAME[] = "RKRPWindowClass";
+	static constexpr char TAG[] = "[Window] ";
 
 	void CreateWindowClass();
 	void CreateWindow();

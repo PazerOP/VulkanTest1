@@ -8,7 +8,7 @@
 class PhysicalDeviceData : public std::enable_shared_from_this<PhysicalDeviceData>
 {
 public:
-	static std::shared_ptr<PhysicalDeviceData> Create(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface);
+	static std::shared_ptr<PhysicalDeviceData> Create(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface);
 
 	enum class Suitability
 	{
@@ -25,8 +25,8 @@ public:
 
 
 	float GetRating() const { return m_Rating; }
-	Suitability GetSuitability() const { return m_Suitability; }
-	const std::string& GetSuitabilityMessage() const { return m_SuitabilityMessage; }
+	Suitability GetSuitability() const;
+	std::string GetSuitabilityMessage() const;
 
 	bool HasExtension(const std::string_view& name) const;
 	const std::vector<vk::ExtensionProperties>& GetSupportedExtensions() const { return m_SupportedExtensions; }
@@ -42,37 +42,43 @@ public:
 	std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> GetQueueFamilies(const vk::QueueFlags& queueFlags);
 	const std::vector<uint32_t>& GetPresentationQueueFamilies() const { return m_PresentationQueueFamilies; }
 
-	const std::shared_ptr<const SwapchainData> GetSwapChainData() const { return m_SwapChainData; }
-
 	const std::vector<const char*>& ChooseBestExtensionSet() const { return m_BestExtensionSet; }
 
 	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation, vk::QueueFlags flags) const;
 	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation) const;
 
+	const vk::SurfaceKHR& GetWindowSurface() const { return m_WindowSurface; }
+
+	void IncludeSwapchainRating(const SwapchainData& scData);
+
 private:
 	PhysicalDeviceData();
-	void Init(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface);
+	void Init(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface);
 
-	void RateDeviceSuitability(vk::SurfaceKHR& windowSurface);
-	void FindPresentationQueueFamilies(const vk::SurfaceKHR& windowSurface);
+	void RateDeviceSuitability();
+	void FindPresentationQueueFamilies();
 
 	bool m_Init;
 
 	float m_Rating;
+	float m_SwapchainRating;
 	Suitability m_Suitability;
-	std::string m_SuitabilityMessage;
+	SwapchainData::Suitability m_SwapchainSuitability;
+
+	std::string m_SuitabilityMessageBase;
+	std::string m_SuitabilityMessageExtra;
+	std::string m_SuitabilityMessageSwapchain;
 
 	std::vector<vk::ExtensionProperties> m_SupportedExtensions;
 	std::vector<vk::LayerProperties> m_SupportedLayers;
 
 	vk::PhysicalDevice m_Device;
+	vk::SurfaceKHR m_WindowSurface;
 
 	vk::PhysicalDeviceProperties m_Properties;
 	vk::PhysicalDeviceFeatures m_Features;
 	std::vector<vk::QueueFamilyProperties> m_QueueFamilies;
 	std::vector<uint32_t> m_PresentationQueueFamilies;
-
-	std::shared_ptr<const SwapchainData> m_SwapChainData;
 
 	static constexpr const char* REQUIRED_EXTENSIONS[] =
 	{

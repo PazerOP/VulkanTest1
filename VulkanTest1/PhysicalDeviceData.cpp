@@ -7,12 +7,10 @@ PhysicalDeviceData::PhysicalDeviceData()
 	m_Init = false;
 }
 
-void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface)
+void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface)
 {
-	if (m_Init)
-		throw programmer_error("Attempted to init PhysicalDeviceData twice!");
-
 	m_Device = device;
+	m_WindowSurface = windowSurface;
 
 	m_SupportedExtensions = device.enumerateDeviceExtensionProperties();
 	m_SupportedLayers = device.enumerateDeviceLayerProperties();
@@ -20,18 +18,34 @@ void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, vk::SurfaceKHR& 
 	m_Features = device.getFeatures();
 	m_QueueFamilies = device.getQueueFamilyProperties();
 
-	FindPresentationQueueFamilies(windowSurface);
+	FindPresentationQueueFamilies();
 
-	RateDeviceSuitability(windowSurface);
+	RateDeviceSuitability();
 
 	m_Init = true;
 }
 
-std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, vk::SurfaceKHR& windowSurface)
+std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface)
 {
 	auto retVal = std::shared_ptr<PhysicalDeviceData>(new PhysicalDeviceData());
 	retVal->Init(device, windowSurface);
 	return retVal;
+}
+
+PhysicalDeviceData::Suitability PhysicalDeviceData::GetSuitability() const
+{
+	if (m_SwapchainSuitability != SwapchainData::Suitability::Suitable)
+		return Suitability::SwapChain_Unsuitable;
+
+	return m_Suitability;
+}
+
+std::string PhysicalDeviceData::GetSuitabilityMessage() const
+{
+	if (m_SuitabilityMessageSwapchain.empty())
+		return m_SuitabilityMessageBase + m_SuitabilityMessageExtra;
+	else
+		return m_SuitabilityMessageBase + m_SuitabilityMessageSwapchain;
 }
 
 bool PhysicalDeviceData::HasExtension(const std::string_view& name) const
@@ -83,11 +97,25 @@ std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData
 	return std::nullopt;
 }
 
-void PhysicalDeviceData::RateDeviceSuitability(vk::SurfaceKHR& windowSurface)
+void PhysicalDeviceData::IncludeSwapchainRating(const SwapchainData& scData)
+{
+	// Check swap chain support
+	m_SwapchainSuitability = scData.GetSuitability();
+	if (m_SwapchainSuitability != SwapchainData::Suitability::Suitable)
+	{
+		m_SuitabilityMessageSwapchain = StringTools::CSFormat(" unsuitable, swap chain says: {0}", scData.GetSuitabilityMessage());
+		return;
+	}
+
+	m_SuitabilityMessageSwapchain.clear();
+	m_SwapchainRating = scData.GetRating();
+}
+
+void PhysicalDeviceData::RateDeviceSuitability()
 {
 	m_Rating = 0;
 
-	m_SuitabilityMessage = StringTools::CSFormat("Physical physicalDevice '{0}' (id {1})", m_Properties.deviceName, m_Properties.deviceID);
+	m_SuitabilityMessageBase = StringTools::CSFormat("Physical physicalDevice '{0}' (id {1})", m_Properties.deviceName, m_Properties.deviceID);
 
 	// Dedicated GPUs are usually significantly better than onboard
 	if (m_Properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
@@ -124,7 +152,7 @@ void PhysicalDeviceData::RateDeviceSuitability(vk::SurfaceKHR& windowSurface)
 	{
 		if (!HasExtension(REQUIRED_EXTENSIONS[i]))
 		{
-			m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, missing required extension {0}", REQUIRED_EXTENSIONS[i]);
+			m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, missing required extension {0}", REQUIRED_EXTENSIONS[i]);
 			m_Suitability = Suitability::MissingRequiredExtension;
 			return;
 		}
@@ -145,46 +173,36 @@ void PhysicalDeviceData::RateDeviceSuitability(vk::SurfaceKHR& windowSurface)
 
 	if (m_QueueFamilies.empty())
 	{
-		m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, no queue families");
+		m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, no queue families");
 		m_Suitability = Suitability::MissingQueue_All;
 		return;
 	}
 
 	if (GetQueueFamilies(vk::QueueFlagBits::eGraphics).empty())
 	{
-		m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, no graphics queue");
+		m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, no graphics queue");
 		m_Suitability = Suitability::MissingQueue_Graphics;
 		return;
 	}
 
 	if (GetPresentationQueueFamilies().empty())
 	{
-		m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, no presentation queue");
+		m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, no presentation queue");
 		m_Suitability = Suitability::MissingQueue_Presentation;
 		return;
 	}
 
-	// Check swap chain support
-	m_SwapChainData = std::make_shared<SwapchainData>(shared_from_this(), windowSurface);
-	if (m_SwapChainData->GetSuitability() != SwapchainData::Suitability::Suitable)
-	{
-		m_SuitabilityMessage += StringTools::CSFormat(" unsuitable, swap chain says: {0}", m_SwapChainData->GetSuitabilityMessage());
-		m_Suitability = Suitability::SwapChain_Unsuitable;
-		return;
-	}
-	m_Rating += m_SwapChainData->GetRating();
-
-	m_SuitabilityMessage += StringTools::CSFormat(" suitable, rating {0}", m_Rating);
+	m_SuitabilityMessageExtra = StringTools::CSFormat(" suitable, rating {0}", m_Rating);
 	m_Suitability = Suitability::Suitable;
 }
 
-void PhysicalDeviceData::FindPresentationQueueFamilies(const vk::SurfaceKHR& windowSurface)
+void PhysicalDeviceData::FindPresentationQueueFamilies()
 {
 	m_PresentationQueueFamilies.clear();
 
 	for (size_t i = 0; i < m_QueueFamilies.size(); i++)
 	{
-		if (m_Device.getSurfaceSupportKHR(i, windowSurface))
+		if (m_Device.getSurfaceSupportKHR(i, m_WindowSurface))
 			m_PresentationQueueFamilies.push_back(i);
 	}
 }

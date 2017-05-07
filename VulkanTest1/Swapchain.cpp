@@ -5,9 +5,9 @@
 #include "LogicalDevice.h"
 #include "PhysicalDeviceData.h"
 
-std::unique_ptr<Swapchain> Swapchain::Create(LogicalDevice& device)
+std::unique_ptr<Swapchain> Swapchain::Create(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device)
 {
-	return std::unique_ptr<Swapchain>(new Swapchain(device));
+	return std::unique_ptr<Swapchain>(new Swapchain(data, device));
 }
 
 std::vector<vk::Framebuffer> Swapchain::GetFramebuffers() const
@@ -20,10 +20,15 @@ std::vector<vk::Framebuffer> Swapchain::GetFramebuffers() const
 	return retVal;
 }
 
-Swapchain::Swapchain(LogicalDevice& weakDevice)
+Swapchain::Swapchain(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device)
 {
-	m_Device = &weakDevice;
-	m_Data = weakDevice.GetData().GetSwapChainData();
+	Init(data, device);
+}
+
+void Swapchain::Init(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice & device)
+{
+	m_Device = &device;
+	m_Data = data;
 	m_InitValues = m_Data->GetBestValues();
 
 	CreateSwapchain();
@@ -73,6 +78,8 @@ void Swapchain::CreateSwapchain()
 
 void Swapchain::CreateImageViews()
 {
+	m_SwapchainImageViews.clear();
+
 	auto device = GetDevice().Get();
 	for (auto& img : m_SwapchainImages)
 	{
@@ -100,6 +107,8 @@ void Swapchain::CreateImageViews()
 
 void Swapchain::CreateFramebuffers()
 {
+	m_Framebuffers.clear();
+
 	auto device = GetDevice().Get();
 	for (const auto& imgView : m_SwapchainImageViews)
 	{
@@ -117,6 +126,7 @@ void Swapchain::CreateFramebuffers()
 	return;
 }
 
-void Swapchain::Recreate()
+void Swapchain::Recreate(const std::shared_ptr<const SwapchainData>& data)
 {
+	Init(data, *m_Device);
 }

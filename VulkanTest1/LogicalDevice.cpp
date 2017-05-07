@@ -6,7 +6,7 @@
 #include "Log.h"
 #include "Swapchain.h"
 
-std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
+std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
 {
 	auto retVal = std::unique_ptr<LogicalDevice>(new LogicalDevice());
 	retVal->Init(physicalDevice);
@@ -68,7 +68,8 @@ void LogicalDevice::DrawFrame()
 
 void LogicalDevice::WindowResized()
 {
-	Log::TagMsg(TAG, "Window resized");
+	Log::TagMsg(TAG, "Window resized, recreating swapchain...");
+	RecreateSwapchain();
 }
 
 LogicalDevice::~LogicalDevice()
@@ -93,9 +94,9 @@ LogicalDevice::~LogicalDevice()
 	m_LogicalDevice.reset();
 }
 
-void LogicalDevice::Init(const std::shared_ptr<const PhysicalDeviceData>& physicalDevice)
+void LogicalDevice::Init(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
 {
-	m_PhysicalDevice = physicalDevice;
+	m_PhysicalDeviceData = physicalDevice;
 
 	ChooseQueueFamilies();
 
@@ -144,10 +145,10 @@ void LogicalDevice::InitDevice()
 	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
 
 	// Extensions
-	deviceCreateInfo.setPpEnabledExtensionNames(m_PhysicalDevice->ChooseBestExtensionSet().data());
-	deviceCreateInfo.setEnabledExtensionCount(m_PhysicalDevice->ChooseBestExtensionSet().size());
+	deviceCreateInfo.setPpEnabledExtensionNames(m_PhysicalDeviceData->ChooseBestExtensionSet().data());
+	deviceCreateInfo.setEnabledExtensionCount(m_PhysicalDeviceData->ChooseBestExtensionSet().size());
 
-	m_LogicalDevice = m_PhysicalDevice->GetPhysicalDevice().createDeviceUnique(deviceCreateInfo);
+	m_LogicalDevice = m_PhysicalDeviceData->GetPhysicalDevice().createDeviceUnique(deviceCreateInfo);
 
 	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
 	m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
@@ -157,7 +158,10 @@ void LogicalDevice::InitSwapchain()
 {
 	Log::TagMsg(TAG, "Creating swap chain...");
 
-	m_Swapchain = Swapchain::Create(*this);
+	auto swapchainData = std::shared_ptr<SwapchainData>(new SwapchainData(
+		m_PhysicalDeviceData->GetPhysicalDevice(), GetData().GetWindowSurface()));
+
+	m_Swapchain = Swapchain::Create(swapchainData, *this);
 }
 
 void LogicalDevice::InitGraphicsPipeline()
@@ -200,7 +204,6 @@ void LogicalDevice::InitCommandBuffers()
 	allocInfo.setLevel(vk::CommandBufferLevel::ePrimary);
 	allocInfo.setCommandBufferCount(framebuffers.size());
 
-	assert(m_CommandBuffers.empty());
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
@@ -248,11 +251,13 @@ void LogicalDevice::InitSemaphores()
 	m_RenderFinishedSemaphore = Get().createSemaphoreUnique(createInfo);
 }
 
-void LogicalDevice::RecreateSwapChain()
+void LogicalDevice::RecreateSwapchain()
 {
 	Get().waitIdle();
 
-	InitSwapchain();
+	((ISwapchain_LogicalDeviceFriends*)m_Swapchain.get())->Recreate(
+		std::make_shared<SwapchainData>(GetData().GetPhysicalDevice(), GetData().GetWindowSurface()));
+
 	InitGraphicsPipeline();
 	InitFramebuffers();
 	InitCommandBuffers();
@@ -261,7 +266,7 @@ void LogicalDevice::RecreateSwapChain()
 void LogicalDevice::ChooseQueueFamilies()
 {
 	// Try to use a single queue for everything
-	const auto bestEverythingQueue = m_PhysicalDevice->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics);
+	const auto bestEverythingQueue = m_PhysicalDeviceData->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics);
 	if (bestEverythingQueue.has_value())
 	{
 		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_QueueFamilies[underlying_value(QueueType::Presentation)] = bestEverythingQueue->first;
@@ -269,7 +274,7 @@ void LogicalDevice::ChooseQueueFamilies()
 	else
 	{
 		// Separate queues
-		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_PhysicalDevice->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
-		m_QueueFamilies[underlying_value(QueueType::Presentation)] = m_PhysicalDevice->ChooseBestQueue(true)->first;
+		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
+		m_QueueFamilies[underlying_value(QueueType::Presentation)] = m_PhysicalDeviceData->ChooseBestQueue(true)->first;
 	}
 }

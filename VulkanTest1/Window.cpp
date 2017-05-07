@@ -141,65 +141,79 @@ LRESULT Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-	case WM_DESTROY:
-	{
-		auto it = m_Windows.find(hWnd);
-		assert(it != m_Windows.end());
-		if (it != m_Windows.end())
+		case WM_DESTROY:
 		{
-			auto windowData = it->second;
-			assert(windowData);
-			assert(!windowData->m_WindowDestroyed);
-			if (windowData)
+			Log::TagMsg(TAG, "Message received: WM_DESTROY");
+
+			auto it = m_Windows.find(hWnd);
+			assert(it != m_Windows.end());
+			if (it != m_Windows.end())
 			{
-				windowData->m_WindowDestroyed = true;
-				windowData->m_Window.reset();
+				auto windowData = it->second;
+				assert(windowData);
+				assert(!windowData->m_WindowDestroyed);
+				if (windowData)
+				{
+					windowData->m_WindowDestroyed = true;
+					windowData->m_Window.reset();
+				}
+
+				m_Windows.erase(it);
 			}
 
-			m_Windows.erase(it);
+			PostQuitMessage(0);
+			return 0;
 		}
 
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	case WM_ENTERSIZEMOVE:
-	{
-		const auto data = FindWindowData(hWnd);
-		assert(!data->m_IsResizing);
-		data->m_IsResizing = true;
-
-		GetWindowRect(hWnd, &data->m_StartRect);
-
-		break;
-	}
-
-	case WM_SIZE:
-	case WM_EXITSIZEMOVE:
-	{
-		const auto data = FindWindowData(hWnd);
-		data->m_IsResizing = false;
-
-		if (data->m_OnResizedFn)
+		case WM_ENTERSIZEMOVE:
 		{
-			RECT endRect;
-			GetWindowRect(hWnd, &endRect);
+			Log::TagMsg(TAG, "Message received: WM_ENTERSIZEMOVE");
 
-			const auto startH = data->m_StartRect.bottom - data->m_StartRect.top;
-			const auto startW = data->m_StartRect.right - data->m_StartRect.left;
-			const auto endH = endRect.bottom - endRect.top;
-			const auto endW = endRect.right - endRect.left;
+			const auto data = FindWindowData(hWnd);
+			assert(!data->m_IsResizing);
+			data->m_IsResizing = true;
 
-			if (startH != endH || startW != endW)
-			{
-				// Window was resized
-				Window temp(data);
-				data->m_OnResizedFn(temp);
-			}
+			GetWindowRect(hWnd, &data->m_StartRect);
+
+			break;
 		}
 
-		break;
-	}
+		case WM_SIZE:
+		{
+			const auto data = FindWindowData(hWnd);
+			if (data->m_IsResizing)
+				break;
+		}
+		case WM_EXITSIZEMOVE:
+		{
+			if (message == WM_SIZE)
+				Log::TagMsg(TAG, "Message received: WM_SIZE");
+			else if (message == WM_EXITSIZEMOVE)
+				Log::TagMsg(TAG, "Message recieved: WM_EXITSIZEMOVE");
+
+			const auto data = FindWindowData(hWnd);
+			data->m_IsResizing = false;
+
+			if (data->m_OnResizedFn)
+			{
+				RECT endRect;
+				GetWindowRect(hWnd, &endRect);
+
+				const auto startH = data->m_StartRect.bottom - data->m_StartRect.top;
+				const auto startW = data->m_StartRect.right - data->m_StartRect.left;
+				const auto endH = endRect.bottom - endRect.top;
+				const auto endW = endRect.right - endRect.left;
+
+				if (startH != endH || startW != endW)
+				{
+					// Window was resized
+					Window temp(data);
+					data->m_OnResizedFn(temp);
+				}
+			}
+
+			break;
+		}
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
@@ -232,6 +246,7 @@ Window::WindowData::WindowData() :
 	m_BackgroundBrush(nullptr, &BrushDeleter)
 {
 	m_WindowDestroyed = true;
+	m_IsResizing = false;
 }
 
 Window::WindowData::~WindowData()
