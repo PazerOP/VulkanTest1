@@ -9,6 +9,7 @@ enum class QueueType
 {
 	Graphics,
 	Presentation,
+	Transfer,
 
 	Count,
 };
@@ -48,6 +49,9 @@ public:
 
 	void WindowResized();
 
+	vk::UniqueCommandBuffer AllocCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
+	std::vector<vk::UniqueCommandBuffer> AllocCommandBuffers(uint32_t count, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
+	
 private:
 	LogicalDevice() = default;
 	void Init(const std::shared_ptr<PhysicalDeviceData>& physicalDevice);

@@ -69,6 +69,26 @@ void LogicalDevice::WindowResized()
 	RecreateSwapchain();
 }
 
+vk::UniqueCommandBuffer LogicalDevice::AllocCommandBuffer(vk::CommandBufferLevel level) const
+{
+	vk::CommandBufferAllocateInfo allocInfo;
+	allocInfo.setLevel(level);
+	allocInfo.setCommandPool(m_CommandPool.get());
+	allocInfo.setCommandBufferCount(1);
+
+	return std::move(Get().allocateCommandBuffersUnique(allocInfo).front());
+}
+
+std::vector<vk::UniqueCommandBuffer> LogicalDevice::AllocCommandBuffers(uint32_t count, vk::CommandBufferLevel level) const
+{
+	vk::CommandBufferAllocateInfo allocInfo;
+	allocInfo.setLevel(level);
+	allocInfo.setCommandPool(m_CommandPool.get());
+	allocInfo.setCommandBufferCount(count);
+
+	return Get().allocateCommandBuffersUnique(allocInfo);
+}
+
 LogicalDevice::~LogicalDevice()
 {
 	Get().waitIdle();
@@ -275,15 +295,19 @@ void LogicalDevice::RecreateSwapchain()
 void LogicalDevice::ChooseQueueFamilies()
 {
 	// Try to use a single queue for everything
-	const auto bestEverythingQueue = m_PhysicalDeviceData->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics);
+	const auto bestEverythingQueue = m_PhysicalDeviceData->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer);
 	if (bestEverythingQueue.has_value())
 	{
-		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_QueueFamilies[underlying_value(QueueType::Presentation)] = bestEverythingQueue->first;
+		m_QueueFamilies[underlying_value(QueueType::Graphics)] =
+			m_QueueFamilies[underlying_value(QueueType::Presentation)] =
+			m_QueueFamilies[underlying_value(QueueType::Transfer)] =
+			bestEverythingQueue->first;
 	}
 	else
 	{
 		// Separate queues
 		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
+		m_QueueFamilies[underlying_value(QueueType::Transfer)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eTransfer)->first;
 		m_QueueFamilies[underlying_value(QueueType::Presentation)] = m_PhysicalDeviceData->ChooseBestQueue(true)->first;
 	}
 }
