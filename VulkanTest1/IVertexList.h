@@ -11,10 +11,12 @@ public:
 	virtual size_t GetVertexSize() const = 0;
 	virtual size_t GetVertexCount() const = 0;
 	virtual const void* GetVertexData() const = 0;
+	virtual size_t GetVertexDataSize() const final { return GetVertexSize() * GetVertexCount(); }
 
 	virtual size_t GetIndexSize() const = 0;
 	virtual size_t GetIndexCount() const = 0;
 	virtual const void* GetIndexData() const = 0;
+	virtual size_t GetIndexDataSize() const final { return GetIndexSize() * GetIndexCount(); }
 
 	virtual vk::VertexInputBindingDescription GetBindingDescription() const = 0;
 	virtual std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions() const = 0;
