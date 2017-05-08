@@ -123,30 +123,40 @@
   <ItemGroup>
     <ClInclude Include="FixedWindows.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameObjectManager.h" />
     <ClInclude Include="GraphicsPipelineCreateInfo.h" />
+    <ClInclude Include="IGameObject.h" />
+    <ClInclude Include="IVertexList.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="ShaderModule.h" />
+    <ClInclude Include="SimpleVertex.h" />
+    <ClInclude Include="VertexList.h" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="StringTools.h" />
     <ClInclude Include="Swapchain.h" />
     <ClInclude Include="SwapchainData.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanEnumOperators.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameObjectManager.cpp" />
     <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="GraphicsPipelineCreateInfo.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="PhysicalDeviceData.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -156,6 +166,7 @@
     <ClCompile Include="StringTools.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="SwapchainData.cpp" />
+    <ClCompile Include="VertexBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>

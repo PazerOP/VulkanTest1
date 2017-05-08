@@ -37,6 +37,7 @@ public:
 
 	const vk::PhysicalDeviceProperties& GetProperties() const { return m_Properties; }
 	const vk::PhysicalDeviceFeatures& GetFeatures() const { return m_Features; }
+	const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const { return m_MemoryProperties; }
 
 	const std::vector<vk::QueueFamilyProperties>& GetQueueFamilies() const { return m_QueueFamilies; }
 	std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> GetQueueFamilies(const vk::QueueFlags& queueFlags);
@@ -77,6 +78,7 @@ private:
 
 	vk::PhysicalDeviceProperties m_Properties;
 	vk::PhysicalDeviceFeatures m_Features;
+	vk::PhysicalDeviceMemoryProperties m_MemoryProperties;
 	std::vector<vk::QueueFamilyProperties> m_QueueFamilies;
 	std::vector<uint32_t> m_PresentationQueueFamilies;
 

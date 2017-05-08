@@ -17,6 +17,8 @@ __forceinline bool validate_enum_value(QueueType value)
 	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(QueueType::Count);
 }
 
+class VertexBuffer;
+
 class LogicalDevice
 {
 public:
@@ -63,6 +65,8 @@ private:
 	static constexpr const char TAG[] = "[LogicalDevice] ";
 
 	void ChooseQueueFamilies();
+
+	std::unique_ptr<VertexBuffer> m_TestVertexBuffer;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;

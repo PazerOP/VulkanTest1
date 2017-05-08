@@ -5,6 +5,7 @@
 #include "GraphicsPipelineCreateInfo.h"
 #include "Log.h"
 #include "Swapchain.h"
+#include "VertexBuffer.h"
 
 std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
 {
@@ -48,7 +49,6 @@ void LogicalDevice::DrawFrame()
 	GetQueue(QueueType::Graphics).submit(submitInfo, nullptr);
 
 	vk::PresentInfoKHR presentInfo;
-	vk::Result presentResult = vk::Result::eSuccess;
 	{
 		presentInfo.setWaitSemaphoreCount(1);
 		presentInfo.setPWaitSemaphores(&m_RenderFinishedSemaphore.get());
@@ -57,13 +57,10 @@ void LogicalDevice::DrawFrame()
 		presentInfo.setPSwapchains(&m_Swapchain->Get());
 
 		presentInfo.setPImageIndices(&imageIndex);
-
-		presentInfo.setPResults(&presentResult);
 	}
 
 	vk::Result mainPresentResult = GetQueue(QueueType::Presentation).presentKHR(presentInfo);
 	assert(mainPresentResult == vk::Result::eSuccess);
-	assert(presentResult == vk::Result::eSuccess);
 }
 
 void LogicalDevice::WindowResized()
@@ -170,8 +167,8 @@ void LogicalDevice::InitGraphicsPipeline()
 
 	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(*this);
 
-	createInfo->SetShader(ShaderType::Vertex, ShaderModule::Create("shaders/vert.spv", *this));
-	createInfo->SetShader(ShaderType::Pixel, ShaderModule::Create("shaders/frag.spv", *this));
+	createInfo->SetShader(ShaderType::Vertex, ShaderModule::Create("shaders/simple_vertex.spv", *this));
+	createInfo->SetShader(ShaderType::Pixel, ShaderModule::Create("shaders/simple_pixel.spv", *this));
 
 	m_GraphicsPipeline = GraphicsPipeline::Create(createInfo);
 }
@@ -193,6 +190,19 @@ void LogicalDevice::InitCommandPool()
 	m_CommandPool = Get().createCommandPoolUnique(createInfo);
 }
 
+#include "SimpleVertex.h"
+#include "VertexList.h"
+static UniqueVertexList<SimpleVertex> GetTestVertexList()
+{
+	UniqueVertexList<SimpleVertex> retVal = VertexList<SimpleVertex>::Create();
+
+	retVal->AddVertex({ { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } });
+	retVal->AddVertex({ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } });
+	retVal->AddVertex({ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } });
+
+	return retVal;
+}
+
 void LogicalDevice::InitCommandBuffers()
 {
 	Log::TagMsg(TAG, "Creating command buffers...");
@@ -205,6 +215,8 @@ void LogicalDevice::InitCommandBuffers()
 	allocInfo.setCommandBufferCount(framebuffers.size());
 
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
+
+	m_TestVertexBuffer = VertexBuffer::Create(GetTestVertexList(), *this);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{
@@ -231,9 +243,7 @@ void LogicalDevice::InitCommandBuffers()
 
 			cmdBuffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-			cmdBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, m_GraphicsPipeline->GetPipeline());
-
-			cmdBuffer->draw(3, 1, 0, 0);
+			m_TestVertexBuffer->Draw(cmdBuffer.get());
 
 			cmdBuffer->endRenderPass();
 		}

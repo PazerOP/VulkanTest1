@@ -13,6 +13,8 @@
 
 #include <chrono>
 
+#pragma comment(lib, "vulkan-1.lib")
+
 static VulkanInstance* s_VulkanInstance = nullptr;
 VulkanInstance& Vulkan()
 {
@@ -287,6 +289,7 @@ void VulkanInstance::AttachDebugMsgCallback()
 			throw rkrp_vulkan_exception("Failed to attach debug callback!");
 
 		m_DebugMsgCallbackHandle.getDeleter() = vk::DebugReportCallbackEXTDeleter(m_Instance.get());
+
 		m_DebugMsgCallbackHandle.reset(vk::DebugReportCallbackEXT(callbackHandle));
 	}
 }
@@ -303,14 +306,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::DebugCallback(VkDebugReportFlagsE
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::ePerformanceWarning))
 		msgType = "[VULKAN PERF]";
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eError))
-	{
 		msgType = "[VULKAN ERROR]";
-	}
 	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eDebug))
 		msgType = "[VULKAN DEBUG]";
 
 	Log::Msg("{0} {2}", msgType, obj, msg);
-	//assert(!(flagBits & vk::DebugReportFlagBitsEXT::eError));
+	assert(!(flagBits & vk::DebugReportFlagBitsEXT::eError));
 
 	return VK_FALSE;
 }

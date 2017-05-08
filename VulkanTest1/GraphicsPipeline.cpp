@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "GraphicsPipeline.h"
 #include "LogicalDevice.h"
+#include "SimpleVertex.h"
 #include "Swapchain.h"
-
 #include "Vulkan.h"
 
 std::unique_ptr<GraphicsPipeline> GraphicsPipeline::Create(const std::shared_ptr<GraphicsPipelineCreateInfo>& createInfo)
@@ -78,6 +78,12 @@ void GraphicsPipeline::CreateRenderPass()
 void GraphicsPipeline::CreatePipeline()
 {
 	vk::PipelineVertexInputStateCreateInfo vertexInputState;
+	auto bindingDescription = SimpleVertex::GetBindingDescription();
+	auto attributeDescriptions = SimpleVertex::GetAttributeDescriptions();
+	vertexInputState.setVertexBindingDescriptionCount(1);
+	vertexInputState.setPVertexBindingDescriptions(&bindingDescription);
+	vertexInputState.setVertexAttributeDescriptionCount(attributeDescriptions.size());
+	vertexInputState.setPVertexAttributeDescriptions(attributeDescriptions.data());
 
 	vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
 	inputAssemblyState.setTopology(vk::PrimitiveTopology::eTriangleList);

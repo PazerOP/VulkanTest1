@@ -127,12 +127,11 @@ void PhysicalDeviceData::RateDeviceSuitability()
 
 	// Bonuses for onboard memory
 	{
-		const auto memoryProperties = m_Device.getMemoryProperties();
-		std::vector<std::pair<uint32_t, vk::MemoryHeapFlagBits>> memoryTypes;
+		m_MemoryProperties = m_Device.getMemoryProperties();
 
-		for (size_t i = 0; i < memoryProperties.memoryHeapCount; i++)
+		for (size_t i = 0; i < m_MemoryProperties.memoryHeapCount; i++)
 		{
-			const auto& heap = memoryProperties.memoryHeaps[i];
+			const auto& heap = m_MemoryProperties.memoryHeaps[i];
 			const auto& heapFlags = heap.flags;
 
 			float scalar;
@@ -141,7 +140,7 @@ void PhysicalDeviceData::RateDeviceSuitability()
 			else
 				scalar = 0.25;	// 0.25 points per GB of shared memory
 
-			static constexpr float BYTES_TO_GB = 1.0f / 1024 / 1024 / 1024;
+			constexpr float BYTES_TO_GB = 1.0f / 1024 / 1024 / 1024;
 
 			m_Rating += scalar * BYTES_TO_GB * heap.size;
 		}
