@@ -92,9 +92,6 @@
     <ClInclude Include="Sprite.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="IVertexList.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
@@ -104,10 +101,10 @@
     <ClInclude Include="VertexList.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
-    <ClInclude Include="VertexBuffer.h">
+    <ClInclude Include="Buffer.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
-    <ClInclude Include="Buffer.h">
+    <ClInclude Include="Mesh.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -157,13 +154,10 @@
     <ClCompile Include="GameObjectManager.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="VertexBuffer.cpp">
+    <ClCompile Include="Buffer.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="Buffer.cpp">
+    <ClCompile Include="Mesh.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
   </ItemGroup>

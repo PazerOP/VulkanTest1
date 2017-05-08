@@ -131,7 +131,6 @@
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="ShaderModule.h" />
@@ -144,7 +143,7 @@
     <ClInclude Include="Swapchain.h" />
     <ClInclude Include="SwapchainData.h" />
     <ClInclude Include="Util.h" />
-    <ClInclude Include="VertexBuffer.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Vulkan.h" />
     <ClInclude Include="VulkanEnumOperators.h" />
     <ClInclude Include="Window.h" />
@@ -158,7 +157,6 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="PhysicalDeviceData.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -168,7 +166,7 @@
     <ClCompile Include="StringTools.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="SwapchainData.cpp" />
-    <ClCompile Include="VertexBuffer.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>

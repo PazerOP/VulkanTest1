@@ -4,8 +4,8 @@
 #include "GraphicsPipeline.h"
 #include "GraphicsPipelineCreateInfo.h"
 #include "Log.h"
+#include "Mesh.h"
 #include "Swapchain.h"
-#include "VertexBuffer.h"
 
 std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
 {
@@ -216,9 +216,15 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 {
 	UniqueVertexList<SimpleVertex> retVal = VertexList<SimpleVertex>::Create();
 
-	retVal->AddVertex({ { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } });
-	retVal->AddVertex({ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } });
-	retVal->AddVertex({ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } });
+	SimpleVertex v[4] =
+	{
+		{ { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+		{ { 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } },
+	};
+
+	retVal->AddVertex({ v[0], v[1], v[2], v[2], v[3], v[0] });
 
 	return retVal;
 }
@@ -236,7 +242,7 @@ void LogicalDevice::InitCommandBuffers()
 
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
-	m_TestVertexBuffer = VertexBuffer::Create(GetTestVertexList(), *this);
+	m_TestVertexBuffer = Mesh::Create(GetTestVertexList(), *this);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{

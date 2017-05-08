@@ -11,6 +11,11 @@ struct SimpleVertex
 	glm::vec2 pos;
 	glm::vec3 color;
 
+	bool operator==(const SimpleVertex& rhs) const
+	{
+		return (pos == rhs.pos && color == rhs.color);
+	}
+
 	static vk::VertexInputBindingDescription GetBindingDescription()
 	{
 		vk::VertexInputBindingDescription desc;

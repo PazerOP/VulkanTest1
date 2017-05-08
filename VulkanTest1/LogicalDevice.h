@@ -18,7 +18,7 @@ __forceinline bool validate_enum_value(QueueType value)
 	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(QueueType::Count);
 }
 
-class VertexBuffer;
+class Mesh;
 
 class LogicalDevice
 {
@@ -51,7 +51,7 @@ public:
 
 	vk::UniqueCommandBuffer AllocCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
 	std::vector<vk::UniqueCommandBuffer> AllocCommandBuffers(uint32_t count, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
-	
+
 private:
 	LogicalDevice() = default;
 	void Init(const std::shared_ptr<PhysicalDeviceData>& physicalDevice);
@@ -70,7 +70,7 @@ private:
 
 	void ChooseQueueFamilies();
 
-	std::unique_ptr<VertexBuffer> m_TestVertexBuffer;
+	std::unique_ptr<Mesh> m_TestVertexBuffer;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;
