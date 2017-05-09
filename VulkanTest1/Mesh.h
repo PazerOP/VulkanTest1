@@ -12,15 +12,15 @@ public:
 
 	void Draw(const vk::CommandBuffer& buffer) const;
 
-	const LogicalDevice& GetDevice() const { return m_Buffer.GetDevice(); }
-	LogicalDevice& GetDevice() { return m_Buffer.GetDevice(); }
+	const LogicalDevice& GetDevice() const { return m_Buffer->GetDevice(); }
+	LogicalDevice& GetDevice() { return m_Buffer->GetDevice(); }
 
-	const Buffer& GetBuffer() const { return m_Buffer; }
-	Buffer& GetBuffer() { return m_Buffer; }
+	const Buffer& GetBuffer() const { return m_Buffer.value(); }
+	Buffer& GetBuffer() { return m_Buffer.value(); }
 
 private:
 	Mesh(const std::shared_ptr<const IVertexList>& vertexList, LogicalDevice& device);
 
 	std::shared_ptr<const IVertexList> m_VertexList;
-	Buffer m_Buffer;
+	std::optional<Buffer> m_Buffer;
 };

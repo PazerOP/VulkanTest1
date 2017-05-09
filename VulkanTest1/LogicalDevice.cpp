@@ -28,6 +28,8 @@ uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
 
 void LogicalDevice::DrawFrame()
 {
+	m_GraphicsPipeline->Update();
+
 	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::numeric_limits<uint64_t>::max(), *m_ImageAvailableSemaphore, nullptr);
 	assert(result.result == vk::Result::eSuccess);
 	const uint32_t imageIndex = result.value;
@@ -106,6 +108,8 @@ LogicalDevice::~LogicalDevice()
 
 	// Command pool
 	m_CommandPool.reset();
+
+	m_TestVertexBuffer.reset();
 
 	// Device
 	m_LogicalDevice.reset();

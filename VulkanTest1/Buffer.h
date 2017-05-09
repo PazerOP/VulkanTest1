@@ -6,6 +6,7 @@ class Buffer
 {
 public:
 	Buffer(LogicalDevice& device, vk::DeviceSize size, const vk::BufferUsageFlags& bufFlags, const vk::MemoryPropertyFlags& memFlags);
+	virtual ~Buffer();
 
 	const LogicalDevice& GetDevice() const { return m_Device; }
 	LogicalDevice& GetDevice() { return m_Device; }
@@ -16,6 +17,8 @@ public:
 	const vk::BufferCreateInfo& GetCreateInfo() const { return m_CreateInfo; }
 
 	void CopyTo(Buffer& buffer) const;
+
+	void Write(const void* data, vk::DeviceSize bytes, vk::DeviceSize offset);
 
 private:
 	static uint32_t FindMemoryType(const vk::PhysicalDeviceMemoryProperties& memProps, uint32_t typeFilter, const vk::MemoryPropertyFlags& properties);

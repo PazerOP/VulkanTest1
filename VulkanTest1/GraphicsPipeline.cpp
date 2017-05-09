@@ -3,19 +3,159 @@
 #include "LogicalDevice.h"
 #include "SimpleVertex.h"
 #include "Swapchain.h"
+#include "UniformBufferObject.h"
 #include "Vulkan.h"
 
-std::unique_ptr<GraphicsPipeline> GraphicsPipeline::Create(const std::shared_ptr<GraphicsPipelineCreateInfo>& createInfo)
+#include <glm/gtc/matrix_transform.hpp>
+
+std::unique_ptr<GraphicsPipeline> GraphicsPipeline::Create(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo)
 {
 	return std::unique_ptr<GraphicsPipeline>(new GraphicsPipeline(createInfo));
+}
+
+std::vector<vk::DescriptorSet> GraphicsPipeline::GetDescriptorSets() const
+{
+	std::vector<vk::DescriptorSet> retVal;
+
+	for (const auto& unique : m_DescriptorSets)
+		retVal.push_back(unique.get());
+
+	return retVal;
+}
+
+std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
+{
+	std::vector<vk::DescriptorSetLayout> retVal;
+
+	for (const auto& unique : m_DescriptorSetLayouts)
+		retVal.push_back(unique.get());
+
+	return retVal;
+}
+
+void GraphicsPipeline::Update()
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float>(currentTime - startTime).count();
+
+	m_UniformTimeBuffer->Write(&time, sizeof(time), 0);
+
+	UniformBufferObject ubo;
+	ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0, 0, 1));
+	ubo.view = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+
+	const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
+	ubo.proj = glm::perspective(glm::radians(45.0f), float(swapchainExtent.width) / swapchainExtent.height, 0.1f, 10.0f);
+
+	m_UniformObjectBuffer->Write(&ubo, sizeof(ubo), 0);
 }
 
 GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo)
 {
 	m_CreateInfo = createInfo;
 
+	CreateDescriptorSetLayout();
+	CreateUniformBuffer();
+	CreateDescriptorPool();
+	CreateDescriptorSet();
 	CreateRenderPass();
 	CreatePipeline();
+}
+
+void GraphicsPipeline::CreateDescriptorSetLayout()
+{
+	{
+		vk::DescriptorSetLayoutBinding uboLayoutBinding;
+		uboLayoutBinding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		uboLayoutBinding.setDescriptorCount(1);
+		uboLayoutBinding.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+		vk::DescriptorSetLayoutCreateInfo createInfo;
+		createInfo.setBindingCount(1);
+		createInfo.setPBindings(&uboLayoutBinding);
+
+		m_DescriptorSetLayouts.push_back(GetDevice()->createDescriptorSetLayoutUnique(createInfo));
+	}
+
+	{
+		vk::DescriptorSetLayoutBinding timeLayoutBinding;
+		timeLayoutBinding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		timeLayoutBinding.setDescriptorCount(1);
+		timeLayoutBinding.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+
+		vk::DescriptorSetLayoutCreateInfo createInfo;
+		createInfo.setBindingCount(1);
+		createInfo.setPBindings(&timeLayoutBinding);
+
+		m_DescriptorSetLayouts.push_back(GetDevice()->createDescriptorSetLayoutUnique(createInfo));
+	}
+}
+
+void GraphicsPipeline::CreateUniformBuffer()
+{
+	m_UniformObjectBuffer.emplace(GetDevice(), sizeof(UniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer,
+								  vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
+	m_UniformTimeBuffer.emplace(GetDevice(), sizeof(float), vk::BufferUsageFlagBits::eUniformBuffer,
+								vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
+}
+
+void GraphicsPipeline::CreateDescriptorPool()
+{
+	vk::DescriptorPoolSize poolSize;
+	poolSize.setType(vk::DescriptorType::eUniformBuffer);
+	poolSize.setDescriptorCount(10);
+
+	vk::DescriptorPoolCreateInfo createInfo;
+	createInfo.setPoolSizeCount(1);
+	createInfo.setPPoolSizes(&poolSize);
+	createInfo.setMaxSets(10);
+	createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+
+	m_DescriptorPool = GetDevice()->createDescriptorPoolUnique(createInfo);
+}
+
+void GraphicsPipeline::CreateDescriptorSet()
+{
+	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
+
+	vk::DescriptorSetAllocateInfo allocInfo;
+	allocInfo.setDescriptorPool(m_DescriptorPool.get());
+	allocInfo.setDescriptorSetCount(descriptorSetLayouts.size());
+	allocInfo.setPSetLayouts(descriptorSetLayouts.data());
+
+	m_DescriptorSets = GetDevice()->allocateDescriptorSetsUnique(allocInfo);
+
+	std::vector<vk::DescriptorBufferInfo> bufferInfos;
+	{
+		{
+			bufferInfos.emplace_back();
+			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.back();
+			bufferInfo.setBuffer(m_UniformObjectBuffer->GetBuffer());
+			bufferInfo.setRange(sizeof(UniformBufferObject));
+		}
+		{
+			bufferInfos.emplace_back();
+			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.back();
+			bufferInfo.setBuffer(m_UniformTimeBuffer->GetBuffer());
+			bufferInfo.setRange(sizeof(float));
+		}
+	}
+
+	std::vector<vk::WriteDescriptorSet> descriptorWrites;
+	for (size_t i = 0; i < m_DescriptorSets.size(); i++)
+	{
+		descriptorWrites.emplace_back();
+		vk::WriteDescriptorSet& descriptorWrite = descriptorWrites.back();
+
+		descriptorWrite.setDstSet(m_DescriptorSets[i].get());
+		descriptorWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		descriptorWrite.setDescriptorCount(1);
+		descriptorWrite.setPBufferInfo(&bufferInfos[i]);
+	}
+
+	GetDevice()->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
 void GraphicsPipeline::CreateRenderPass()
@@ -91,8 +231,8 @@ void GraphicsPipeline::CreatePipeline()
 	const auto& swapchainExtent = m_CreateInfo->GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
 
 	vk::Viewport viewport;
-	viewport.setWidth(swapchainExtent.width);
-	viewport.setHeight(swapchainExtent.height);
+	viewport.setWidth((float)swapchainExtent.width);
+	viewport.setHeight((float)swapchainExtent.height);
 	viewport.setMaxDepth(1);
 
 	vk::Rect2D scissor(vk::Offset2D(), swapchainExtent);
@@ -161,6 +301,9 @@ void GraphicsPipeline::CreatePipeline()
 	}
 
 	vk::PipelineLayoutCreateInfo plCreateInfo;
+	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
+	plCreateInfo.setSetLayoutCount(descriptorSetLayouts.size());
+	plCreateInfo.setPSetLayouts(descriptorSetLayouts.data());
 
 	const auto device = GetCreateInfo().GetDevice().Get();
 	m_Layout = device.createPipelineLayoutUnique(plCreateInfo);

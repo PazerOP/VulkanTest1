@@ -22,6 +22,12 @@ Buffer::Buffer(LogicalDevice& device, vk::DeviceSize size, const vk::BufferUsage
 	device->bindBufferMemory(m_Buffer.get(), m_DeviceMemory.get(), 0);
 }
 
+Buffer::~Buffer()
+{
+	m_Buffer.reset();
+	m_DeviceMemory.reset();
+}
+
 void Buffer::CopyTo(Buffer& buffer) const
 {
 	vk::UniqueCommandBuffer cmdBuf = GetDevice().AllocCommandBuffer();
@@ -45,6 +51,13 @@ void Buffer::CopyTo(Buffer& buffer) const
 	const auto queue = GetDevice().GetQueue(QueueType::Graphics);
 	queue.submit(submitInfo, nullptr);
 	queue.waitIdle();
+}
+
+void Buffer::Write(const void* data, vk::DeviceSize bytes, vk::DeviceSize offset)
+{
+	void* dst = GetDevice()->mapMemory(m_DeviceMemory.get(), offset, bytes);
+	memcpy(dst, data, bytes);
+	GetDevice()->unmapMemory(m_DeviceMemory.get());
 }
 
 uint32_t Buffer::FindMemoryType(const vk::PhysicalDeviceMemoryProperties& memProps, uint32_t typeFilter, const vk::MemoryPropertyFlags& properties)

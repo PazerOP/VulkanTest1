@@ -135,6 +135,7 @@
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="ShaderModule.h" />
     <ClInclude Include="SimpleVertex.h" />
+    <ClInclude Include="UniformBufferObject.h" />
     <ClInclude Include="VertexList.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="stdafx.h" />
