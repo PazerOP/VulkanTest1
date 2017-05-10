@@ -10,7 +10,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDebugMarkerSetObjectNameEXT(
 	if (!func)
 		return VkResult::VK_ERROR_EXTENSION_NOT_PRESENT;
 
-	return func(device, pNameInfo);
+	throw not_implemented_error(__FUNCTION__);
+	//return func(device, pNameInfo);
 }
 
 void VulkanDebug::SetObjectName(vk::Device device, const std::string& name)

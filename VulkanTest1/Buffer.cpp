@@ -2,6 +2,7 @@
 #include "Buffer.h"
 
 #include "LogicalDevice.h"
+#include "VulkanHelpers.h"
 
 Buffer::Buffer(LogicalDevice& device, vk::DeviceSize size, const vk::BufferUsageFlags& bufFlags, const vk::MemoryPropertyFlags& memFlags) :
 	m_Device(device)
@@ -32,27 +33,11 @@ void Buffer::CopyTo(Buffer& buffer) const
 {
 	vk::UniqueCommandBuffer cmdBuf = GetDevice().AllocCommandBuffer();
 
-	vk::CommandBufferBeginInfo beginInfo;
-	beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-	cmdBuf->begin(beginInfo);
-
-	vk::BufferCopy copyRegion;
-	copyRegion.setSize(GetCreateInfo().size);
-
-	cmdBuf->copyBuffer(m_Buffer.get(), buffer.GetBuffer(), copyRegion);
-
+	cmdBuf->begin(VulkanHelpers::CBBI_ONE_TIME_SUBMIT);
+	cmdBuf->copyBuffer(m_Buffer.get(), buffer.GetBuffer(), vk::BufferCopy(0, 0, GetCreateInfo().size));
 	cmdBuf->end();
 
-	vk::SubmitInfo submitInfo;
-
-	const vk::CommandBuffer cmdBuffers[] = { cmdBuf.get() };
-	submitInfo.setCommandBufferCount(std::size(cmdBuffers));
-	submitInfo.setPCommandBuffers(cmdBuffers);
-
-	const auto queue = GetDevice().GetQueue(QueueType::Graphics);
-	queue.submit(submitInfo, nullptr);
-	queue.waitIdle();
+	GetDevice().SubmitCommandBuffers(cmdBuf.get());
 }
 
 void Buffer::Write(const void* data, vk::DeviceSize bytes, vk::DeviceSize offset)

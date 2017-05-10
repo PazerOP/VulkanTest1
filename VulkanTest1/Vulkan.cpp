@@ -245,8 +245,6 @@ void VulkanInstance::InitDevice()
 	Log::TagMsg(TAG, "Creating logical device with \"best\" physical device \"{0}\"...", physicalDevice->GetSuitabilityMessage());
 
 	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
-
-	VulkanDebug::SetObjectName(GetLogicalDevice(), "Device: " __FUNCTION__);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback)

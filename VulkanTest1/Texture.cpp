@@ -4,6 +4,7 @@
 #include "LogicalDevice.h"
 #include "stb_image.h"
 #include "Vulkan.h"
+#include "VulkanHelpers.h"
 
 std::unique_ptr<Texture> Texture::Create(const std::filesystem::path& imgPath, LogicalDevice* device)
 {
@@ -17,6 +18,9 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 
 	int w, h, channels;
 	auto rawImg = std::unique_ptr<stbi_uc>(stbi_load(imgPath.string().c_str(), &w, &h, &channels, STBI_rgb_alpha));
+	if (w <= 0 || h <= 0 || channels <= 0)
+		throw std::runtime_error(StringTools::CSFormat("Failed to load raw img in texture constructor: width {0}, height {1}, channels {2}", w, h, channels));
+
 	const size_t rawImgSize = w * h * channels;
 
 	// Create staging image
@@ -62,7 +66,7 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 		const vk::SubresourceLayout stagingImageLayout = m_Device->getImageSubresourceLayout(stagingImage.get(), subresource);
 
 		void* data = m_Device->mapMemory(stagingMemory.get(), 0, stagingMemorySize);
-		if (stagingImageLayout.rowPitch == w * channels)
+		if (stagingImageLayout.rowPitch == vk::DeviceSize(w * channels))
 			memcpy_s(data, stagingMemorySize, rawImg.get(), rawImgSize);
 		else
 		{
@@ -98,18 +102,84 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 		allocInfo.setAllocationSize(memReqs.size);
 		allocInfo.setMemoryTypeIndex(m_Device.GetData().FindMemoryType(memReqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
 
-		stagingMemory = m_Device->allocateMemoryUnique(allocInfo);
+		m_DeviceMemory = m_Device->allocateMemoryUnique(allocInfo);
 	}
+
+	m_Device->bindImageMemory(m_Image.get(), m_DeviceMemory.get(), 0);
 
 	// Copy from staging to final
 	{
-		vk::UniqueCommandBuffer copyCmdBuf = m_Device.AllocCommandBuffer();
-		copyCmdBuf->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-		{
-			vk::ImageMemoryBarrier barrier;
-			//barrier.setOldLayout(vk::ImageLayout::)
-		}
-		copyCmdBuf->end();
-		m_Device.SubmitCommandBuffers(copyCmdBuf.get());
+		TransitionImageLayout(stagingImage.get(), imgCreateInfo.format, imgCreateInfo.initialLayout, vk::ImageLayout::eTransferSrcOptimal);
+		TransitionImageLayout(m_Image.get(), imgCreateInfo.format, imgCreateInfo.initialLayout, vk::ImageLayout::eTransferDstOptimal);
+		CopyImage(stagingImage.get(), m_Image.get(), w, h);
 	}
+}
+
+void Texture::TransitionImageLayout(const vk::Image& img, vk::Format /*format*/, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+{
+	auto cmdBuf = m_Device.AllocCommandBuffer();
+	cmdBuf->begin(VulkanHelpers::CBBI_ONE_TIME_SUBMIT);
+	{
+		vk::ImageMemoryBarrier barrier;
+		barrier.setOldLayout(oldLayout);
+		barrier.setNewLayout(newLayout);
+
+		barrier.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+		barrier.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+
+		barrier.setImage(img);
+		barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
+		barrier.subresourceRange.setLevelCount(1);
+		barrier.subresourceRange.setLayerCount(1);
+
+		if (oldLayout == vk::ImageLayout::ePreinitialized && newLayout == vk::ImageLayout::eTransferSrcOptimal)
+		{
+			barrier.setSrcAccessMask(vk::AccessFlagBits::eHostWrite);
+			barrier.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
+		}
+		else if (oldLayout == vk::ImageLayout::ePreinitialized && newLayout == vk::ImageLayout::eTransferDstOptimal)
+		{
+			barrier.setSrcAccessMask(vk::AccessFlagBits::eHostWrite);
+			barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+		}
+		else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+		{
+			barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+			barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+		}
+		else
+			throw std::invalid_argument("Unsupported layout transition");
+
+		cmdBuf->pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTopOfPipe,
+			(vk::DependencyFlagBits)0,
+			nullptr, nullptr,
+			barrier);
+	}
+	cmdBuf->end();
+	m_Device.SubmitCommandBuffers(cmdBuf.get());
+}
+
+void Texture::CopyImage(const vk::Image& src, const vk::Image& dst, uint32_t width, uint32_t height)
+{
+	vk::UniqueCommandBuffer cmdBuf = m_Device.AllocCommandBuffer();
+	cmdBuf->begin(VulkanHelpers::CBBI_ONE_TIME_SUBMIT);
+
+	vk::ImageSubresourceLayers subresourceLayers;
+	subresourceLayers.setAspectMask(vk::ImageAspectFlagBits::eColor);
+	subresourceLayers.setLayerCount(1);
+
+	vk::ImageCopy region;
+	region.setSrcSubresource(subresourceLayers);
+	region.setDstSubresource(subresourceLayers);
+	region.extent.width = width;
+	region.extent.height = height;
+	region.extent.depth = 1;
+
+	cmdBuf->copyImage(src, vk::ImageLayout::eTransferSrcOptimal,
+					  dst, vk::ImageLayout::eTransferDstOptimal,
+					  region);
+
+	cmdBuf->end();
+	m_Device->waitIdle();
 }

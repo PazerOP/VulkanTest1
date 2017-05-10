@@ -100,7 +100,5 @@ void SwapchainData::ChooseAndRateImageCount()
 
 	m_Rating += Remap(0, 5, 3, 2, (float)surfaceCaps.minImageCount);
 
-	m_BestValues->m_ImageCount = surfaceCaps.maxImageCount ?
-		std::min(surfaceCaps.minImageCount + 1, surfaceCaps.maxImageCount) :
-		surfaceCaps.minImageCount + 1;
+	m_BestValues->m_ImageCount = surfaceCaps.minImageCount;
 }

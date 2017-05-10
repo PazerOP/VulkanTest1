@@ -176,6 +176,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="VulkanDebug.cpp" />
+    <ClCompile Include="VulkanHelpers.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
