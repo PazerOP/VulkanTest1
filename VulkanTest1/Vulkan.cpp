@@ -10,6 +10,7 @@
 #include "PhysicalDeviceData.h"
 #include "Swapchain.h"
 #include "Util.h"
+#include "VulkanDebug.h"
 
 #include <chrono>
 
@@ -244,6 +245,8 @@ void VulkanInstance::InitDevice()
 	Log::TagMsg(TAG, "Creating logical device with \"best\" physical device \"{0}\"...", physicalDevice->GetSuitabilityMessage());
 
 	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
+
+	VulkanDebug::SetObjectName(GetLogicalDevice(), "Device: " __FUNCTION__);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback)
@@ -251,7 +254,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instanc
 	auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, __FUNCTION__);
 	assert(func);
 	if (!func)
-		return VkResult::VK_INCOMPLETE;
+		return VkResult::VK_ERROR_EXTENSION_NOT_PRESENT;
 
 	return func(instance, pCreateInfo, pAllocator, pCallback);
 }
@@ -296,18 +299,18 @@ void VulkanInstance::AttachDebugMsgCallback()
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData)
 {
-	const vk::DebugReportFlagBitsEXT flagBits = (vk::DebugReportFlagBitsEXT)flags;
+	const vk::DebugReportFlagsEXT flagBits((vk::DebugReportFlagBitsEXT)flags);
 
 	const char* msgType = "[VULKAN UNKNOWN]";
-	if (!!(flagBits & vk::DebugReportFlagBitsEXT::eInformation))
+	if (flagBits & vk::DebugReportFlagBitsEXT::eInformation)
 		msgType = "[VULKAN INFO]";
-	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eWarning))
+	else if (flagBits & vk::DebugReportFlagBitsEXT::eWarning)
 		msgType = "[VULKAN WARN]";
-	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::ePerformanceWarning))
+	else if (flagBits & vk::DebugReportFlagBitsEXT::ePerformanceWarning)
 		msgType = "[VULKAN PERF]";
-	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eError))
+	else if (flagBits & vk::DebugReportFlagBitsEXT::eError)
 		msgType = "[VULKAN ERROR]";
-	else if (!!(flagBits & vk::DebugReportFlagBitsEXT::eDebug))
+	else if (flagBits & vk::DebugReportFlagBitsEXT::eDebug)
 		msgType = "[VULKAN DEBUG]";
 
 	Log::Msg("{0} {2}", msgType, obj, msg);

@@ -31,7 +31,8 @@ void LogicalDevice::DrawFrame()
 {
 	m_GraphicsPipeline->Update();
 
-	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::numeric_limits<uint64_t>::max(), *m_ImageAvailableSemaphore, nullptr);
+	using namespace std::chrono_literals;
+	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::chrono::nanoseconds(1s).count(), *m_ImageAvailableSemaphore, nullptr);
 	assert(result.result == vk::Result::eSuccess);
 	const uint32_t imageIndex = result.value;
 
@@ -99,6 +100,21 @@ std::vector<vk::UniqueCommandBuffer> LogicalDevice::AllocCommandBuffers(uint32_t
 	allocInfo.setCommandBufferCount(count);
 
 	return Get().allocateCommandBuffersUnique(allocInfo);
+}
+
+void LogicalDevice::SubmitCommandBuffers(const vk::CommandBuffer& cmdBuf, QueueType q) const
+{
+	SubmitCommandBuffers({ cmdBuf }, q);
+}
+
+void LogicalDevice::SubmitCommandBuffers(const std::initializer_list<vk::CommandBuffer>& cmdBufs, QueueType q) const
+{
+	vk::SubmitInfo submitInfo;
+	submitInfo.setCommandBufferCount(cmdBufs.size());
+	submitInfo.setPCommandBuffers(cmdBufs.begin());
+
+	GetQueue(q).submit(submitInfo, nullptr);
+	Get().waitIdle();
 }
 
 LogicalDevice::~LogicalDevice()

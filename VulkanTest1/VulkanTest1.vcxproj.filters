@@ -62,9 +62,6 @@
     <ClInclude Include="Vulkan.h">
       <Filter>Engine\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanEnumOperators.h">
-      <Filter>Engine\Vulkan</Filter>
-    </ClInclude>
     <ClInclude Include="PhysicalDeviceData.h">
       <Filter>Engine\Vulkan\Data</Filter>
     </ClInclude>
@@ -122,6 +119,12 @@
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanDebug.h">
+      <Filter>Engine\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanHelpers.h">
+      <Filter>Engine\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +184,9 @@
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanDebug.cpp">
+      <Filter>Engine\Vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

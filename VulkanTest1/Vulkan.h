@@ -1,9 +1,6 @@
 #pragma once
 #include <set>
 #include <vulkan\vulkan.hpp>
-#include "VulkanEnumOperators.h"
-
-VULKAN_ENUM_OPERATORS(VkDebugReportFlagBitsEXT, vk::DebugReportFlagBitsEXT);
 
 class GraphicsPipeline;
 class LogicalDevice;

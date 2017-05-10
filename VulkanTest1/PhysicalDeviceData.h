@@ -92,7 +92,7 @@ private:
 	// A list of optional extensions to enable, along with a weight of how important they are.
 	static constexpr std::pair<const char*, float> OPTIONAL_EXTENSIONS[] =
 	{
-		{ "placeholder", 0.0f }
+		{ "VK_EXT_debug_marker", 5.0f }
 	};
 
 	std::vector<const char*> m_BestExtensionSet;

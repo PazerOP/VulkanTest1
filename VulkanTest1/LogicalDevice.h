@@ -30,10 +30,8 @@ public:
 	const PhysicalDeviceData& GetData() const { assert(m_PhysicalDeviceData); return *m_PhysicalDeviceData; }
 
 	const vk::Device* operator->() const { return m_LogicalDevice.operator->(); }
-	//vk::Device* operator->() { return &m_LogicalDevice.get(); }
-
-	const vk::Device Get() const { return m_LogicalDevice.get(); }
-	vk::Device Get() { return m_LogicalDevice.get(); }
+	vk::Device Get() const { return m_LogicalDevice.get(); }
+	operator vk::Device() const { return Get(); }
 
 	const vk::Queue& GetQueue(QueueType q) const;
 	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(const_this(this)->GetQueue(q)); }
@@ -52,6 +50,8 @@ public:
 
 	vk::UniqueCommandBuffer AllocCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
 	std::vector<vk::UniqueCommandBuffer> AllocCommandBuffers(uint32_t count, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const;
+	void SubmitCommandBuffers(const vk::CommandBuffer& cmdBuf, QueueType q = QueueType::Graphics) const;
+	void SubmitCommandBuffers(const std::initializer_list<vk::CommandBuffer>& cmdBufs, QueueType q = QueueType::Graphics) const;
 
 private:
 	LogicalDevice() = default;
