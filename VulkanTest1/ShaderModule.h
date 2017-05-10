@@ -2,13 +2,6 @@
 
 #include <filesystem>
 
-#if _MSC_VER == 1910
-namespace std
-{
-	namespace filesystem = ::std::experimental::filesystem;
-}
-#endif
-
 class LogicalDevice;
 
 enum class ShaderType

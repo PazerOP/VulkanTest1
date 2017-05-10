@@ -136,6 +136,8 @@
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="ShaderModule.h" />
     <ClInclude Include="SimpleVertex.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="UniformBufferObject.h" />
     <ClInclude Include="VertexList.h" />
     <ClInclude Include="Sprite.h" />
@@ -161,6 +163,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PhysicalDeviceData.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -169,6 +172,7 @@
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="SwapchainData.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>

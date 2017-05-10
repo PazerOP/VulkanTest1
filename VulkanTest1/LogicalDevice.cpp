@@ -6,6 +6,7 @@
 #include "Log.h"
 #include "Mesh.h"
 #include "Swapchain.h"
+#include "Texture.h"
 
 std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
 {
@@ -256,6 +257,7 @@ void LogicalDevice::InitCommandBuffers()
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
 	m_TestVertexBuffer = Mesh::Create(GetTestVertexList(), *this);
+	m_TestTexture = Texture::Create("../statue.jpg", this);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{

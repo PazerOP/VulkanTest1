@@ -19,6 +19,7 @@ __forceinline bool validate_enum_value(QueueType value)
 }
 
 class Mesh;
+class Texture;
 
 class LogicalDevice
 {
@@ -71,6 +72,7 @@ private:
 	void ChooseQueueFamilies();
 
 	std::unique_ptr<Mesh> m_TestVertexBuffer;
+	std::unique_ptr<Texture> m_TestTexture;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;

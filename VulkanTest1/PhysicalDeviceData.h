@@ -52,6 +52,8 @@ public:
 
 	void IncludeSwapchainRating(const SwapchainData& scData);
 
+	uint32_t FindMemoryType(uint32_t typeFilter, const vk::MemoryPropertyFlags& properties) const;
+
 private:
 	PhysicalDeviceData();
 	void Init(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface);

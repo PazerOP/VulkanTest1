@@ -27,6 +27,12 @@
     <Filter Include="Engine\Graphics">
       <UniqueIdentifier>{13e0c615-bb33-4b34-9376-89cc68cb740a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{8faa7871-61ed-4245-8980-8c22d238a69c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\stb">
+      <UniqueIdentifier>{9ab31d46-5b01-4991-a01c-9c7360d50c85}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FixedWindows.h">
@@ -111,6 +117,12 @@
       <Filter>Engine\Test</Filter>
     </ClInclude>
     <ClInclude Include="CompilerSettings.h" />
+    <ClInclude Include="stb_image.h">
+      <Filter>Libraries\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -162,6 +174,12 @@
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image.cpp">
+      <Filter>Libraries\stb</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
   </ItemGroup>

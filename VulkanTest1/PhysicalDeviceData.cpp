@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PhysicalDeviceData.h"
 #include "StringTools.h"
+#include "Vulkan.h"
 
 PhysicalDeviceData::PhysicalDeviceData()
 {
@@ -109,6 +110,17 @@ void PhysicalDeviceData::IncludeSwapchainRating(const SwapchainData& scData)
 
 	m_SuitabilityMessageSwapchain.clear();
 	m_SwapchainRating = scData.GetRating();
+}
+
+uint32_t PhysicalDeviceData::FindMemoryType(uint32_t typeFilter, const vk::MemoryPropertyFlags & properties) const
+{
+	for (uint32_t i = 0; i < m_MemoryProperties.memoryTypeCount; i++)
+	{
+		if (typeFilter & (1 << i) && (m_MemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
+	}
+
+	throw rkrp_vulkan_exception("failed to find suitable memory type!");
 }
 
 void PhysicalDeviceData::RateDeviceSuitability()

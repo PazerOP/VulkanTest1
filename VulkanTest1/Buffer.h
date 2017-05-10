@@ -21,8 +21,6 @@ public:
 	void Write(const void* data, vk::DeviceSize bytes, vk::DeviceSize offset);
 
 private:
-	static uint32_t FindMemoryType(const vk::PhysicalDeviceMemoryProperties& memProps, uint32_t typeFilter, const vk::MemoryPropertyFlags& properties);
-
 	LogicalDevice& m_Device;
 	vk::BufferCreateInfo m_CreateInfo;
 	vk::MemoryRequirements m_MemoryReqs;
