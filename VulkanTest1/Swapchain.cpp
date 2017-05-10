@@ -115,7 +115,9 @@ void Swapchain::CreateFramebuffers()
 		vk::FramebufferCreateInfo createInfo;
 		createInfo.setRenderPass(GetDevice().GetGraphicsPipeline().GetRenderPass());
 		createInfo.setAttachmentCount(1);
-		createInfo.setPAttachments(&imgView.get());
+
+		const vk::ImageView attachments[] = { imgView.get() };
+		createInfo.setPAttachments(attachments);
 		createInfo.setWidth(GetInitValues().m_Extent2D.width);
 		createInfo.setHeight(GetInitValues().m_Extent2D.height);
 		createInfo.setLayers(1);

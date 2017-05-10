@@ -34,35 +34,44 @@ void LogicalDevice::DrawFrame()
 	assert(result.result == vk::Result::eSuccess);
 	const uint32_t imageIndex = result.value;
 
-	vk::SubmitInfo submitInfo;
-	const vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	// Submit cmd buffers
 	{
-		submitInfo.setWaitSemaphoreCount(1);
-		submitInfo.setPWaitSemaphores(&m_ImageAvailableSemaphore.get());
+		vk::SubmitInfo submitInfo;
+		const vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
+		const vk::Semaphore waitSemaphores[] = { m_ImageAvailableSemaphore.get() };
+		submitInfo.setWaitSemaphoreCount(std::size(waitSemaphores));
+		submitInfo.setPWaitSemaphores(waitSemaphores);
 		submitInfo.setPWaitDstStageMask(waitStages);
 
-		submitInfo.setCommandBufferCount(1);
-		submitInfo.setPCommandBuffers(&m_CommandBuffers[imageIndex].get());
+		const vk::CommandBuffer cmdBuffers[] = { m_CommandBuffers[imageIndex].get() };
+		submitInfo.setCommandBufferCount(std::size(cmdBuffers));
+		submitInfo.setPCommandBuffers(cmdBuffers);
 
-		submitInfo.setSignalSemaphoreCount(1);
-		submitInfo.setPSignalSemaphores(&m_RenderFinishedSemaphore.get());
+		const vk::Semaphore signalSempahores[] = { m_RenderFinishedSemaphore.get() };
+		submitInfo.setPSignalSemaphores(signalSempahores);
+		submitInfo.setSignalSemaphoreCount(std::size(signalSempahores));
+
+		GetQueue(QueueType::Graphics).submit(submitInfo, nullptr);
 	}
 
-	GetQueue(QueueType::Graphics).submit(submitInfo, nullptr);
-
-	vk::PresentInfoKHR presentInfo;
+	// Present
 	{
-		presentInfo.setWaitSemaphoreCount(1);
-		presentInfo.setPWaitSemaphores(&m_RenderFinishedSemaphore.get());
+		vk::PresentInfoKHR presentInfo;
 
-		presentInfo.setSwapchainCount(1);
-		presentInfo.setPSwapchains(&m_Swapchain->Get());
+		const vk::Semaphore waitSemaphores[] = { m_RenderFinishedSemaphore.get() };
+		presentInfo.setWaitSemaphoreCount(std::size(waitSemaphores));
+		presentInfo.setPWaitSemaphores(waitSemaphores);
+
+		const vk::SwapchainKHR swapchains[] = { m_Swapchain->Get() };
+		presentInfo.setSwapchainCount(std::size(swapchains));
+		presentInfo.setPSwapchains(swapchains);
 
 		presentInfo.setPImageIndices(&imageIndex);
-	}
 
-	vk::Result mainPresentResult = GetQueue(QueueType::Presentation).presentKHR(presentInfo);
-	assert(mainPresentResult == vk::Result::eSuccess);
+		vk::Result mainPresentResult = GetQueue(QueueType::Presentation).presentKHR(presentInfo);
+		assert(mainPresentResult == vk::Result::eSuccess);
+	}
 }
 
 void LogicalDevice::WindowResized()
@@ -191,8 +200,8 @@ void LogicalDevice::InitGraphicsPipeline()
 
 	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(*this);
 
-	createInfo->SetShader(ShaderType::Vertex, ShaderModule::Create("shaders/simple_vertex.spv", *this));
-	createInfo->SetShader(ShaderType::Pixel, ShaderModule::Create("shaders/simple_pixel.spv", *this));
+	createInfo->SetShader(ShaderModule::Create("shaders/simple_vertex.spv", ShaderType::Vertex, *this));
+	createInfo->SetShader(ShaderModule::Create("shaders/simple_pixel.spv", ShaderType::Pixel, *this));
 
 	m_GraphicsPipeline = GraphicsPipeline::Create(createInfo);
 }

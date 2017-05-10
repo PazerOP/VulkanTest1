@@ -20,9 +20,8 @@ const ShaderModule* GraphicsPipelineCreateInfo::GetShader(ShaderType type) const
 	return m_Shaders[underlying_value(type)].get();
 }
 
-void GraphicsPipelineCreateInfo::SetShader(ShaderType type, const std::shared_ptr<ShaderModule>& shader)
+void GraphicsPipelineCreateInfo::SetShader(const std::shared_ptr<ShaderModule>& shader)
 {
-	assert(validate_enum_value(type));
 	assert(&shader->GetDevice() == &GetDevice());
-	m_Shaders[underlying_value(type)] = shader;
+	m_Shaders[underlying_value(shader->GetType())] = shader;
 }

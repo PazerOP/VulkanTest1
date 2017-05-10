@@ -31,8 +31,8 @@ __forceinline bool validate_enum_value(ShaderType value)
 class ShaderModule
 {
 public:
-	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path);
-	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path, LogicalDevice& device);
+	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path, ShaderType type);
+	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
 
 	const std::filesystem::path& GetPath() const { return m_Path; }
 
@@ -45,11 +45,13 @@ public:
 	const vk::ShaderModule Get() const { return m_Shader.get(); }
 	vk::ShaderModule Get() { return m_Shader.get(); }
 
+	ShaderType GetType() const { return m_Type; }
+
 private:
-	ShaderModule(const std::filesystem::path& path, LogicalDevice& device);
+	ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
 
 	vk::UniqueShaderModule m_Shader;
 	LogicalDevice* m_Device;
-
+	ShaderType m_Type;
 	std::filesystem::path m_Path;
 };

@@ -45,8 +45,10 @@ void Buffer::CopyTo(Buffer& buffer) const
 	cmdBuf->end();
 
 	vk::SubmitInfo submitInfo;
-	submitInfo.setCommandBufferCount(1);
-	submitInfo.setPCommandBuffers(&cmdBuf.get());
+
+	const vk::CommandBuffer cmdBuffers[] = { cmdBuf.get() };
+	submitInfo.setCommandBufferCount(std::size(cmdBuffers));
+	submitInfo.setPCommandBuffers(cmdBuffers);
 
 	const auto queue = GetDevice().GetQueue(QueueType::Graphics);
 	queue.submit(submitInfo, nullptr);

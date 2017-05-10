@@ -110,6 +110,7 @@
     <ClInclude Include="UniformBufferObject.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
+    <ClInclude Include="CompilerSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

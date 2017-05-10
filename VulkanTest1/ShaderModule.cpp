@@ -6,19 +6,20 @@
 
 #include <fstream>
 
-std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path)
+std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, ShaderType type)
 {
-	return Create(path, Vulkan().GetLogicalDevice());
+	return Create(path, type, Vulkan().GetLogicalDevice());
 }
 
-std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, LogicalDevice& device)
+std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, ShaderType type, LogicalDevice& device)
 {
-	return std::unique_ptr<ShaderModule>(new ShaderModule(path, device));
+	return std::unique_ptr<ShaderModule>(new ShaderModule(path, type, device));
 }
 
-ShaderModule::ShaderModule(const std::filesystem::path& path, LogicalDevice& device)
+ShaderModule::ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device)
 {
 	m_Device = &device;
+	m_Type = type;
 
 	std::ifstream stream(path.string(), std::ios::ate | std::ios::binary);
 
