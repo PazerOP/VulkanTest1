@@ -30,7 +30,8 @@ void Mesh::Draw(const vk::CommandBuffer& cmdBuf) const
 	cmdBuf.drawIndexed(m_VertexList->GetIndexCount(), 1, 0, 0, 0);
 }
 
-Mesh::Mesh(const std::shared_ptr<const IVertexList>& vertexList, LogicalDevice& device)
+Mesh::Mesh(const std::shared_ptr<const IVertexList>& vertexList, LogicalDevice& device) :
+	m_Device(device)
 {
 	m_Buffer.emplace(device, vertexList->GetVertexDataSize() + vertexList->GetIndexDataSize(),
 					 vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,

@@ -21,6 +21,8 @@ public:
 private:
 	Mesh(const std::shared_ptr<const IVertexList>& vertexList, LogicalDevice& device);
 
+	LogicalDevice& m_Device;
+
 	std::shared_ptr<const IVertexList> m_VertexList;
 	std::optional<Buffer> m_Buffer;
 };

@@ -129,9 +129,11 @@
     <ClInclude Include="GraphicsPipelineCreateInfo.h" />
     <ClInclude Include="IGameObject.h" />
     <ClInclude Include="IVertexList.h" />
+    <ClInclude Include="JSON.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="GraphicsPipeline.h" />
     <ClInclude Include="ShaderModule.h" />
@@ -159,6 +161,7 @@
     <ClCompile Include="GameObjectManager.cpp" />
     <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="GraphicsPipelineCreateInfo.cpp" />
+    <ClCompile Include="JSON.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />

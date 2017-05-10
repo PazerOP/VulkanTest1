@@ -25,20 +25,19 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 
 	// Create staging image
 	vk::UniqueImage stagingImage;
-	vk::ImageCreateInfo imgCreateInfo;
 	{
-		imgCreateInfo.setImageType(vk::ImageType::e2D);
-		imgCreateInfo.setExtent(vk::Extent3D(w, h, 1));
-		imgCreateInfo.setMipLevels(1);
-		imgCreateInfo.setArrayLayers(1);
-		imgCreateInfo.setFormat(vk::Format::eR8G8B8A8Unorm);
-		imgCreateInfo.setTiling(vk::ImageTiling::eLinear);
-		imgCreateInfo.setInitialLayout(vk::ImageLayout::ePreinitialized);
-		imgCreateInfo.setUsage(vk::ImageUsageFlagBits::eTransferSrc);
-		imgCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
-		imgCreateInfo.setSamples(vk::SampleCountFlagBits::e1);
+		m_ImageCreateInfo.setImageType(vk::ImageType::e2D);
+		m_ImageCreateInfo.setExtent(vk::Extent3D(w, h, 1));
+		m_ImageCreateInfo.setMipLevels(1);
+		m_ImageCreateInfo.setArrayLayers(1);
+		m_ImageCreateInfo.setFormat(vk::Format::eR8G8B8A8Unorm);
+		m_ImageCreateInfo.setTiling(vk::ImageTiling::eLinear);
+		m_ImageCreateInfo.setInitialLayout(vk::ImageLayout::ePreinitialized);
+		m_ImageCreateInfo.setUsage(vk::ImageUsageFlagBits::eTransferSrc);
+		m_ImageCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
+		m_ImageCreateInfo.setSamples(vk::SampleCountFlagBits::e1);
 
-		stagingImage = m_Device->createImageUnique(imgCreateInfo);
+		stagingImage = m_Device->createImageUnique(m_ImageCreateInfo);
 	}
 
 	// Allocate staging memory
@@ -88,10 +87,10 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 
 	// Setup final image
 	{
-		imgCreateInfo.setTiling(vk::ImageTiling::eOptimal);
-		imgCreateInfo.setUsage(vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
+		m_ImageCreateInfo.setTiling(vk::ImageTiling::eOptimal);
+		m_ImageCreateInfo.setUsage(vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
 
-		m_Image = m_Device->createImageUnique(imgCreateInfo);
+		m_Image = m_Device->createImageUnique(m_ImageCreateInfo);
 	}
 
 	// Alloc final device memory
@@ -109,10 +108,22 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 
 	// Copy from staging to final
 	{
-		TransitionImageLayout(stagingImage.get(), imgCreateInfo.format, imgCreateInfo.initialLayout, vk::ImageLayout::eTransferSrcOptimal);
-		TransitionImageLayout(m_Image.get(), imgCreateInfo.format, imgCreateInfo.initialLayout, vk::ImageLayout::eTransferDstOptimal);
+		TransitionImageLayout(stagingImage.get(), m_ImageCreateInfo.format, m_ImageCreateInfo.initialLayout, vk::ImageLayout::eTransferSrcOptimal);
+		TransitionImageLayout(m_Image.get(), m_ImageCreateInfo.format, m_ImageCreateInfo.initialLayout, vk::ImageLayout::eTransferDstOptimal);
 		CopyImage(stagingImage.get(), m_Image.get(), w, h);
 	}
+}
+
+void Texture::CreateImageView()
+{
+	m_ImageViewCreateInfo.setImage(m_Image.get());
+	m_ImageViewCreateInfo.setViewType(vk::ImageViewType::e2D);
+	m_ImageViewCreateInfo.setFormat(m_ImageCreateInfo.format);
+	m_ImageViewCreateInfo.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
+	m_ImageViewCreateInfo.subresourceRange.setLevelCount(1);
+	m_ImageViewCreateInfo.subresourceRange.setLayerCount(1);
+
+	m_ImageView = m_Device->createImageViewUnique(m_ImageViewCreateInfo);
 }
 
 void Texture::TransitionImageLayout(const vk::Image& img, vk::Format /*format*/, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)

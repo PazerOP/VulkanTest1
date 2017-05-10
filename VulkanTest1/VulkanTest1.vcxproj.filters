@@ -33,6 +33,9 @@
     <Filter Include="Libraries\stb">
       <UniqueIdentifier>{9ab31d46-5b01-4991-a01c-9c7360d50c85}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Filetypes">
+      <UniqueIdentifier>{1df33123-56df-47c4-8cef-9f8515a20045}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FixedWindows.h">
@@ -126,6 +129,12 @@
     <ClInclude Include="VulkanHelpers.h">
       <Filter>Engine\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON.h">
+      <Filter>Filetypes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -190,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="VulkanHelpers.cpp">
       <Filter>Engine\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="JSON.cpp">
+      <Filter>Filetypes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
