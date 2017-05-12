@@ -1,6 +1,7 @@
 #pragma once
 #include "Buffer.h"
 #include "GraphicsPipelineCreateInfo.h"
+#include "ShaderType.h"
 
 #include <functional>
 #include <optional>
@@ -8,7 +9,7 @@
 class GraphicsPipeline
 {
 public:
-	static std::unique_ptr<GraphicsPipeline> Create(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo);
+	GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo);
 
 	const GraphicsPipelineCreateInfo& GetCreateInfo() const { return *m_CreateInfo; }
 
@@ -30,8 +31,6 @@ public:
 	void Update();
 
 private:
-	GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo);
-
 	void CreateDescriptorSetLayout();
 	void CreateUniformBuffer();
 	void CreateDescriptorPool();

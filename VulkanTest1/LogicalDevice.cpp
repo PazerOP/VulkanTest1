@@ -5,15 +5,9 @@
 #include "GraphicsPipelineCreateInfo.h"
 #include "Log.h"
 #include "Mesh.h"
+#include "ShaderGroupManager.h"
 #include "Swapchain.h"
 #include "Texture.h"
-
-std::unique_ptr<LogicalDevice> LogicalDevice::Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
-{
-	auto retVal = std::unique_ptr<LogicalDevice>(new LogicalDevice());
-	retVal->Init(physicalDevice);
-	return retVal;
-}
 
 const vk::Queue& LogicalDevice::GetQueue(QueueType q) const
 {
@@ -117,8 +111,30 @@ void LogicalDevice::SubmitCommandBuffers(const std::initializer_list<vk::Command
 	Get().waitIdle();
 }
 
+LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physicalDevice) :
+	m_PhysicalDeviceData(physicalDevice)
+{
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+	ChooseQueueFamilies();
+
+	InitDevice();
+
+	m_ShaderGroupDataManagerInstance.emplace();
+	m_ShaderGroupManagerInstance.emplace(*this);
+	m_MaterialDataManagerInstance.emplace();
+
+	InitSwapchain();
+	InitGraphicsPipeline();
+	InitFramebuffers();
+	InitCommandPool();
+	InitCommandBuffers();
+	InitSemaphores();
+}
+
 LogicalDevice::~LogicalDevice()
 {
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
 	Get().waitIdle();
 
 	// Semaphores
@@ -137,23 +153,12 @@ LogicalDevice::~LogicalDevice()
 
 	m_TestVertexBuffer.reset();
 
+	m_MaterialDataManagerInstance.reset();
+	m_ShaderGroupManagerInstance.reset();
+	m_ShaderGroupDataManagerInstance.reset();
+
 	// Device
 	m_LogicalDevice.reset();
-}
-
-void LogicalDevice::Init(const std::shared_ptr<PhysicalDeviceData>& physicalDevice)
-{
-	m_PhysicalDeviceData = physicalDevice;
-
-	ChooseQueueFamilies();
-
-	InitDevice();
-	InitSwapchain();
-	InitGraphicsPipeline();
-	InitFramebuffers();
-	InitCommandPool();
-	InitCommandBuffers();
-	InitSemaphores();
 }
 
 void LogicalDevice::InitDevice()
@@ -208,7 +213,7 @@ void LogicalDevice::InitSwapchain()
 	auto swapchainData = std::shared_ptr<SwapchainData>(new SwapchainData(
 		m_PhysicalDeviceData->GetPhysicalDevice(), GetData().GetWindowSurface()));
 
-	m_Swapchain = Swapchain::Create(swapchainData, *this);
+	m_Swapchain.emplace(swapchainData, *this);
 }
 
 void LogicalDevice::InitGraphicsPipeline()
@@ -216,18 +221,15 @@ void LogicalDevice::InitGraphicsPipeline()
 	Log::TagMsg(TAG, "Creating graphics pipeline...");
 
 	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(*this);
-
-	createInfo->SetShader(ShaderModule::Create("shaders/simple_vertex.spv", ShaderType::Vertex, *this));
-	createInfo->SetShader(ShaderModule::Create("shaders/simple_pixel.spv", ShaderType::Pixel, *this));
-
-	m_GraphicsPipeline = GraphicsPipeline::Create(createInfo);
+	createInfo->SetShaderGroup(ShaderGroupManager::Instance().FindShaderGroup("test_shader_group"));
+	m_GraphicsPipeline.emplace(createInfo);
 }
 
 void LogicalDevice::InitFramebuffers()
 {
 	Log::TagMsg(TAG, "Creating framebuffers...");
 
-	((ISwapchain_LogicalDeviceFriends*)m_Swapchain.get())->CreateFramebuffers();
+	((ISwapchain_LogicalDeviceFriends*)&m_Swapchain.value())->CreateFramebuffers();
 }
 
 void LogicalDevice::InitCommandPool()
@@ -273,7 +275,8 @@ void LogicalDevice::InitCommandBuffers()
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
 	m_TestVertexBuffer = Mesh::Create(GetTestVertexList(), *this);
-	m_TestTexture = Texture::Create("../statue.jpg", this);
+
+	auto testTexture = Texture::Create("../statue.jpg", this);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{
@@ -321,7 +324,7 @@ void LogicalDevice::RecreateSwapchain()
 {
 	Get().waitIdle();
 
-	((ISwapchain_LogicalDeviceFriends*)m_Swapchain.get())->Recreate(
+	((ISwapchain_LogicalDeviceFriends*)&m_Swapchain.value())->Recreate(
 		std::make_shared<SwapchainData>(GetData().GetPhysicalDevice(), GetData().GetWindowSurface()));
 
 	InitGraphicsPipeline();

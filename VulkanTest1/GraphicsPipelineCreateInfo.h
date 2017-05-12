@@ -1,24 +1,21 @@
 #pragma once
-#include "ShaderModule.h"
 
 class LogicalDevice;
-class Swapchain;
+class ShaderGroup;
 
 class GraphicsPipelineCreateInfo
 {
 public:
-	GraphicsPipelineCreateInfo();
 	GraphicsPipelineCreateInfo(LogicalDevice& device);
 
-	const LogicalDevice& GetDevice() const { assert(m_Device); return *m_Device; }
-	LogicalDevice& GetDevice() { assert(m_Device); return *m_Device; }
+	const LogicalDevice& GetDevice() const { return m_Device; }
+	LogicalDevice& GetDevice() { return m_Device; }
 
-	const ShaderModule* GetShader(ShaderType type) const;
-	ShaderModule* GetShader(ShaderType type) { return const_cast<ShaderModule*>(const_this(this)->GetShader(type)); }
-	void SetShader(const std::shared_ptr<ShaderModule>& shader);
+	const std::shared_ptr<ShaderGroup>& GetShaderGroup() const { return m_ShaderGroup; }
+	void SetShaderGroup(const std::shared_ptr<ShaderGroup>& shaderGroup) { m_ShaderGroup = shaderGroup; }
 
 private:
-	std::shared_ptr<ShaderModule> m_Shaders[underlying_value(ShaderType::Count)];
+	std::shared_ptr<ShaderGroup> m_ShaderGroup;
 
-	LogicalDevice* m_Device;
+	LogicalDevice& m_Device;
 };

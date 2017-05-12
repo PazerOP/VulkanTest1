@@ -1,9 +1,11 @@
 #pragma once
+#include "LogicalDevice.h"
+
+#include <optional>
 #include <set>
 #include <vulkan\vulkan.hpp>
 
 class GraphicsPipeline;
-class LogicalDevice;
 class Swapchain;
 
 class rkrp_vulkan_exception : public std::runtime_error
@@ -38,7 +40,7 @@ private:
 	void InitDevice();
 
 	vk::UniqueInstance m_Instance;
-	std::unique_ptr<LogicalDevice> m_LogicalDevice;
+	std::optional<LogicalDevice> m_LogicalDevice;
 	vk::UniqueSurfaceKHR m_WindowSurface;
 
 	static constexpr const char TAG[] = "[VulkanImpl] ";

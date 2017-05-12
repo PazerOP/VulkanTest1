@@ -33,6 +33,8 @@ void Mesh::Draw(const vk::CommandBuffer& cmdBuf) const
 Mesh::Mesh(const std::shared_ptr<const IVertexList>& vertexList, LogicalDevice& device) :
 	m_Device(device)
 {
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
 	m_Buffer.emplace(device, vertexList->GetVertexDataSize() + vertexList->GetIndexDataSize(),
 					 vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 					 vk::MemoryPropertyFlagBits::eDeviceLocal);

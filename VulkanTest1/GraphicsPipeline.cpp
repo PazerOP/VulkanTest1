@@ -2,16 +2,13 @@
 #include "GraphicsPipeline.h"
 #include "LogicalDevice.h"
 #include "SimpleVertex.h"
+#include "ShaderGroup.h"
 #include "Swapchain.h"
 #include "UniformBufferObject.h"
 #include "Vulkan.h"
 
+#include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
-
-std::unique_ptr<GraphicsPipeline> GraphicsPipeline::Create(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo)
-{
-	return std::unique_ptr<GraphicsPipeline>(new GraphicsPipeline(createInfo));
-}
 
 std::vector<vk::DescriptorSet> GraphicsPipeline::GetDescriptorSets() const
 {
@@ -52,9 +49,13 @@ void GraphicsPipeline::Update()
 	m_UniformObjectBuffer->Write(&ubo, sizeof(ubo), 0);
 }
 
-GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo)
+GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo) :
+	m_CreateInfo(createInfo)
 {
-	m_CreateInfo = createInfo;
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
+	if (!m_CreateInfo->GetShaderGroup())
+		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have a ShaderGroup set.");
 
 	CreateDescriptorSetLayout();
 	CreateUniformBuffer();
@@ -361,7 +362,7 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
 	for (std::underlying_type_t<ShaderType> i = 0; i < underlying_value(ShaderType::Count); i++)
 	{
-		const auto& current = m_CreateInfo->GetShader((ShaderType)i);
+		const auto& current = m_CreateInfo->GetShaderGroup()->GetModule((ShaderType)i);
 		if (!current)
 			continue;
 

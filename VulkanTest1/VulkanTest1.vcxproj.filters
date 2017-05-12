@@ -27,21 +27,24 @@
     <Filter Include="Engine\Graphics">
       <UniqueIdentifier>{13e0c615-bb33-4b34-9376-89cc68cb740a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Libraries">
-      <UniqueIdentifier>{8faa7871-61ed-4245-8980-8c22d238a69c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Libraries\stb">
-      <UniqueIdentifier>{9ab31d46-5b01-4991-a01c-9c7360d50c85}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Filetypes">
       <UniqueIdentifier>{1df33123-56df-47c4-8cef-9f8515a20045}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Support">
+      <UniqueIdentifier>{8faa7871-61ed-4245-8980-8c22d238a69c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Support\stb">
+      <UniqueIdentifier>{9ab31d46-5b01-4991-a01c-9c7360d50c85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Shaders">
+      <UniqueIdentifier>{9e152800-bbd0-4668-9c63-2136434845bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Materials">
+      <UniqueIdentifier>{eb8394ef-701d-4f03-9731-46ebec427f44}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FixedWindows.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Game.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Log.h">
@@ -118,7 +121,7 @@
     </ClInclude>
     <ClInclude Include="CompilerSettings.h" />
     <ClInclude Include="stb_image.h">
-      <Filter>Libraries\stb</Filter>
+      <Filter>Engine\Support\stb</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
@@ -129,18 +132,57 @@
     <ClInclude Include="VulkanHelpers.h">
       <Filter>Engine\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Material.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="JSON.h">
       <Filter>Filetypes</Filter>
+    </ClInclude>
+    <ClInclude Include="Drawable.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="IDrawable.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderParameterType.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderType.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGroup.h">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGroupData.h">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGroupDataManager.h">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderGroupManager.h">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="IMaterial.h">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialData.h">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialDataManager.h">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialManager.h">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="DataStore.h">
+      <Filter>Engine\Support</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Game.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Log.cpp">
@@ -189,7 +231,7 @@
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
     <ClCompile Include="stb_image.cpp">
-      <Filter>Libraries\stb</Filter>
+      <Filter>Engine\Support\stb</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
@@ -202,6 +244,33 @@
     </ClCompile>
     <ClCompile Include="JSON.cpp">
       <Filter>Filetypes</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGroup.cpp">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGroupData.cpp">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGroupDataManager.cpp">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderGroupManager.cpp">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialData.cpp">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialDataManager.cpp">
+      <Filter>Engine\Graphics\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialManager.cpp">
+      <Filter>Engine\Graphics\Materials</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

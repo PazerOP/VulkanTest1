@@ -244,12 +244,12 @@ void VulkanInstance::InitDevice()
 
 	Log::TagMsg(TAG, "Creating logical device with \"best\" physical device \"{0}\"...", physicalDevice->GetSuitabilityMessage());
 
-	m_LogicalDevice = LogicalDevice::Create(physicalDevice);
+	m_LogicalDevice.emplace(physicalDevice);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback)
 {
-	auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, __FUNCTION__);
+	auto func = (PFN_vkCreateDebugReportCallbackEXT)(void*)vkGetInstanceProcAddr(instance, __FUNCTION__);
 	assert(func);
 	if (!func)
 		return VkResult::VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -259,7 +259,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugReportCallbackEXT(VkInstance instanc
 
 VKAPI_ATTR void VKAPI_CALL vkDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator)
 {
-	auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, __FUNCTION__);
+	auto func = (PFN_vkDestroyDebugReportCallbackEXT)(void*)vkGetInstanceProcAddr(instance, __FUNCTION__);
 	assert(func);
 	if (!func)
 		return;
@@ -271,7 +271,7 @@ void VulkanInstance::AttachDebugMsgCallback()
 {
 	Log::TagMsg(TAG, "Attaching debug msg callback...");
 
-	auto func = (PFN_vkCreateDebugReportCallbackEXT)m_Instance->getProcAddr("vkCreateDebugReportCallbackEXT");
+	auto func = (PFN_vkCreateDebugReportCallbackEXT)(void*)m_Instance->getProcAddr("vkCreateDebugReportCallbackEXT");
 	assert(func);
 	if (func != nullptr)
 	{
@@ -311,7 +311,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::DebugCallback(VkDebugReportFlagsE
 	else if (flagBits & vk::DebugReportFlagBitsEXT::eDebug)
 		msgType = "[VULKAN DEBUG]";
 
-	Log::Msg("{0} {2}", msgType, obj, msg);
+	const std::string* objName = VulkanDebug::GetObjectName(obj);
+	if (objName)
+		Log::Msg("{0} {2}", msgType, *objName, msg);
+	else
+		Log::Msg("{0} {1}", msgType, msg);
+
 	assert(!(flagBits & vk::DebugReportFlagBitsEXT::eError));
 
 	return VK_FALSE;

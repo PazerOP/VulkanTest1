@@ -1,0 +1,26 @@
+{
+	"name": "test_shader_group",
+	"shaders": [
+		{
+			"type": "fragment",
+			"filename": "shaders/simple_pixel.spv",
+			"inputs": [
+				{
+					"binding": 1,
+					"parameter": "baseTexture"
+				}
+			]
+		},
+		{
+			"type": "vertex",
+			"filename": "shaders/simple_vertex.spv",
+			"inputs": []
+		}
+	],
+	"parameters": [
+		{
+			"name": "baseTexture",
+			"type": "texture"
+		}
+	]
+}

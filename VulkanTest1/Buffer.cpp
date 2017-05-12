@@ -7,6 +7,8 @@
 Buffer::Buffer(LogicalDevice& device, vk::DeviceSize size, const vk::BufferUsageFlags& bufFlags, const vk::MemoryPropertyFlags& memFlags) :
 	m_Device(device)
 {
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
 	m_CreateInfo.setSize(size);
 	m_CreateInfo.setUsage(bufFlags);
 	m_CreateInfo.setSharingMode(vk::SharingMode::eExclusive);

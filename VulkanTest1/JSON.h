@@ -1,6 +1,8 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -13,77 +15,67 @@ enum class JSONDataType
 	Object
 };
 
+class JSONValue;
+using JSONArray = std::vector<JSONValue>;
+using JSONObject = std::map<std::string, JSONValue>;
+
 class JSONValue
 {
 public:
-	JSONValue();
-	~JSONValue();
+	JSONValue() = default;
+	explicit JSONValue(double number) : m_Data(number) { }
+	explicit JSONValue(const std::string& str) : m_Data(str) { }
+	explicit JSONValue(bool boolean) : m_Data(boolean) { }
+	explicit JSONValue(const JSONArray& array) : m_Data(array) { }
+	explicit JSONValue(const JSONObject& object) : m_Data(object) { }
+
+	void Set(double number) { m_Data = number; }
+	void Set(const std::string& str) { m_Data.emplace<std::string>(str); }
+	void Set(bool boolean) { m_Data = boolean; }
+	void Set(const JSONArray& array) { m_Data = array; }
+	void Set(const JSONObject& object) { m_Data = object; }
+
+	double GetNumber() const { return std::get<double>(m_Data); }
+	bool GetBool() const { return std::get<bool>(m_Data); }
+
+	const std::string& GetString() const { return std::get<std::string>(m_Data); }
+	std::string& GetString() { return std::get<std::string>(m_Data); }
+
+	const JSONArray& GetArray() const { return std::get<JSONArray>(m_Data); }
+	JSONArray& GetArray() { return std::get<JSONArray>(m_Data); }
+
+	const JSONObject& GetObject() const { return std::get<JSONObject>(m_Data); }
+	JSONObject& GetObject() { return std::get<JSONObject>(m_Data); }
 
 private:
-	union
-	{
-		double m_Number;
-		std::string m_String;
-	} m_Data;
+	std::variant<double, std::string, bool, JSONArray, JSONObject> m_Data;
 };
 
-class JSONObject
+class json_parsing_error : public std::runtime_error
 {
 public:
-
-private:
-	std::vector<JSONValue> m_Values;
+	json_parsing_error(const char* msg) : std::runtime_error(msg) { }
+	json_parsing_error(const std::string& msg) : std::runtime_error(msg) { }
 };
 
 class JSONSerializer
 {
 public:
-
+	static JSONValue FromFile(const std::filesystem::path& path);
+	static JSONValue FromString(const std::string& str);
 
 private:
+	static constexpr char ESCAPE_CHAR = '\\';
 
+	static bool IsEscaped(const char* input);
+	static bool IsNumber(char input);
+	static void EatWhitespace(const char** input);
+
+	static JSONObject GatherObject(const char** input);
+	static JSONArray GatherArray(const char** input);
+	static JSONValue GatherValue(const char** input);
+
+	static double GatherNumber(const char** input);
+	static std::string GatherString(const char** input);
+	static std::pair<std::string, JSONValue> GatherNamedValue(const char** input);
 };
-
-namespace JSON
-{
-	namespace internal
-	{
-		// Dumb hack to get std::variant to contain itself
-		struct PlaceholderArray final
-		{
-			PlaceholderArray();
-			PlaceholderArray(const PlaceholderArray& other);
-			PlaceholderArray(PlaceholderArray&& other);
-			~PlaceholderArray();
-		private:
-			uint8_t placeholder[32];
-		};
-		struct PlaceholderObject final
-		{
-			PlaceholderObject();
-			PlaceholderObject(const PlaceholderObject& other);
-			PlaceholderObject(PlaceholderObject&& other);
-			~PlaceholderObject();
-		private:
-			uint8_t placeholder[24];
-		};
-
-		using Variant = std::variant<double, std::string, bool, PlaceholderArray, PlaceholderObject>;
-
-		using RealArray = std::vector<Variant>;
-		constexpr auto PLACEHOLDER_ARRAY_SIZE = sizeof(PlaceholderArray);
-		constexpr auto ACTUAL_ARRAY_SIZE = sizeof(RealArray);
-		static_assert(PLACEHOLDER_ARRAY_SIZE == ACTUAL_ARRAY_SIZE, "Array placeholder size mismatch!");
-
-		using RealObject = std::map<std::string, Variant>;
-		constexpr auto PLACEHOLDER_OBJECT_SIZE = sizeof(PlaceholderObject);
-		constexpr auto ACTUAL_OBJECT_SIZE = sizeof(RealObject);
-		static_assert(PLACEHOLDER_OBJECT_SIZE == ACTUAL_OBJECT_SIZE, "Object placeholder size mismatch!");
-	}
-
-	using Array = internal::RealArray;
-	using Object = internal::RealObject;
-	using Value = std::variant<double, std::string, bool, Array, Object>;
-
-	extern Value LoadFromString(const std::string& str);
-}

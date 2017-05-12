@@ -5,11 +5,6 @@
 #include "LogicalDevice.h"
 #include "PhysicalDeviceData.h"
 
-std::unique_ptr<Swapchain> Swapchain::Create(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device)
-{
-	return std::unique_ptr<Swapchain>(new Swapchain(data, device));
-}
-
 std::vector<vk::Framebuffer> Swapchain::GetFramebuffers() const
 {
 	std::vector<vk::Framebuffer> retVal;
@@ -20,15 +15,15 @@ std::vector<vk::Framebuffer> Swapchain::GetFramebuffers() const
 	return retVal;
 }
 
-Swapchain::Swapchain(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device)
+Swapchain::Swapchain(const std::shared_ptr<const SwapchainData>& data, LogicalDevice& device) :
+	m_Data(data), m_Device(device)
 {
-	Init(data, device);
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+	Init();
 }
 
-void Swapchain::Init(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice & device)
+void Swapchain::Init()
 {
-	m_Device = &device;
-	m_Data = data;
 	m_InitValues = m_Data->GetBestValues();
 
 	CreateSwapchain();
@@ -130,5 +125,6 @@ void Swapchain::CreateFramebuffers()
 
 void Swapchain::Recreate(const std::shared_ptr<const SwapchainData>& data)
 {
-	Init(data, *m_Device);
+	m_Data = data;
+	Init();
 }

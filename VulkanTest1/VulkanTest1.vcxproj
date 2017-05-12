@@ -64,6 +64,7 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="Shared.props" />
+    <Import Project="Shared_Release.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -72,6 +73,7 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="Shared.props" />
+    <Import Project="Shared_Release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -100,8 +102,6 @@
     <ClCompile>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -123,20 +123,33 @@
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CompilerSettings.h" />
+    <ClInclude Include="DataStore.h" />
+    <ClInclude Include="Drawable.h" />
     <ClInclude Include="FixedWindows.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObjectManager.h" />
     <ClInclude Include="GraphicsPipelineCreateInfo.h" />
+    <ClInclude Include="IDrawable.h" />
     <ClInclude Include="IGameObject.h" />
+    <ClInclude Include="IMaterial.h" />
     <ClInclude Include="IVertexList.h" />
     <ClInclude Include="JSON.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="MaterialData.h" />
+    <ClInclude Include="MaterialDataManager.h" />
+    <ClInclude Include="MaterialManager.h" />
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="GraphicsPipeline.h" />
+    <ClInclude Include="ShaderGroup.h" />
+    <ClInclude Include="ShaderGroupData.h" />
+    <ClInclude Include="ShaderGroupDataManager.h" />
+    <ClInclude Include="ShaderGroupManager.h" />
     <ClInclude Include="ShaderModule.h" />
+    <ClInclude Include="ShaderParameterType.h" />
+    <ClInclude Include="ShaderType.h" />
     <ClInclude Include="SimpleVertex.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
@@ -165,12 +178,22 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="MaterialData.cpp" />
+    <ClCompile Include="MaterialDataManager.cpp" />
+    <ClCompile Include="MaterialManager.cpp" />
     <ClCompile Include="PhysicalDeviceData.cpp" />
+    <ClCompile Include="ShaderGroup.cpp" />
+    <ClCompile Include="ShaderGroupData.cpp" />
+    <ClCompile Include="ShaderGroupDataManager.cpp" />
+    <ClCompile Include="ShaderGroupManager.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StringTools.cpp" />
     <ClCompile Include="Swapchain.cpp" />

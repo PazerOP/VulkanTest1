@@ -7,16 +7,37 @@
 #include "FixedWindows.h"
 #include <locale>
 
-void Log::MsgRaw(const std::string& str)
+LogType Log::s_Types = (LogType)(~std::underlying_type_t<LogType>(0));
+
+void Log::EnableType(LogType type)
 {
+	s_Types = LogType(underlying_value(s_Types) | underlying_value(type));
+}
+
+bool Log::IsTypeEnabled(LogType type)
+{
+	return (underlying_value(s_Types) & underlying_value(type)) == underlying_value(type);
+}
+
+void Log::DisableType(LogType type)
+{
+	s_Types = LogType(underlying_value(s_Types) & ~underlying_value(type));
+}
+
+void Log::MsgRaw(LogType type, const std::string& str)
+{
+	assert(str.data());
 	if (!str.data())
+		return;
+
+	if (!IsTypeEnabled(type))
 		return;
 
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 	OutputDebugStringW(converter.from_bytes(str).c_str());
 }
 
-void Log::BlockMsgRaw(std::string str, size_t charsPerLine)
+void Log::BlockMsgRaw(LogType type, std::string str, size_t charsPerLine)
 {
 	if (!charsPerLine)
 		throw std::invalid_argument("charsPerLine was 0");
@@ -97,5 +118,5 @@ void Log::BlockMsgRaw(std::string str, size_t charsPerLine)
 
 	str.insert(str.size(), "\n"sv);
 
-	MsgRaw(str);
+	MsgRaw(type, str);
 }

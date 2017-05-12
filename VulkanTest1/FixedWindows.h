@@ -6,6 +6,7 @@
 #include <Windows.h>
 
 #undef CreateWindow
+#undef GetObject
 
 //#undef min
 //#undef max

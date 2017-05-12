@@ -23,6 +23,7 @@
 
 #pragma warning(error : 4172)		// returning address of local variable or temporary
 #pragma warning(error : 4238)		// nonstandard extension used: class rvalue used as lvalue
+#pragma warning(error : 4265)		// 'class' : class has virtual functions, but destructor is not virtual
 #pragma warning(error : 4566)		// character represented by universal-character-name 'char' cannot be represented in the current code page (%d)
 
 

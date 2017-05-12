@@ -8,6 +8,7 @@ class Texture
 {
 public:
 	static std::unique_ptr<Texture> Create(const std::filesystem::path& imgPath, LogicalDevice* device = nullptr);
+	~Texture();
 
 private:
 	Texture(const std::filesystem::path& imgPath, LogicalDevice* device = nullptr);

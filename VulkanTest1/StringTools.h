@@ -1,11 +1,13 @@
 #pragma once
 #include <cassert>
+#include <filesystem>			// More to_string stuff
 #include <locale>
 #include <string>
 #include <string_view>
 #include <vector>
 #include <vulkan/vulkan.hpp>	// For all the to_string goodness
 
+#include "Util.h"
 #include "StringConverter.h"
 
 using namespace std::string_literals;
@@ -37,6 +39,7 @@ constexpr std::wstring_view operator "" sv(const wchar_t* str, size_t len) noexc
 inline std::string& to_string(std::string& str) { return str; }
 inline std::string to_string(const std::string& str) { return str; }
 inline std::string to_string(const char* str) { return std::string(str); }
+inline std::string to_string(const std::filesystem::path& path) { return path.string(); }
 
 class utf8_exception : public std::runtime_error
 {
@@ -54,11 +57,11 @@ public:
 
 	static void UnitTests();
 
-	template<class... Args> static std::string CSFormat(const char* fmt, Args... args) { return CSFormat(std::string(fmt), args...); }
+	template<class... Args> static std::string CSFormat(const char* fmt, const Args&... args) { return CSFormat(std::string(fmt), args...); }
 	static std::string CSFormat(const char* fmt) { return std::string(fmt); }
-	template<class... Args> static std::string CSFormat(std::string fmt, Args... args);
+	template<class... Args> static std::string CSFormat(std::string fmt, const Args&... args);
 	static std::string CSFormat(const std::string& fmt) { return fmt; }
-	template<class... Args> static std::string CSFormat(const std::string_view& fmt, Args... args) { return CSFormat(std::string(fmt), args...); }
+	template<class... Args> static std::string CSFormat(const std::string_view& fmt, const Args&... args) { return CSFormat(std::string(fmt), args...); }
 	static std::string CSFormat(const std::string_view& fmt) { return std::string(fmt); }
 
 	template<class CharT> static bool IsEscaped(const CharT* str, size_t offset, CharT escapeChar = '\\');
@@ -98,7 +101,7 @@ private:
 };
 
 template<class... Args>
-inline std::string StringTools::CSFormat(std::string fmt, Args... args)
+inline std::string StringTools::CSFormat(std::string fmt, const Args&... args)
 {
 	using namespace std;
 	std::string strArgs[] = { to_string(args)... };

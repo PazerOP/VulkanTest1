@@ -1,31 +1,14 @@
 #pragma once
+#include "ShaderType.h"
 
 #include <filesystem>
 
 class LogicalDevice;
 
-enum class ShaderType
-{
-	Vertex,
-	TessellationControl,
-	TessellationEvaluation,
-	Gemoetry,
-	Compute,
-	Fragment,
-	Pixel = Fragment,
-
-	Count,
-};
-__forceinline bool validate_enum_value(ShaderType value)
-{
-	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(ShaderType::Count);
-}
-
 class ShaderModule
 {
 public:
-	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path, ShaderType type);
-	static std::unique_ptr<ShaderModule> Create(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
+	ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
 
 	const std::filesystem::path& GetPath() const { return m_Path; }
 
@@ -41,7 +24,6 @@ public:
 	ShaderType GetType() const { return m_Type; }
 
 private:
-	ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
 
 	vk::UniqueShaderModule m_Shader;
 	LogicalDevice* m_Device;

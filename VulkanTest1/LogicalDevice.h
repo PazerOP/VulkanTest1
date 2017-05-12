@@ -1,7 +1,11 @@
 #pragma once
+#include "GraphicsPipeline.h"
+#include "MaterialDataManager.h"
 #include "PhysicalDeviceData.h"
+#include "ShaderGroupManager.h"
+#include "ShaderGroupDataManager.h"
+#include "Swapchain.h"
 #include "Util.h"
-#include "Vulkan.h"
 
 #include <memory>
 
@@ -24,7 +28,7 @@ class Texture;
 class LogicalDevice
 {
 public:
-	static std::unique_ptr<LogicalDevice> Create(const std::shared_ptr<PhysicalDeviceData>& physicalDevice);
+	LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physicalDevice);
 	~LogicalDevice();
 
 	const PhysicalDeviceData& GetData() const { assert(m_PhysicalDeviceData); return *m_PhysicalDeviceData; }
@@ -53,10 +57,12 @@ public:
 	void SubmitCommandBuffers(const vk::CommandBuffer& cmdBuf, QueueType q = QueueType::Graphics) const;
 	void SubmitCommandBuffers(const std::initializer_list<vk::CommandBuffer>& cmdBufs, QueueType q = QueueType::Graphics) const;
 
-private:
-	LogicalDevice() = default;
-	void Init(const std::shared_ptr<PhysicalDeviceData>& physicalDevice);
+	// a LogicalDevice should never be assigned, this is here to make
+	// passing references everywhere to ourselves a safer prospect
+	LogicalDevice& operator=(const LogicalDevice& rhs) = delete;
+	LogicalDevice& operator=(LogicalDevice&& rhs) = delete;
 
+private:
 	void InitDevice();
 	void InitSwapchain();
 	void InitGraphicsPipeline();
@@ -72,16 +78,20 @@ private:
 	void ChooseQueueFamilies();
 
 	std::unique_ptr<Mesh> m_TestVertexBuffer;
-	std::unique_ptr<Texture> m_TestTexture;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;
 
+	// These need to be initialized in a specific order
+	std::optional<ShaderGroupManager> m_ShaderGroupManagerInstance;
+	std::optional<ShaderGroupDataManager> m_ShaderGroupDataManagerInstance;
+	std::optional<MaterialDataManager> m_MaterialDataManagerInstance;
+
 	uint32_t m_QueueFamilies[underlying_value(QueueType::Count)];
 	vk::Queue m_Queues[underlying_value(QueueType::Count)];
 
-	std::unique_ptr<Swapchain> m_Swapchain;
-	std::unique_ptr<GraphicsPipeline> m_GraphicsPipeline;
+	std::optional<Swapchain> m_Swapchain;
+	std::optional<GraphicsPipeline> m_GraphicsPipeline;
 	vk::UniqueCommandPool m_CommandPool;
 	std::vector<vk::UniqueCommandBuffer> m_CommandBuffers;
 

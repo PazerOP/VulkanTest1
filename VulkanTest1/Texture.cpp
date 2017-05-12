@@ -4,6 +4,7 @@
 #include "LogicalDevice.h"
 #include "stb_image.h"
 #include "Vulkan.h"
+#include "VulkanDebug.h"
 #include "VulkanHelpers.h"
 
 std::unique_ptr<Texture> Texture::Create(const std::filesystem::path& imgPath, LogicalDevice* device)
@@ -11,13 +12,23 @@ std::unique_ptr<Texture> Texture::Create(const std::filesystem::path& imgPath, L
 	return std::unique_ptr<Texture>(new Texture(imgPath, device));
 }
 
+Texture::~Texture()
+{
+	m_ImageView.reset();
+	m_Image.reset();
+	m_DeviceMemory.reset();
+}
+
 Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 	m_Device(device ? *device : Vulkan().GetLogicalDevice())
 {
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
 	m_ImagePath = imgPath;
 
 	int w, h, channels;
-	auto rawImg = std::unique_ptr<stbi_uc>(stbi_load(imgPath.string().c_str(), &w, &h, &channels, STBI_rgb_alpha));
+	auto rawImg = std::shared_ptr<stbi_uc>(stbi_load(imgPath.string().c_str(), &w, &h, &channels, STBI_rgb_alpha),
+										   [](stbi_uc* i) { stbi_image_free(i); });
 	if (w <= 0 || h <= 0 || channels <= 0)
 		throw std::runtime_error(StringTools::CSFormat("Failed to load raw img in texture constructor: width {0}, height {1}, channels {2}", w, h, channels));
 
@@ -112,6 +123,9 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 		TransitionImageLayout(m_Image.get(), m_ImageCreateInfo.format, m_ImageCreateInfo.initialLayout, vk::ImageLayout::eTransferDstOptimal);
 		CopyImage(stagingImage.get(), m_Image.get(), w, h);
 	}
+
+	stagingImage.reset();
+	stagingMemory.reset();
 }
 
 void Texture::CreateImageView()

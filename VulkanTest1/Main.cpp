@@ -6,8 +6,10 @@
 #include <clocale>
 #include "FixedWindows.h"
 #include <glm/glm.hpp>
+#include "JSON.h"
 #include "Log.h"
 #include "LogicalDevice.h"
+#include "ShaderGroupData.h"
 #include "StringTools.h"
 #include "Vulkan.h"
 
@@ -53,7 +55,7 @@ int CALLBACK WinMain(
 	_In_ int nCmdShow)
 {
 	Log::BlockMsg(u8"{00} EPIC MEME START 🔥🔥🔥", u8"🔥🔥🔥");
-
+	
 	try
 	{
 		LocalMain().SetAppInstance(hInstance);

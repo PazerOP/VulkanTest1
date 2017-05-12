@@ -6,22 +6,17 @@
 
 #include <fstream>
 
-std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, ShaderType type)
-{
-	return Create(path, type, Vulkan().GetLogicalDevice());
-}
-
-std::unique_ptr<ShaderModule> ShaderModule::Create(const std::filesystem::path& path, ShaderType type, LogicalDevice& device)
-{
-	return std::unique_ptr<ShaderModule>(new ShaderModule(path, type, device));
-}
-
 ShaderModule::ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device)
 {
+	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
+
 	m_Device = &device;
 	m_Type = type;
 
 	std::ifstream stream(path.string(), std::ios::ate | std::ios::binary);
+
+	if (!stream.is_open())
+		throw std::runtime_error(StringTools::CSFormat("Failed to open file \"{0}\"", path));
 
 	const size_t fileSize = stream.tellg();
 	std::vector<char> codeBytes(fileSize);

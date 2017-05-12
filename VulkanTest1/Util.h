@@ -13,7 +13,7 @@
 #if _MSC_VER == 1910
 namespace std
 {
-	namespace experimental { namespace filesystem {} }
+	namespace experimental { namespace filesystem { } }
 	namespace filesystem = ::std::experimental::filesystem;
 }
 #endif

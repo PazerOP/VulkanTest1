@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "VulkanDebug.h"
 
+std::map<uint64_t, std::string> VulkanDebug::s_DebugNames;
+
 VKAPI_ATTR VkResult VKAPI_CALL vkDebugMarkerSetObjectNameEXT(
 	VkDevice                                    device,
 	VkDebugMarkerObjectNameInfoEXT*             pNameInfo)
@@ -14,12 +16,21 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDebugMarkerSetObjectNameEXT(
 	//return func(device, pNameInfo);
 }
 
-void VulkanDebug::SetObjectName(vk::Device device, const std::string& name)
+const std::string* VulkanDebug::GetObjectName(uint64_t objectID)
 {
-	vk::DebugMarkerObjectNameInfoEXT nameInfo;
-	nameInfo.setObjectType(vk::DebugReportObjectTypeEXT::eDevice);
-	nameInfo.setObject((uint64_t)(VkDevice)device);
-	nameInfo.setPObjectName(name.c_str());
+	auto found = s_DebugNames.find(objectID);
+	if (found != s_DebugNames.end())
+		return &(found->second);
 
-	device.debugMarkerSetObjectNameEXT(&nameInfo);
+	return nullptr;
+}
+
+void VulkanDebug::SetObjectName(const vk::Image& image, const std::string& name)
+{
+	SetObjectName((uint64_t)(VkImage)image, name);
+}
+
+void VulkanDebug::SetObjectName(uint64_t objectID, const std::string& name)
+{
+	s_DebugNames.insert_or_assign(objectID, name);
 }

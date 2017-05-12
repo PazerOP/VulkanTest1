@@ -21,7 +21,11 @@ private:
 class Swapchain : public ISwapchain_LogicalDeviceFriends
 {
 public:
-	static std::unique_ptr<Swapchain> Create(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
+	Swapchain(const std::shared_ptr<const SwapchainData>& data, LogicalDevice& device);
+	
+	// Stuff relies on us not moving around
+	Swapchain(const Swapchain& other) = delete;
+	Swapchain(Swapchain&& other) = delete;
 
 	const vk::SwapchainKHR* operator->() const { return m_Swapchain.operator->(); }
 	//vk::SwapchainKHR* operator->() { return &m_Swapchain.get(); }
@@ -37,11 +41,10 @@ public:
 
 	const SwapchainData::BestValues& GetInitValues() const { return *m_InitValues; }
 
-	const LogicalDevice& GetDevice() const { return *m_Device; }
+	const LogicalDevice& GetDevice() const { return m_Device; }
 
 private:
-	Swapchain(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
-	void Init(const std::shared_ptr<const SwapchainData>& data, const LogicalDevice& device);
+	void Init();
 
 	void CreateSwapchain();
 	void CreateImageViews();
@@ -51,7 +54,7 @@ private:
 
 	std::shared_ptr<const SwapchainData> m_Data;
 	std::shared_ptr<const SwapchainData::BestValues> m_InitValues;
-	const LogicalDevice* m_Device;
+	LogicalDevice& m_Device;
 
 	std::vector<vk::Image> m_SwapchainImages;
 	std::vector<vk::UniqueImageView> m_SwapchainImageViews;
