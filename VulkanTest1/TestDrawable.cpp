@@ -12,9 +12,9 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 	SimpleVertex v[4] =
 	{
 		{ { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
-		{ { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } },
+		{ { 0.5f, -0.5f }, { 0.5f, 1.0f, 0.0f } },
+		{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f, 0.5f }, { 0.5f, 0.0f, 1.0f } },
 	};
 
 	retVal->AddVertex({ v[0], v[1], v[2], v[2], v[3], v[0] });

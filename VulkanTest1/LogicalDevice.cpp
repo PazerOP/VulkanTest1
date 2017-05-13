@@ -148,17 +148,24 @@ LogicalDevice::~LogicalDevice()
 	m_RenderPass.reset();
 	m_Swapchain.reset();
 
-	// Command buffers
+	// Command buffers/pool
 	m_CommandBuffers.clear();
-
-	// Command pool
 	m_CommandPool.reset();
 
+	// Test
 	m_TestDrawable.reset();
 
+	// Manager instances
+	m_MaterialManagerInstance.reset();
 	m_MaterialDataManagerInstance.reset();
 	m_ShaderGroupManagerInstance.reset();
 	m_ShaderGroupDataManagerInstance.reset();
+
+	// Built-in uniform buffers
+	m_BuiltinUniformBuffers.reset();
+
+	// Descriptor pool
+	m_DescriptorPool.reset();
 
 	// Device
 	m_LogicalDevice.reset();
@@ -323,7 +330,7 @@ void LogicalDevice::InitCommandBuffers()
 
 	m_TestDrawable.emplace(*this);
 
-	auto testTexture = Texture::Create("../statue.jpg", this);
+	//auto testTexture = Texture::Create("../statue.jpg", this);
 
 	for (size_t i = 0; i < framebuffers.size(); i++)
 	{

@@ -296,9 +296,6 @@
     <ClCompile Include="Transform.cpp">
       <Filter>Engine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="TestDrawable.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
     <ClCompile Include="Drawable.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
@@ -306,6 +303,9 @@
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
     <ClCompile Include="BuiltinUniformBuffers.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="TestDrawable.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
   </ItemGroup>

@@ -29,6 +29,7 @@ void BuiltinUniformBuffers::Update()
 		m_Buffers[Enums::value_to_index(Type::Time)]->Write(&time, sizeof(time), 0);
 	}
 
+	time = 0;
 	// Transform
 	{
 		BuiltinTransformBuffer ubo;
@@ -40,7 +41,6 @@ void BuiltinUniformBuffers::Update()
 
 		m_Buffers[Enums::value_to_index(Type::Transform)]->Write(&ubo, sizeof(ubo), 0);
 	}
-
 }
 
 std::vector<vk::DescriptorSet> BuiltinUniformBuffers::GetDescriptorSets() const
