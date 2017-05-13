@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ShaderGroupData.h"
 
+#include "BuiltinUniformBuffers.h"
+
 ShaderGroupData::ShaderGroupData(const std::filesystem::path& path) :
 	ShaderGroupData(JSONSerializer::FromFile(path).GetObject())
 {
@@ -53,7 +55,7 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 		else if (!typeName.compare("fragment"))
 			def.m_Type = ShaderType::Fragment;
 		else
-			throw std::runtime_error(StringTools::CSFormat(__FUNCTION__ ": Unexpected shader type \"{0}\"", typeName));
+			throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Unexpected shader type \"{0}\"", typeName));
 
 		for (const JSONValue& input : shaderObj.find("inputs")->second.GetArray())
 		{
@@ -73,7 +75,16 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 	}
 }
 
-bool ShaderGroupData::IsValidParameterName(const std::string& paramName)
+bool ShaderGroupData::IsValidParameterName(const std::string& paramName) const
 {
-	return m_Parameters.find(paramName) != m_Parameters.end();
+	if (m_Parameters.find(paramName) != m_Parameters.end())
+		return true;
+
+	if (std::find_if(BuiltinUniformBuffers::Names.begin(), BuiltinUniformBuffers::Names.end(),
+					 [&paramName](const char* s) { return !paramName.compare(s); }) != BuiltinUniformBuffers::Names.end())
+	{
+		return true;
+	}
+
+	return false;
 }

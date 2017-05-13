@@ -5,8 +5,9 @@
 
 enum class LogType
 {
-	Misc = (1 << 0),
-	ObjectLifetime = (1 << 1),
+	Misc,
+	ObjectLifetime,
+	Exception,
 };
 
 class Log final

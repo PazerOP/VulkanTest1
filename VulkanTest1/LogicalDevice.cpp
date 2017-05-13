@@ -12,18 +12,20 @@
 
 const vk::Queue& LogicalDevice::GetQueue(QueueType q) const
 {
-	assert(validate_enum_value(q));
-	return m_Queues[underlying_value(q)];
+	assert(Enums::validate(q));
+	return m_Queues[Enums::value(q)];
 }
 
 uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
 {
-	assert(validate_enum_value(q));
-	return m_QueueFamilies[underlying_value(q)];
+	assert(Enums::validate(q));
+	return m_QueueFamilies[Enums::value(q)];
 }
 
 void LogicalDevice::DrawFrame()
 {
+	m_BuiltinUniformBuffers->Update();
+
 	using namespace std::chrono_literals;
 	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::chrono::nanoseconds(1s).count(), *m_ImageAvailableSemaphore, nullptr);
 	assert(result.result == vk::Result::eSuccess);
@@ -117,6 +119,8 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 	ChooseQueueFamilies();
 
 	InitDevice();
+	InitDescriptorPool();
+	m_BuiltinUniformBuffers.emplace(*this);
 
 	m_ShaderGroupDataManagerInstance.emplace(*this);
 	m_ShaderGroupManagerInstance.emplace(*this);
@@ -150,7 +154,7 @@ LogicalDevice::~LogicalDevice()
 	// Command pool
 	m_CommandPool.reset();
 
-	m_TestVertexBuffer.reset();
+	m_TestDrawable.reset();
 
 	m_MaterialDataManagerInstance.reset();
 	m_ShaderGroupManagerInstance.reset();
@@ -201,8 +205,23 @@ void LogicalDevice::InitDevice()
 
 	m_LogicalDevice = m_PhysicalDeviceData->GetPhysicalDevice().createDeviceUnique(deviceCreateInfo);
 
-	m_Queues[underlying_value(QueueType::Graphics)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
-	m_Queues[underlying_value(QueueType::Presentation)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
+	m_Queues[Enums::value(QueueType::Graphics)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Graphics), graphicsQueueIndex);
+	m_Queues[Enums::value(QueueType::Presentation)] = m_LogicalDevice->getQueue(GetQueueFamily(QueueType::Presentation), presentationQueueIndex);
+}
+
+void LogicalDevice::InitDescriptorPool()
+{
+	vk::DescriptorPoolSize poolSize;
+	poolSize.setType(vk::DescriptorType::eUniformBuffer);
+	poolSize.setDescriptorCount(10);
+
+	vk::DescriptorPoolCreateInfo createInfo;
+	createInfo.setPoolSizeCount(1);
+	createInfo.setPPoolSizes(&poolSize);
+	createInfo.setMaxSets(10);
+	createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+
+	m_DescriptorPool = Get().createDescriptorPoolUnique(createInfo);
 }
 
 void LogicalDevice::InitSwapchain()
@@ -288,24 +307,6 @@ void LogicalDevice::InitCommandPool()
 	m_CommandPool = Get().createCommandPoolUnique(createInfo);
 }
 
-#include "SimpleVertex.h"
-#include "VertexList.h"
-static UniqueVertexList<SimpleVertex> GetTestVertexList()
-{
-	UniqueVertexList<SimpleVertex> retVal = VertexList<SimpleVertex>::Create();
-
-	SimpleVertex v[4] =
-	{
-		{ { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
-		{ { 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
-		{ { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } },
-	};
-
-	retVal->AddVertex({ v[0], v[1], v[2], v[2], v[3], v[0] });
-
-	return retVal;
-}
 
 void LogicalDevice::InitCommandBuffers()
 {
@@ -320,8 +321,7 @@ void LogicalDevice::InitCommandBuffers()
 
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
-	m_TestMaterial = MaterialManager::Instance().Find("test_material");
-	m_TestVertexBuffer = Mesh::Create(GetTestVertexList(), *this);
+	m_TestDrawable.emplace(*this);
 
 	auto testTexture = Texture::Create("../statue.jpg", this);
 
@@ -350,9 +350,7 @@ void LogicalDevice::InitCommandBuffers()
 
 			cmdBuffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-			m_TestMaterial->GetPipeline().Update();
-			m_TestMaterial->Bind(cmdBuffer.get());
-			m_TestVertexBuffer->Draw(cmdBuffer.get());
+			m_TestDrawable->Draw(cmdBuffer.get());
 
 			cmdBuffer->endRenderPass();
 		}
@@ -387,16 +385,16 @@ void LogicalDevice::ChooseQueueFamilies()
 	const auto bestEverythingQueue = m_PhysicalDeviceData->ChooseBestQueue(true, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer);
 	if (bestEverythingQueue.has_value())
 	{
-		m_QueueFamilies[underlying_value(QueueType::Graphics)] =
-			m_QueueFamilies[underlying_value(QueueType::Presentation)] =
-			m_QueueFamilies[underlying_value(QueueType::Transfer)] =
+		m_QueueFamilies[Enums::value(QueueType::Graphics)] =
+			m_QueueFamilies[Enums::value(QueueType::Presentation)] =
+			m_QueueFamilies[Enums::value(QueueType::Transfer)] =
 			bestEverythingQueue->first;
 	}
 	else
 	{
 		// Separate queues
-		m_QueueFamilies[underlying_value(QueueType::Graphics)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
-		m_QueueFamilies[underlying_value(QueueType::Transfer)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eTransfer)->first;
-		m_QueueFamilies[underlying_value(QueueType::Presentation)] = m_PhysicalDeviceData->ChooseBestQueue(true)->first;
+		m_QueueFamilies[Enums::value(QueueType::Graphics)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eGraphics)->first;
+		m_QueueFamilies[Enums::value(QueueType::Transfer)] = m_PhysicalDeviceData->ChooseBestQueue(false, vk::QueueFlagBits::eTransfer)->first;
+		m_QueueFamilies[Enums::value(QueueType::Presentation)] = m_PhysicalDeviceData->ChooseBestQueue(true)->first;
 	}
 }

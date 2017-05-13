@@ -23,12 +23,6 @@ namespace std
 
 #define SV_MACRO(x)	std::string_view(x, std::size(x))
 
-template<class T>
-inline constexpr auto underlying_value(const T& in)
-{
-	return std::underlying_type_t<T>(in);
-}
-
 template<class TOut, class TIn>
 inline TOut overflow_check(const TIn& in)
 {

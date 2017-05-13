@@ -4,50 +4,7 @@
 #include "SimpleVertex.h"
 #include "ShaderGroup.h"
 #include "Swapchain.h"
-#include "UniformBufferObject.h"
 #include "Vulkan.h"
-
-#include <chrono>
-#include <glm/gtc/matrix_transform.hpp>
-
-std::vector<vk::DescriptorSet> GraphicsPipeline::GetDescriptorSets() const
-{
-	std::vector<vk::DescriptorSet> retVal;
-
-	for (const auto& unique : m_DescriptorSets)
-		retVal.push_back(unique.get());
-
-	return retVal;
-}
-
-std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
-{
-	std::vector<vk::DescriptorSetLayout> retVal;
-
-	for (const auto& unique : m_DescriptorSetLayouts)
-		retVal.push_back(unique.get());
-
-	return retVal;
-}
-
-void GraphicsPipeline::Update()
-{
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float>(currentTime - startTime).count();
-
-	m_UniformTimeBuffer->Write(&time, sizeof(time), 0);
-
-	UniformBufferObject ubo;
-	ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0, 0, 1));
-	ubo.view = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-
-	const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
-	ubo.proj = glm::perspective(glm::radians(45.0f), float(swapchainExtent.width) / swapchainExtent.height, 0.1f, 10.0f);
-
-	m_UniformObjectBuffer->Write(&ubo, sizeof(ubo), 0);
-}
 
 GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo) :
 	m_Device(device), m_CreateInfo(createInfo)
@@ -57,105 +14,8 @@ GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<
 	if (!m_CreateInfo->GetShaderGroup())
 		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have a ShaderGroup set.");
 
-	CreateDescriptorSetLayout();
-	CreateUniformBuffer();
-	CreateDescriptorPool();
-	CreateDescriptorSet();
+	InitDescriptorSets();
 	CreatePipeline();
-}
-
-void GraphicsPipeline::CreateDescriptorSetLayout()
-{
-	{
-		vk::DescriptorSetLayoutBinding uboLayoutBinding;
-		uboLayoutBinding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
-		uboLayoutBinding.setDescriptorCount(1);
-		uboLayoutBinding.setStageFlags(vk::ShaderStageFlagBits::eVertex);
-
-		vk::DescriptorSetLayoutCreateInfo createInfo;
-		createInfo.setBindingCount(1);
-		createInfo.setPBindings(&uboLayoutBinding);
-
-		m_DescriptorSetLayouts.push_back(GetDevice()->createDescriptorSetLayoutUnique(createInfo));
-	}
-
-	{
-		vk::DescriptorSetLayoutBinding timeLayoutBinding;
-		timeLayoutBinding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
-		timeLayoutBinding.setDescriptorCount(1);
-		timeLayoutBinding.setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-		vk::DescriptorSetLayoutCreateInfo createInfo;
-		createInfo.setBindingCount(1);
-		createInfo.setPBindings(&timeLayoutBinding);
-
-		m_DescriptorSetLayouts.push_back(GetDevice()->createDescriptorSetLayoutUnique(createInfo));
-	}
-}
-
-void GraphicsPipeline::CreateUniformBuffer()
-{
-	m_UniformObjectBuffer.emplace(GetDevice(), sizeof(UniformBufferObject), vk::BufferUsageFlagBits::eUniformBuffer,
-								  vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
-	m_UniformTimeBuffer.emplace(GetDevice(), sizeof(float), vk::BufferUsageFlagBits::eUniformBuffer,
-								vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
-}
-
-void GraphicsPipeline::CreateDescriptorPool()
-{
-	vk::DescriptorPoolSize poolSize;
-	poolSize.setType(vk::DescriptorType::eUniformBuffer);
-	poolSize.setDescriptorCount(10);
-
-	vk::DescriptorPoolCreateInfo createInfo;
-	createInfo.setPoolSizeCount(1);
-	createInfo.setPPoolSizes(&poolSize);
-	createInfo.setMaxSets(10);
-	createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
-
-	m_DescriptorPool = GetDevice()->createDescriptorPoolUnique(createInfo);
-}
-
-void GraphicsPipeline::CreateDescriptorSet()
-{
-	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
-
-	vk::DescriptorSetAllocateInfo allocInfo;
-	allocInfo.setDescriptorPool(m_DescriptorPool.get());
-	allocInfo.setDescriptorSetCount(descriptorSetLayouts.size());
-	allocInfo.setPSetLayouts(descriptorSetLayouts.data());
-
-	m_DescriptorSets = GetDevice()->allocateDescriptorSetsUnique(allocInfo);
-
-	std::vector<vk::DescriptorBufferInfo> bufferInfos;
-	{
-		{
-			bufferInfos.emplace_back();
-			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.back();
-			bufferInfo.setBuffer(m_UniformObjectBuffer->GetBuffer());
-			bufferInfo.setRange(sizeof(UniformBufferObject));
-		}
-		{
-			bufferInfos.emplace_back();
-			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.back();
-			bufferInfo.setBuffer(m_UniformTimeBuffer->GetBuffer());
-			bufferInfo.setRange(sizeof(float));
-		}
-	}
-
-	std::vector<vk::WriteDescriptorSet> descriptorWrites;
-	for (size_t i = 0; i < m_DescriptorSets.size(); i++)
-	{
-		descriptorWrites.emplace_back();
-		vk::WriteDescriptorSet& descriptorWrite = descriptorWrites.back();
-
-		descriptorWrite.setDstSet(m_DescriptorSets[i].get());
-		descriptorWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer);
-		descriptorWrite.setDescriptorCount(1);
-		descriptorWrite.setPBufferInfo(&bufferInfos[i]);
-	}
-
-	GetDevice()->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
 void GraphicsPipeline::CreatePipeline()
@@ -244,9 +104,9 @@ void GraphicsPipeline::CreatePipeline()
 	}
 
 	vk::PipelineLayoutCreateInfo plCreateInfo;
-	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
-	plCreateInfo.setSetLayoutCount(descriptorSetLayouts.size());
-	plCreateInfo.setPSetLayouts(descriptorSetLayouts.data());
+	const auto& descriptorSetLayout = GetDevice().GetBuiltinUniformBuffers().GetDescriptorSetLayout();
+	plCreateInfo.setSetLayoutCount(1);
+	plCreateInfo.setPSetLayouts(&descriptorSetLayout);
 
 	const auto device = GetCreateInfo().GetDevice().Get();
 	m_Layout = device.createPipelineLayoutUnique(plCreateInfo);
@@ -278,6 +138,11 @@ void GraphicsPipeline::CreatePipeline()
 	m_Pipeline = device.createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
+void GraphicsPipeline::InitDescriptorSets()
+{
+	m_DescriptorSets = GetDevice().GetBuiltinUniformBuffers().GetDescriptorSets();
+}
+
 vk::ShaderStageFlagBits GraphicsPipeline::ConvertShaderType(ShaderType type)
 {
 	switch (type)
@@ -302,9 +167,9 @@ vk::ShaderStageFlagBits GraphicsPipeline::ConvertShaderType(ShaderType type)
 std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderStageCreateInfos() const
 {
 	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
-	for (std::underlying_type_t<ShaderType> i = 0; i < underlying_value(ShaderType::Count); i++)
+	for (std::underlying_type_t<ShaderType> i = 0; i < Enums::count<ShaderType>(); i++)
 	{
-		const auto& current = m_CreateInfo->GetShaderGroup()->GetModule((ShaderType)i);
+		const auto& current = m_CreateInfo->GetShaderGroup()->GetModule(Enums::index_to_value<ShaderType>(i));
 		if (!current)
 			continue;
 

@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(set = 1, binding = 0) uniform TimeObj
+layout(set = 0, binding = 1) uniform TimeObj
 {
 	float seconds;
 } time;

@@ -19,5 +19,5 @@ public:
 private:
 	LogicalDevice& m_Device;
 	std::shared_ptr<const ShaderGroupData> m_Data;
-	std::shared_ptr<ShaderModule> m_Modules[underlying_value(ShaderType::Count)];
+	std::shared_ptr<ShaderModule> m_Modules[Enums::count<ShaderType>()];
 };

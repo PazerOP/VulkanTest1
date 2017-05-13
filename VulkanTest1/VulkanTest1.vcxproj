@@ -122,9 +122,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
+    <ClInclude Include="BuiltinUniformBuffers.h" />
     <ClInclude Include="CompilerSettings.h" />
     <ClInclude Include="DataStore.h" />
     <ClInclude Include="Drawable.h" />
+    <ClInclude Include="Enums.h" />
     <ClInclude Include="FixedWindows.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObjectManager.h" />
@@ -143,6 +145,7 @@
     <ClInclude Include="MaterialManager.h" />
     <ClInclude Include="PhysicalDeviceData.h" />
     <ClInclude Include="GraphicsPipeline.h" />
+    <ClInclude Include="QueueType.h" />
     <ClInclude Include="ShaderGroup.h" />
     <ClInclude Include="ShaderGroupData.h" />
     <ClInclude Include="ShaderGroupDataManager.h" />
@@ -152,8 +155,11 @@
     <ClInclude Include="ShaderType.h" />
     <ClInclude Include="SimpleVertex.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="TestDrawable.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="UniformBufferObject.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="UniformBuffer.h" />
+    <ClInclude Include="TransformBuffer.h" />
     <ClInclude Include="VertexList.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="stdafx.h" />
@@ -170,6 +176,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="BuiltinUniformBuffers.cpp" />
+    <ClCompile Include="Drawable.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObjectManager.cpp" />
     <ClCompile Include="GraphicsPipeline.cpp" />
@@ -199,7 +207,10 @@
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="SwapchainData.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="TestDrawable.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="VulkanDebug.cpp" />
     <ClCompile Include="VulkanHelpers.cpp" />

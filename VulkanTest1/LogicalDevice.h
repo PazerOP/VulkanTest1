@@ -1,27 +1,17 @@
 #pragma once
+#include "BuiltinUniformBuffers.h"
 #include "GraphicsPipeline.h"
 #include "MaterialDataManager.h"
 #include "MaterialManager.h"
 #include "PhysicalDeviceData.h"
+#include "QueueType.h"
 #include "ShaderGroupManager.h"
 #include "ShaderGroupDataManager.h"
 #include "Swapchain.h"
+#include "TestDrawable.h"
 #include "Util.h"
 
 #include <memory>
-
-enum class QueueType
-{
-	Graphics,
-	Presentation,
-	Transfer,
-
-	Count,
-};
-__forceinline bool validate_enum_value(QueueType value)
-{
-	return underlying_value(value) >= 0 && underlying_value(value) < underlying_value(QueueType::Count);
-}
 
 class Mesh;
 class Texture;
@@ -48,6 +38,11 @@ public:
 
 	vk::RenderPass GetRenderPass() const { return m_RenderPass.get(); }
 
+	vk::DescriptorPool GetDescriptorPool() const { return m_DescriptorPool.get(); }
+
+	const BuiltinUniformBuffers& GetBuiltinUniformBuffers() const { return m_BuiltinUniformBuffers.value(); }
+	BuiltinUniformBuffers& GetBuiltinUniformBuffers() { return m_BuiltinUniformBuffers.value(); }
+
 	void DrawFrame();
 
 	void WindowResized();
@@ -64,6 +59,7 @@ public:
 
 private:
 	void InitDevice();
+	void InitDescriptorPool();
 	void InitSwapchain();
 	void InitRenderPass();
 	void InitFramebuffers();
@@ -77,8 +73,7 @@ private:
 
 	void ChooseQueueFamilies();
 
-	std::shared_ptr<Material> m_TestMaterial;
-	std::unique_ptr<Mesh> m_TestVertexBuffer;
+	std::optional<TestDrawable> m_TestDrawable;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;
@@ -89,14 +84,16 @@ private:
 	std::optional<MaterialDataManager> m_MaterialDataManagerInstance;
 	std::optional<MaterialManager> m_MaterialManagerInstance;
 
-	uint32_t m_QueueFamilies[underlying_value(QueueType::Count)];
-	vk::Queue m_Queues[underlying_value(QueueType::Count)];
+	uint32_t m_QueueFamilies[Enums::count<QueueType>()];
+	vk::Queue m_Queues[Enums::count<QueueType>()];
 
 	std::optional<Swapchain> m_Swapchain;
 	vk::UniqueRenderPass m_RenderPass;
-	//std::optional<GraphicsPipeline> m_GraphicsPipeline;
 	vk::UniqueCommandPool m_CommandPool;
 	std::vector<vk::UniqueCommandBuffer> m_CommandBuffers;
+	vk::UniqueDescriptorPool m_DescriptorPool;
+
+	std::optional<BuiltinUniformBuffers> m_BuiltinUniformBuffers;
 
 	vk::UniqueSemaphore m_ImageAvailableSemaphore;
 	vk::UniqueSemaphore m_RenderFinishedSemaphore;

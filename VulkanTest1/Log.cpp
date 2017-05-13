@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Log.h"
 
+#include "Enums.h"
+
 #include <algorithm>
 #include <clocale>
 #include <codecvt>
@@ -11,17 +13,17 @@ LogType Log::s_Types = (LogType)(~std::underlying_type_t<LogType>(0));
 
 void Log::EnableType(LogType type)
 {
-	s_Types = LogType(underlying_value(s_Types) | underlying_value(type));
+	s_Types = LogType(Enums::value(s_Types) | Enums::value(type));
 }
 
 bool Log::IsTypeEnabled(LogType type)
 {
-	return (underlying_value(s_Types) & underlying_value(type)) == underlying_value(type);
+	return (Enums::value(s_Types) & Enums::value(type)) == Enums::value(type);
 }
 
 void Log::DisableType(LogType type)
 {
-	s_Types = LogType(underlying_value(s_Types) & ~underlying_value(type));
+	s_Types = LogType(Enums::value(s_Types) & ~Enums::value(type));
 }
 
 void Log::MsgRaw(LogType type, const std::string& str)

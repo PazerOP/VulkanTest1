@@ -22,17 +22,11 @@ public:
 	const vk::PipelineLayout GetPipelineLayout() const { return m_Layout.get(); }
 	vk::PipelineLayout GetPipelineLayout() { return m_Layout.get(); }
 
-	std::vector<vk::DescriptorSet> GetDescriptorSets() const;
-	std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
-
-	void Update();
+	const std::vector<vk::DescriptorSet>& GetDescriptorSets() const { return m_DescriptorSets; }
 
 private:
-	void CreateDescriptorSetLayout();
-	void CreateUniformBuffer();
-	void CreateDescriptorPool();
-	void CreateDescriptorSet();
 	void CreatePipeline();
+	void InitDescriptorSets();
 	static vk::ShaderStageFlagBits ConvertShaderType(ShaderType type);
 	std::vector<vk::PipelineShaderStageCreateInfo> GenerateShaderStageCreateInfos() const;
 
@@ -43,9 +37,7 @@ private:
 	vk::UniquePipelineLayout m_Layout;
 	vk::UniquePipeline m_Pipeline;
 
-	std::vector<vk::UniqueDescriptorSetLayout> m_DescriptorSetLayouts;
-	vk::UniqueDescriptorPool m_DescriptorPool;
-	std::vector<vk::UniqueDescriptorSet> m_DescriptorSets;
-	std::optional<Buffer> m_UniformObjectBuffer;
-	std::optional<Buffer> m_UniformTimeBuffer;
+	std::vector<vk::UniqueDescriptorSet> m_UniqueDescriptorSetHandles;
+	std::vector<vk::DescriptorSet> m_DescriptorSets;
+	std::vector<Buffer> m_UniformBuffers;
 };

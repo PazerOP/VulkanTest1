@@ -42,21 +42,12 @@
     <Filter Include="Engine\Graphics\Materials">
       <UniqueIdentifier>{eb8394ef-701d-4f03-9731-46ebec427f44}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Math">
+      <UniqueIdentifier>{7d21cb1d-c674-4e22-a90d-93807c13c4f2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FixedWindows.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Log.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Main.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="StringConverter.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="StringTools.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
@@ -115,9 +106,6 @@
     </ClInclude>
     <ClInclude Include="Mesh.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
-    </ClInclude>
-    <ClInclude Include="UniformBufferObject.h">
-      <Filter>Engine\Test</Filter>
     </ClInclude>
     <ClInclude Include="CompilerSettings.h" />
     <ClInclude Include="stb_image.h">
@@ -180,15 +168,42 @@
     <ClInclude Include="DataStore.h">
       <Filter>Engine\Support</Filter>
     </ClInclude>
+    <ClInclude Include="FixedWindows.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="StringConverter.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="StringTools.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="TestDrawable.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UniformBuffer.h">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="QueueType.h">
+      <Filter>Engine\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Enums.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="BuiltinUniformBuffers.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformBuffer.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Log.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="StringTools.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Window.cpp">
@@ -271,6 +286,27 @@
     </ClCompile>
     <ClCompile Include="MaterialManager.cpp">
       <Filter>Engine\Graphics\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="StringTools.cpp">
+      <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Engine\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="TestDrawable.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Drawable.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="UniformBuffer.cpp">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="BuiltinUniformBuffers.cpp">
+      <Filter>Engine\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

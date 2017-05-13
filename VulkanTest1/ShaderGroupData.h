@@ -7,6 +7,7 @@
 
 class ShaderGroupData
 {
+	using ShaderParameterList = std::map<std::string, std::vector<ShaderParameterType>>;
 public:
 	ShaderGroupData(const std::filesystem::path& path);
 	ShaderGroupData(const std::string& str);
@@ -15,7 +16,7 @@ public:
 	class ParseException : public std::runtime_error
 	{
 	private:
-		ParseException(const std::string& str) : std::runtime_error(str) { }
+		ParseException(const std::string& str) : std::runtime_error(str) { Log::Msg<LogType::Exception>(str); }
 		friend class ShaderGroupData;
 	};
 
@@ -37,12 +38,11 @@ public:
 	const auto& GetShaderDefinitions() const { return m_Shaders; }
 
 private:
-
 	std::filesystem::path m_Path;
 
-	bool IsValidParameterName(const std::string& paramName);
+	bool IsValidParameterName(const std::string& paramName) const;
 
 	std::string m_Name;
-	std::map<std::string, std::vector<ShaderParameterType>> m_Parameters;
+	ShaderParameterList m_Parameters;
 	std::vector<ShaderDefinition> m_Shaders;
 };
