@@ -17,15 +17,15 @@ std::unique_ptr<Mesh> Mesh::Create(const std::shared_ptr<const IVertexList>& ver
 
 void Mesh::Draw(const vk::CommandBuffer& cmdBuf) const
 {
-	const auto& pipeline = GetDevice().GetGraphicsPipeline();
+	//const auto& pipeline = GetDevice().GetGraphicsPipeline();
 
-	cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetPipeline());
+	//cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetPipeline());
 
 	cmdBuf.bindVertexBuffers(0, GetBuffer().GetBuffer(), vk::DeviceSize(0));
 	cmdBuf.bindIndexBuffer(GetBuffer().GetBuffer(), m_VertexList->GetVertexDataSize(), vk::IndexType::eUint32);
 
-	const auto& descriptorSets = pipeline.GetDescriptorSets();
-	cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+	//const auto& descriptorSets = pipeline.GetDescriptorSets();
+	//cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 
 	cmdBuf.drawIndexed(m_VertexList->GetIndexCount(), 1, 0, 0, 0);
 }

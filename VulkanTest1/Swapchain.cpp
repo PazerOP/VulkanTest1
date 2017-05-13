@@ -108,7 +108,7 @@ void Swapchain::CreateFramebuffers()
 	for (const auto& imgView : m_SwapchainImageViews)
 	{
 		vk::FramebufferCreateInfo createInfo;
-		createInfo.setRenderPass(GetDevice().GetGraphicsPipeline().GetRenderPass());
+		createInfo.setRenderPass(GetDevice().GetRenderPass());
 		createInfo.setAttachmentCount(1);
 
 		const vk::ImageView attachments[] = { imgView.get() };

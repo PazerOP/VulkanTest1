@@ -1,26 +1,13 @@
 #pragma once
-#include <map>
-#include <memory>
+#include "DataStore.h"
 
 class LogicalDevice;
 class ShaderGroup;
 
-class ShaderGroupManager
+class ShaderGroupManager : public DataStore<ShaderGroupManager, ShaderGroup>
 {
 public:
 	ShaderGroupManager(LogicalDevice& device);
-	~ShaderGroupManager();
-	static ShaderGroupManager& Instance();
 
-	void Reload();
-
-	std::shared_ptr<const ShaderGroup> FindShaderGroup(const std::string& name) const;
-	std::shared_ptr<ShaderGroup> FindShaderGroup(const std::string& name) { return std::const_pointer_cast<ShaderGroup>(const_this(this)->FindShaderGroup(name)); }
-
-private:
-	static ShaderGroupManager* s_Instance;
-
-	LogicalDevice& m_Device;
-
-	std::map<std::string, std::shared_ptr<ShaderGroup>> m_ShaderGroups;
+	void Reload() override;
 };

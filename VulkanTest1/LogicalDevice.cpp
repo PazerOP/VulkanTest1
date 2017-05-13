@@ -4,6 +4,7 @@
 #include "GraphicsPipeline.h"
 #include "GraphicsPipelineCreateInfo.h"
 #include "Log.h"
+#include "Material.h"
 #include "Mesh.h"
 #include "ShaderGroupManager.h"
 #include "Swapchain.h"
@@ -23,8 +24,6 @@ uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
 
 void LogicalDevice::DrawFrame()
 {
-	m_GraphicsPipeline->Update();
-
 	using namespace std::chrono_literals;
 	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::chrono::nanoseconds(1s).count(), *m_ImageAvailableSemaphore, nullptr);
 	assert(result.result == vk::Result::eSuccess);
@@ -119,12 +118,13 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 
 	InitDevice();
 
-	m_ShaderGroupDataManagerInstance.emplace();
+	m_ShaderGroupDataManagerInstance.emplace(*this);
 	m_ShaderGroupManagerInstance.emplace(*this);
-	m_MaterialDataManagerInstance.emplace();
+	m_MaterialDataManagerInstance.emplace(*this);
+	m_MaterialManagerInstance.emplace(*this);
 
 	InitSwapchain();
-	InitGraphicsPipeline();
+	InitRenderPass();
 	InitFramebuffers();
 	InitCommandPool();
 	InitCommandBuffers();
@@ -141,8 +141,7 @@ LogicalDevice::~LogicalDevice()
 	m_ImageAvailableSemaphore.reset();
 	m_RenderFinishedSemaphore.reset();
 
-	// Graphics pipeline and swap chain wrappers
-	m_GraphicsPipeline.reset();
+	m_RenderPass.reset();
 	m_Swapchain.reset();
 
 	// Command buffers
@@ -216,13 +215,60 @@ void LogicalDevice::InitSwapchain()
 	m_Swapchain.emplace(swapchainData, *this);
 }
 
-void LogicalDevice::InitGraphicsPipeline()
+void LogicalDevice::InitRenderPass()
 {
-	Log::TagMsg(TAG, "Creating graphics pipeline...");
+	vk::AttachmentDescription colorAttachment;
+	{
+		colorAttachment.setFormat(GetSwapchain().GetInitValues().m_SurfaceFormat.format);
+		colorAttachment.setSamples(vk::SampleCountFlagBits::e1);
 
-	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>(*this);
-	createInfo->SetShaderGroup(ShaderGroupManager::Instance().FindShaderGroup("test_shader_group"));
-	m_GraphicsPipeline.emplace(createInfo);
+		colorAttachment.setLoadOp(vk::AttachmentLoadOp::eClear);
+		colorAttachment.setStoreOp(vk::AttachmentStoreOp::eStore);
+
+		colorAttachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+		colorAttachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+		colorAttachment.setInitialLayout(vk::ImageLayout::eUndefined);
+		colorAttachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+	}
+
+	vk::AttachmentReference colorAttachmentRef;
+	{
+		colorAttachmentRef.setAttachment(0);
+		colorAttachmentRef.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	}
+
+	vk::SubpassDescription subpass;
+	{
+		subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+		subpass.setColorAttachmentCount(1);
+		subpass.setPColorAttachments(&colorAttachmentRef);
+	}
+
+	vk::SubpassDependency dependency;
+	{
+		dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
+		dependency.setDstSubpass(0);
+
+		dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+		//dependency.setSrcAccessMask(0);
+
+		dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+		dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
+	}
+
+	vk::RenderPassCreateInfo rpCreateInfo;
+	{
+		rpCreateInfo.setAttachmentCount(1);
+		rpCreateInfo.setPAttachments(&colorAttachment);
+		rpCreateInfo.setSubpassCount(1);
+		rpCreateInfo.setPSubpasses(&subpass);
+		rpCreateInfo.setDependencyCount(1);
+		rpCreateInfo.setPDependencies(&dependency);
+	}
+
+	m_RenderPass = Get().createRenderPassUnique(rpCreateInfo);
 }
 
 void LogicalDevice::InitFramebuffers()
@@ -274,6 +320,7 @@ void LogicalDevice::InitCommandBuffers()
 
 	m_CommandBuffers = Get().allocateCommandBuffersUnique(allocInfo);
 
+	m_TestMaterial = MaterialManager::Instance().Find("test_material");
 	m_TestVertexBuffer = Mesh::Create(GetTestVertexList(), *this);
 
 	auto testTexture = Texture::Create("../statue.jpg", this);
@@ -291,7 +338,7 @@ void LogicalDevice::InitCommandBuffers()
 		// Not too sure about this one...
 		{
 			vk::RenderPassBeginInfo renderPassInfo;
-			renderPassInfo.setRenderPass(m_GraphicsPipeline->GetRenderPass());
+			renderPassInfo.setRenderPass(m_RenderPass.get());
 			renderPassInfo.setFramebuffer(framebuffer);
 			renderPassInfo.renderArea.setExtent(m_Swapchain->GetInitValues().m_Extent2D);
 
@@ -303,6 +350,8 @@ void LogicalDevice::InitCommandBuffers()
 
 			cmdBuffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
+			m_TestMaterial->GetPipeline().Update();
+			m_TestMaterial->Bind(cmdBuffer.get());
 			m_TestVertexBuffer->Draw(cmdBuffer.get());
 
 			cmdBuffer->endRenderPass();
@@ -327,7 +376,7 @@ void LogicalDevice::RecreateSwapchain()
 	((ISwapchain_LogicalDeviceFriends*)&m_Swapchain.value())->Recreate(
 		std::make_shared<SwapchainData>(GetData().GetPhysicalDevice(), GetData().GetWindowSurface()));
 
-	InitGraphicsPipeline();
+	InitRenderPass();
 	InitFramebuffers();
 	InitCommandBuffers();
 }

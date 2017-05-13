@@ -18,7 +18,7 @@ MaterialData::MaterialData(const JSONObject& json)
 	m_Name = json.find("name")->second.GetString();
 
 	const auto& shaderGroupName = json.find("shaderGroup")->second.GetString();
-	m_ShaderGroup = ShaderGroupManager::Instance().FindShaderGroup(shaderGroupName);
+	m_ShaderGroup = ShaderGroupManager::Instance().Find(shaderGroupName);
 
 	if (!m_ShaderGroup)
 		throw std::runtime_error(StringTools::CSFormat("Encountered unknown shader group \"{0}\"", shaderGroupName));

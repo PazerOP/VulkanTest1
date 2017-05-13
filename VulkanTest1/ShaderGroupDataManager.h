@@ -1,28 +1,13 @@
 #pragma once
+#include "DataStore.h"
 
-#include <map>
-#include <memory>
-
+class LogicalDevice;
 class ShaderGroupData;
 
-class ShaderGroupDataManager
+class ShaderGroupDataManager : public DataStore<ShaderGroupDataManager, const ShaderGroupData>
 {
 public:
-	ShaderGroupDataManager();
-	~ShaderGroupDataManager();
-	static ShaderGroupDataManager& Instance();
+	ShaderGroupDataManager(LogicalDevice& device);
 
-	void ReloadData();
-
-	std::shared_ptr<const ShaderGroupData> FindData(const std::string& name) const;
-
-	auto begin() const { return m_Data.begin(); }
-	auto begin() { return m_Data.begin(); }
-	auto end() const { return m_Data.end(); }
-	auto end() { return m_Data.end(); }
-
-private:
-	static ShaderGroupDataManager* s_Instance;
-
-	std::map<std::string, std::shared_ptr<const ShaderGroupData>> m_Data;
+	void Reload() override;
 };

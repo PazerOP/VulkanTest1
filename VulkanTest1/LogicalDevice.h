@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicsPipeline.h"
 #include "MaterialDataManager.h"
+#include "MaterialManager.h"
 #include "PhysicalDeviceData.h"
 #include "ShaderGroupManager.h"
 #include "ShaderGroupDataManager.h"
@@ -45,8 +46,7 @@ public:
 	const Swapchain& GetSwapchain() const { return *m_Swapchain; }
 	Swapchain& GetSwapchain() { return *m_Swapchain; }
 
-	const GraphicsPipeline& GetGraphicsPipeline() const { assert(m_GraphicsPipeline); return *m_GraphicsPipeline; }
-	GraphicsPipeline& GetGraphicsPipeline() { assert(m_GraphicsPipeline); return *m_GraphicsPipeline; }
+	vk::RenderPass GetRenderPass() const { return m_RenderPass.get(); }
 
 	void DrawFrame();
 
@@ -65,7 +65,7 @@ public:
 private:
 	void InitDevice();
 	void InitSwapchain();
-	void InitGraphicsPipeline();
+	void InitRenderPass();
 	void InitFramebuffers();
 	void InitCommandPool();
 	void InitCommandBuffers();
@@ -77,6 +77,7 @@ private:
 
 	void ChooseQueueFamilies();
 
+	std::shared_ptr<Material> m_TestMaterial;
 	std::unique_ptr<Mesh> m_TestVertexBuffer;
 
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
@@ -86,12 +87,14 @@ private:
 	std::optional<ShaderGroupManager> m_ShaderGroupManagerInstance;
 	std::optional<ShaderGroupDataManager> m_ShaderGroupDataManagerInstance;
 	std::optional<MaterialDataManager> m_MaterialDataManagerInstance;
+	std::optional<MaterialManager> m_MaterialManagerInstance;
 
 	uint32_t m_QueueFamilies[underlying_value(QueueType::Count)];
 	vk::Queue m_Queues[underlying_value(QueueType::Count)];
 
 	std::optional<Swapchain> m_Swapchain;
-	std::optional<GraphicsPipeline> m_GraphicsPipeline;
+	vk::UniqueRenderPass m_RenderPass;
+	//std::optional<GraphicsPipeline> m_GraphicsPipeline;
 	vk::UniqueCommandPool m_CommandPool;
 	std::vector<vk::UniqueCommandBuffer> m_CommandBuffers;
 

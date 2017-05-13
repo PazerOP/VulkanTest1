@@ -49,8 +49,8 @@ void GraphicsPipeline::Update()
 	m_UniformObjectBuffer->Write(&ubo, sizeof(ubo), 0);
 }
 
-GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo) :
-	m_CreateInfo(createInfo)
+GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo) :
+	m_Device(device), m_CreateInfo(createInfo)
 {
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
 
@@ -61,7 +61,6 @@ GraphicsPipeline::GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineC
 	CreateUniformBuffer();
 	CreateDescriptorPool();
 	CreateDescriptorSet();
-	CreateRenderPass();
 	CreatePipeline();
 }
 
@@ -157,63 +156,6 @@ void GraphicsPipeline::CreateDescriptorSet()
 	}
 
 	GetDevice()->updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-}
-
-void GraphicsPipeline::CreateRenderPass()
-{
-	vk::AttachmentDescription colorAttachment;
-	{
-		colorAttachment.setFormat(m_CreateInfo->GetDevice().GetSwapchain().GetInitValues().m_SurfaceFormat.format);
-		colorAttachment.setSamples(vk::SampleCountFlagBits::e1);
-
-		colorAttachment.setLoadOp(vk::AttachmentLoadOp::eClear);
-		colorAttachment.setStoreOp(vk::AttachmentStoreOp::eStore);
-
-		colorAttachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
-		colorAttachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-
-		colorAttachment.setInitialLayout(vk::ImageLayout::eUndefined);
-		colorAttachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
-	}
-
-	vk::AttachmentReference colorAttachmentRef;
-	{
-		colorAttachmentRef.setAttachment(0);
-		colorAttachmentRef.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-	}
-
-	vk::SubpassDescription subpass;
-	{
-		subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-
-		subpass.setColorAttachmentCount(1);
-		subpass.setPColorAttachments(&colorAttachmentRef);
-	}
-
-	vk::SubpassDependency dependency;
-	{
-		dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
-		dependency.setDstSubpass(0);
-
-		dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-		//dependency.setSrcAccessMask(0);
-
-		dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-		dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
-	}
-
-	vk::RenderPassCreateInfo rpCreateInfo;
-	{
-		rpCreateInfo.setAttachmentCount(1);
-		rpCreateInfo.setPAttachments(&colorAttachment);
-		rpCreateInfo.setSubpassCount(1);
-		rpCreateInfo.setPSubpasses(&subpass);
-		rpCreateInfo.setDependencyCount(1);
-		rpCreateInfo.setPDependencies(&dependency);
-	}
-
-	const auto device = GetCreateInfo().GetDevice().Get();
-	m_RenderPass = device.createRenderPassUnique(rpCreateInfo);
 }
 
 void GraphicsPipeline::CreatePipeline()
@@ -326,7 +268,7 @@ void GraphicsPipeline::CreatePipeline()
 
 		gpCreateInfo.setLayout(*m_Layout);
 
-		gpCreateInfo.setRenderPass(*m_RenderPass);
+		gpCreateInfo.setRenderPass(m_Device.GetRenderPass());
 		gpCreateInfo.setSubpass(0);
 
 		gpCreateInfo.setBasePipelineHandle(nullptr);

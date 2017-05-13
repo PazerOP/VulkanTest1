@@ -5,6 +5,11 @@
 #include "MaterialData.h"
 #include "MaterialDataManager.h"
 
+MaterialManager::MaterialManager(LogicalDevice& device) :
+	DataStoreType(device)
+{
+}
+
 void MaterialManager::Reload()
 {
 	m_Data.clear();

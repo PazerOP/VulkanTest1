@@ -9,15 +9,12 @@
 class GraphicsPipeline
 {
 public:
-	GraphicsPipeline(const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo);
+	GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<const GraphicsPipelineCreateInfo>& createInfo);
 
 	const GraphicsPipelineCreateInfo& GetCreateInfo() const { return *m_CreateInfo; }
 
 	const LogicalDevice& GetDevice() const { return m_CreateInfo->GetDevice(); }
 	LogicalDevice& GetDevice() { return const_cast<LogicalDevice&>(m_CreateInfo->GetDevice()); }	// dumb
-
-	const vk::RenderPass GetRenderPass() const { return m_RenderPass.get(); }
-	vk::RenderPass GetRenderPass() { return m_RenderPass.get(); }
 
 	const vk::Pipeline GetPipeline() const { return m_Pipeline.get(); }
 	vk::Pipeline GetPipeline() { return m_Pipeline.get(); }
@@ -35,14 +32,14 @@ private:
 	void CreateUniformBuffer();
 	void CreateDescriptorPool();
 	void CreateDescriptorSet();
-	void CreateRenderPass();
 	void CreatePipeline();
 	static vk::ShaderStageFlagBits ConvertShaderType(ShaderType type);
 	std::vector<vk::PipelineShaderStageCreateInfo> GenerateShaderStageCreateInfos() const;
 
+	LogicalDevice& m_Device;
+
 	std::shared_ptr<const GraphicsPipelineCreateInfo> m_CreateInfo;
 
-	vk::UniqueRenderPass m_RenderPass;
 	vk::UniquePipelineLayout m_Layout;
 	vk::UniquePipeline m_Pipeline;
 
