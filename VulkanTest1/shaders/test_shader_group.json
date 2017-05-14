@@ -3,12 +3,8 @@
 	"shaders": [
 		{
 			"type": "fragment",
-			"filename": "shaders/simple_pixel.spv",
+			"filename": "shaders/simple.frag.spv",
 			"inputs": [
-				{
-					"binding": 1,
-					"parameter": "__time"
-				},
 				{
 					"binding": 5,
 					"parameter": "baseTexture"
@@ -17,13 +13,8 @@
 		},
 		{
 			"type": "vertex",
-			"filename": "shaders/simple_vertex.spv",
-			"inputs": [
-				{
-					"binding": 0,
-					"parameter": "__transform"
-				}
-			]
+			"filename": "shaders/simple.vert.spv",
+			"inputs": []
 		}
 	],
 	"parameters": [

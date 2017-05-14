@@ -103,7 +103,7 @@ void Window::CreateWindow()
 		"RKRP Game",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		CW_USEDEFAULT, CW_USEDEFAULT,
+		1280, 480,
 		nullptr,
 		nullptr,
 		Main().GetAppInstance(),

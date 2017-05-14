@@ -21,3 +21,11 @@ void MaterialManager::Reload()
 		m_Data.insert(std::make_pair(data->GetName(), std::make_shared<Material>(data, m_Device)));
 	}
 }
+
+void MaterialManager::RecreatePipelines()
+{
+	for (auto& entry : Instance())
+	{
+		entry.second->GetPipeline().RecreatePipeline();
+	}
+}

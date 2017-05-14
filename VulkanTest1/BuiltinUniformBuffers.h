@@ -5,18 +5,6 @@
 
 #include <optional>
 
-struct BuiltinTransformBuffer
-{
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
-};
-
-struct BuiltinTimeBuffer
-{
-	float time;
-};
-
 class BuiltinUniformBuffers
 {
 public:
@@ -28,14 +16,28 @@ public:
 
 	enum class Type
 	{
-		Transform,
-		Time,
+		FrameConstants,
+		ViewConstants,
+		ObjectConstants,
 	};
 
-	static constexpr auto Names = make_array<const char*>(
-		"__transform",
-		"__time"
-	);
+	struct FrameConstants
+	{
+		float time;
+		float dt;
+	};
+
+	struct ViewConstants
+	{
+		glm::vec3 camPos;
+	};
+
+	struct ObjectConstants
+	{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
 
 	vk::DescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout.get(); }
 	std::vector<vk::DescriptorSet> GetDescriptorSets() const;
@@ -47,12 +49,12 @@ private:
 	void InitDescriptorSetLayout();
 	void InitDescriptorSet();
 
-	static constexpr auto BUFFER_COUNT = 2;
+	static constexpr auto BUFFER_COUNT = 3;
 	std::array<std::optional<UniformBuffer>, BUFFER_COUNT> m_Buffers;
 
 	vk::UniqueDescriptorSetLayout m_DescriptorSetLayout;
 	std::vector<vk::UniqueDescriptorSet> m_DescriptorSets;
 };
 
-template<> __forceinline constexpr auto Enums::min<BuiltinUniformBuffers::Type>() { return Enums::value(BuiltinUniformBuffers::Type::Transform); }
-template<> __forceinline constexpr auto Enums::max<BuiltinUniformBuffers::Type>() { return Enums::value(BuiltinUniformBuffers::Type::Time); }
+template<> __forceinline constexpr auto Enums::min<BuiltinUniformBuffers::Type>() { return Enums::value(BuiltinUniformBuffers::Type::FrameConstants); }
+template<> __forceinline constexpr auto Enums::max<BuiltinUniformBuffers::Type>() { return Enums::value(BuiltinUniformBuffers::Type::ObjectConstants); }

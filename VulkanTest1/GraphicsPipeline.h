@@ -24,6 +24,8 @@ public:
 
 	const std::vector<vk::DescriptorSet>& GetDescriptorSets() const { return m_DescriptorSets; }
 
+	void RecreatePipeline();
+
 private:
 	void CreatePipeline();
 	void InitDescriptorSets();

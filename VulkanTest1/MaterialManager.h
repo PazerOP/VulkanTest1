@@ -10,4 +10,6 @@ public:
 	MaterialManager(LogicalDevice& device);
 
 	void Reload() override;
+
+	void RecreatePipelines();
 };

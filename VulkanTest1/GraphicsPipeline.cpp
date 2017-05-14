@@ -18,6 +18,11 @@ GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<
 	CreatePipeline();
 }
 
+void GraphicsPipeline::RecreatePipeline()
+{
+	CreatePipeline();
+}
+
 void GraphicsPipeline::CreatePipeline()
 {
 	vk::PipelineVertexInputStateCreateInfo vertexInputState;
@@ -31,7 +36,7 @@ void GraphicsPipeline::CreatePipeline()
 	vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
 	inputAssemblyState.setTopology(vk::PrimitiveTopology::eTriangleList);
 
-	const auto& swapchainExtent = m_CreateInfo->GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
+	const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
 
 	vk::Viewport viewport;
 	viewport.setWidth((float)swapchainExtent.width);
@@ -56,7 +61,7 @@ void GraphicsPipeline::CreatePipeline()
 
 		rasterizationState.setLineWidth(1);
 
-		rasterizationState.setCullMode(vk::CullModeFlagBits::eBack);
+		rasterizationState.setCullMode(vk::CullModeFlagBits::eNone);
 		rasterizationState.setFrontFace(vk::FrontFace::eClockwise);
 
 		rasterizationState.setDepthBiasEnable(false);

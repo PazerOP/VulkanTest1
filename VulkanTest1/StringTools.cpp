@@ -59,6 +59,113 @@ size_t StringTools::UTF8Size(const char* ptr, const char* endPtr)
 	throw utf8_exception("Malformed utf-8 byte");
 }
 
+std::vector<StringTools::CSToken> StringTools::ParseCSTokens(const std::string_view& str)
+{
+	enum class GatherMode
+	{
+		Fresh,
+		GatheringMode,
+		GatheredMode,
+		GatheredID,
+		GatheringData,
+
+		// Throw this CSToken away, it's malformed somehow
+		Garbage,
+	} gatherMode = GatherMode::Fresh;
+
+	std::vector<CSToken> retVal;
+
+	size_t i = 0;
+	size_t braceLevel = 0;
+
+	bool isEscaped = false;
+
+	CSToken current;
+
+	for (auto charIter = str.begin(); charIter != str.end(); charIter++)
+	{
+		const char& c = *charIter;
+		if (isEscaped)
+			isEscaped = false;
+		else if (c == '\\')
+			isEscaped = true;
+		else if (c == '{')
+		{
+			braceLevel++;
+
+			if (braceLevel == 1)
+			{
+				gatherMode = GatherMode::Fresh;
+
+				current.m_ID = 0;
+				current.m_FullTokenStart = i;
+				current.m_ModeStart = current.m_ModeEnd = 0;
+				current.m_DataStart = current.m_DataEnd = 0;
+			}
+		}
+		else if (c == ':' && braceLevel == 1)
+		{
+			if (gatherMode == GatherMode::Fresh || gatherMode == GatherMode::GatheredMode)
+				gatherMode = GatherMode::Garbage;
+			else
+				gatherMode = GatherMode::GatheringData;
+
+			current.m_DataStart = i + 1;
+		}
+		else if (c == '}')
+		{
+			assert(braceLevel >= 1);
+			if (braceLevel >= 1)
+				braceLevel--;
+
+			if (!braceLevel)
+			{
+				if (gatherMode == GatherMode::GatheringData)
+					current.m_DataEnd = i;
+				else if (gatherMode == GatherMode::Fresh)
+					gatherMode = GatherMode::Garbage;
+
+				if (gatherMode != GatherMode::Garbage)
+				{
+					current.m_FullTokenEnd = i + 1;
+					retVal.push_back(current);
+				}
+			}
+		}
+		else if (gatherMode == GatherMode::Fresh)
+		{
+			if (isdigit(c))
+			{
+				assert(&c == (str.data() + i));
+				size_t charsRead;
+				bool success;
+				current.m_ID = StringConverter::From<size_t>(std::string_view(str.data() + i, str.size() - i), &charsRead, &success);
+
+				if (!success)
+					gatherMode = GatherMode::Garbage;
+				else
+				{
+					gatherMode = GatherMode::GatheredID;
+					charIter += charsRead;
+					i += charsRead;
+					charIter -= 1;
+					i -= 1;
+				}
+			}
+			else
+			{
+				current.m_ModeStart = i;
+				current.m_ModeEnd = 0;
+				gatherMode = GatherMode::GatheringMode;
+			}
+		}
+
+		i++;
+	}
+
+	return retVal;
+}
+
 #if 0
 bool StringTools::IsEscaped(const char* str, size_t offset, char escapeChar)
 {
@@ -91,3 +198,21 @@ bool StringTools::IsEscaped(const char* str, size_t offset, char escapeChar)
 	return false;
 }
 #endif
+
+std::string to_string(const vk::Extent2D& extent2D)
+{
+	return StringTools::CSFormat("({0}x{1})", extent2D.width, extent2D.height);
+}
+
+std::string to_string(const glm::mat4& mat4)
+{
+	return StringTools::CSFormat(
+		"[{0} {1} {2} {3}]\n"
+		"[{4} {5} {6} {7}]\n"
+		"[{8} {9} {10} {11}]\n"
+		"[{12} {13} {14} {15}]",
+		mat4[0][0], mat4[1][0], mat4[2][0], mat4[3][0],
+		mat4[0][1], mat4[1][1], mat4[2][1], mat4[3][1],
+		mat4[0][2], mat4[1][2], mat4[2][2], mat4[3][2],
+		mat4[0][3], mat4[1][3], mat4[2][3], mat4[3][3]);
+}

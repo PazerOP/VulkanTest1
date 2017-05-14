@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <filesystem>			// More to_string stuff
+#include <glm/detail/type_mat4x4.hpp>
 #include <locale>
 #include <string>
 #include <string_view>
@@ -40,6 +41,8 @@ inline std::string& to_string(std::string& str) { return str; }
 inline std::string to_string(const std::string& str) { return str; }
 inline std::string to_string(const char* str) { return std::string(str); }
 inline std::string to_string(const std::filesystem::path& path) { return path.string(); }
+extern std::string to_string(const vk::Extent2D& extent2D);
+extern std::string to_string(const glm::mat4& mat4);
 
 class utf8_exception : public std::runtime_error
 {
@@ -151,108 +154,4 @@ inline bool StringTools::IsEscaped(const std::basic_string_view<CharT, Traits>& 
 	}
 
 	return escaped;
-}
-
-inline std::vector<StringTools::CSToken> StringTools::ParseCSTokens(const std::string_view& str)
-{
-	enum class GatherMode
-	{
-		Fresh,
-		GatheringMode,
-		GatheredMode,
-		GatheredID,
-		GatheringData,
-
-		// Throw this CSToken away, it's malformed somehow
-		Garbage,
-	} gatherMode = GatherMode::Fresh;
-
-	std::vector<CSToken> retVal;
-
-	size_t i = 0;
-	size_t braceLevel = 0;
-
-	bool isEscaped = false;
-
-	CSToken current;
-
-	for (auto charIter = str.begin(); charIter != str.end(); charIter++)
-	{
-		const char c = *charIter;
-		if (isEscaped)
-			isEscaped = false;
-		else if (c == '\\')
-			isEscaped = true;
-		else if (c == '{')
-		{
-			braceLevel++;
-
-			if (braceLevel == 1)
-			{
-				gatherMode = GatherMode::Fresh;
-
-				current.m_ID = 0;
-				current.m_FullTokenStart = i;
-				current.m_ModeStart = current.m_ModeEnd = 0;
-				current.m_DataStart = current.m_DataEnd = 0;
-			}
-		}
-		else if (c == ':' && braceLevel == 1)
-		{
-			if (gatherMode == GatherMode::Fresh || gatherMode == GatherMode::GatheredMode)
-				gatherMode = GatherMode::Garbage;
-			else
-				gatherMode = GatherMode::GatheringData;
-
-			current.m_DataStart = i + 1;
-		}
-		else if (c == '}')
-		{
-			assert(braceLevel >= 1);
-			if (braceLevel >= 1)
-				braceLevel--;
-
-			if (!braceLevel)
-			{
-				if (gatherMode == GatherMode::GatheringData)
-					current.m_DataEnd = i;
-				else if (gatherMode == GatherMode::Fresh)
-					gatherMode = GatherMode::Garbage;
-
-				if (gatherMode != GatherMode::Garbage)
-				{
-					current.m_FullTokenEnd = i + 1;
-					retVal.push_back(current);
-				}
-			}
-		}
-		else if (gatherMode == GatherMode::Fresh)
-		{
-			if (isdigit(c))
-			{
-				size_t charsRead;
-				bool success;
-				current.m_ID = StringConverter::From<size_t>(std::string_view(str.data() + i, str.size() - i), &charsRead, &success);
-
-				if (!success)
-					gatherMode = GatherMode::Garbage;
-				else
-				{
-					gatherMode = GatherMode::GatheredID;
-					charIter += charsRead;
-					charIter -= 1;
-				}
-			}
-			else
-			{
-				current.m_ModeStart = i;
-				current.m_ModeEnd = 0;
-				gatherMode = GatherMode::GatheringMode;
-			}
-		}
-
-		i++;
-	}
-
-	return retVal;
 }

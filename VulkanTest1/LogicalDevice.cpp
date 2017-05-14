@@ -314,7 +314,6 @@ void LogicalDevice::InitCommandPool()
 	m_CommandPool = Get().createCommandPoolUnique(createInfo);
 }
 
-
 void LogicalDevice::InitCommandBuffers()
 {
 	Log::TagMsg(TAG, "Creating command buffers...");
@@ -383,6 +382,8 @@ void LogicalDevice::RecreateSwapchain()
 
 	InitRenderPass();
 	InitFramebuffers();
+
+	MaterialManager::Instance().RecreatePipelines();
 	InitCommandBuffers();
 }
 

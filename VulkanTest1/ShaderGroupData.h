@@ -16,7 +16,7 @@ public:
 	class ParseException : public std::runtime_error
 	{
 	private:
-		ParseException(const std::string& str) : std::runtime_error(str) { Log::Msg<LogType::Exception>(str); }
+		ParseException(const std::string& str) : std::runtime_error(str) { Log::BlockMsg<LogType::Exception>(str); }
 		friend class ShaderGroupData;
 	};
 

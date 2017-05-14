@@ -218,6 +218,36 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <CustomBuild Include="shaders\simple.frag">
+      <FileType>Document</FileType>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Identity) to SPIR-V...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath).spv;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="shaders\simple.vert">
+      <FileType>Document</FileType>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath).spv;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Identity) to SPIR-V...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="AppManifest.manifest" />

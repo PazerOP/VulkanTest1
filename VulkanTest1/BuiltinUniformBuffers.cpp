@@ -18,28 +18,44 @@ BuiltinUniformBuffers::BuiltinUniformBuffers(LogicalDevice& device) :
 
 void BuiltinUniformBuffers::Update()
 {
-	float time;
-	// Time
+	FrameConstants frame;
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
+		static auto lastTime = startTime;
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
-		time = std::chrono::duration<float>(currentTime - startTime).count();
+		frame.time = std::chrono::duration<float>(currentTime - startTime).count();
+		frame.dt = std::chrono::duration<float>(currentTime - lastTime).count();
+		lastTime = currentTime;
 
-		m_Buffers[Enums::value_to_index(Type::Time)]->Write(&time, sizeof(time), 0);
+		m_Buffers[Enums::value_to_index(Type::FrameConstants)]->Write(&frame, sizeof(frame), 0);
 	}
 
-	time = 0;
-	// Transform
+	ViewConstants view;
 	{
-		BuiltinTransformBuffer ubo;
-		ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0, 0, 1));
-		ubo.view = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+
+	}
+
+	ObjectConstants obj;
+	{
+		//obj.model = glm::rotate(obj.model, glm::radians(45.0f), glm::vec3(0, 0, 1));
+		//obj.model = glm::translate(obj.model, glm::vec3(-300, 0, 0));
+		obj.model = glm::rotate<float>(obj.model, 0.5 * glm::radians(90.0), glm::vec3(0, 0, 1));
+		obj.model = glm::scale<float>(obj.model, glm::vec3(300));
+
+		//obj.view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 		const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
-		ubo.proj = glm::perspective(glm::radians(45.0f), float(swapchainExtent.width) / swapchainExtent.height, 0.1f, 10.0f);
+		const float swapchainAspect = float(swapchainExtent.width) / swapchainExtent.height;
+		const glm::vec2 swapchainHalfSize(swapchainExtent.width / 2.0f, swapchainExtent.height / 2.0f);
+		obj.proj = glm::ortho<float>(-swapchainHalfSize.x, swapchainHalfSize.x, -swapchainHalfSize.y, swapchainHalfSize.y,
+									 -10.0f, 10.0f);
 
-		m_Buffers[Enums::value_to_index(Type::Transform)]->Write(&ubo, sizeof(ubo), 0);
+		//Log::Msg("spew: {0}", obj.proj);
+		//obj.proj = glm::ortho<float>(-swapchainAspect, swapchainAspect, -1, 1, -10, 10);
+		//obj.proj = glm::perspective(glm::radians(45.0f), float(swapchainExtent.width) / swapchainExtent.height, 0.1f, 10.0f);
+
+		m_Buffers[Enums::value_to_index(Type::ObjectConstants)]->Write(&obj, sizeof(obj), 0);
 	}
 }
 
@@ -57,9 +73,9 @@ void BuiltinUniformBuffers::InitBuffers()
 {
 	const vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible;
 
-	m_Buffers[Enums::value_to_index(Type::Transform)].emplace(m_Device, sizeof(BuiltinTransformBuffer), flags);
-
-	m_Buffers[Enums::value_to_index(Type::Time)].emplace(m_Device, sizeof(BuiltinTimeBuffer), flags);
+	m_Buffers[Enums::value_to_index(Type::FrameConstants)].emplace(m_Device, sizeof(FrameConstants), flags);
+	m_Buffers[Enums::value_to_index(Type::ViewConstants)].emplace(m_Device, sizeof(ViewConstants), flags);
+	m_Buffers[Enums::value_to_index(Type::ObjectConstants)].emplace(m_Device, sizeof(ObjectConstants), flags);
 }
 
 void BuiltinUniformBuffers::InitDescriptorSetLayout()
@@ -68,6 +84,7 @@ void BuiltinUniformBuffers::InitDescriptorSetLayout()
 	{
 		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
 		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
+		vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
 	};
 
 	vk::DescriptorSetLayoutCreateInfo createInfo;
@@ -106,8 +123,8 @@ void BuiltinUniformBuffers::InitDescriptorSet()
 
 	descriptorWrites[0].setDstSet(m_DescriptorSets.front().get());
 	descriptorWrites[0].setDescriptorType(vk::DescriptorType::eUniformBuffer);
-	descriptorWrites[0].setDescriptorCount(2);
-	descriptorWrites[0].setPBufferInfo(&bufferInfos[0]);
+	descriptorWrites[0].setDescriptorCount(Enums::count<Type>());
+	descriptorWrites[0].setPBufferInfo(&bufferInfos.front());
 
 	/*descriptorWrites[1].setDstSet(m_DescriptorSets.front().get());
 	descriptorWrites[1].setDescriptorType(vk::DescriptorType::eUniformBuffer);

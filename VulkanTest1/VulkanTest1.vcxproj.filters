@@ -45,6 +45,9 @@
     <Filter Include="Engine\Math">
       <UniqueIdentifier>{7d21cb1d-c674-4e22-a90d-93807c13c4f2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Vulkan\Shaders">
+      <UniqueIdentifier>{62933ed2-9520-468e-8d19-64379ad1ea9d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -314,5 +317,13 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="AppManifest.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="shaders\simple.frag">
+      <Filter>Engine\Vulkan\Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\simple.vert">
+      <Filter>Engine\Vulkan\Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

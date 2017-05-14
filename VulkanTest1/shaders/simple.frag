@@ -1,10 +1,8 @@
+// shadertype=glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(set = 0, binding = 1) uniform TimeObj
-{
-	float seconds;
-} time;
+#include "shared.glsl"
 
 layout(location = 0) in vec3 fragColor;
 
@@ -180,7 +178,7 @@ vec3 toRGB(vec3 hsp)
 void main()
 {
 	vec3 hsp = toHSP(fragColor.rgb);
-	hsp.x = mod(hsp.x + (time.seconds / 4), 1);
+	hsp.x = mod(hsp.x + (frame.time / 4), 1);
 	vec3 rgb = toRGB(hsp);
 	rgb.r = clamp(rgb.r, 0, 1);
 	rgb.g = clamp(rgb.g, 0, 1);
