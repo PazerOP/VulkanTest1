@@ -10,12 +10,12 @@ layout(binding = 0) uniform FrameConstants
 
 layout(binding = 1) uniform ViewConstants
 {
-	vec3 camPos;
-};
+	vec2 camPos;
+	mat4 orthoProj;
+	mat4 view;
+} view;
 
 layout(binding = 2) uniform ObjectConstants
 {
-	mat4 model;
-	mat4 view;
-	mat4 proj;
+	mat4 modelToWorld;
 } object;

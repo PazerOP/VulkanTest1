@@ -33,23 +33,23 @@ void BuiltinUniformBuffers::Update()
 
 	ViewConstants view;
 	{
+		const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
+		const glm::vec2 swapchainHalfSize(swapchainExtent.width / 2.0f, swapchainExtent.height / 2.0f);
+		view.orthoProj = glm::ortho<float>(-swapchainHalfSize.x, swapchainHalfSize.x, -swapchainHalfSize.y, swapchainHalfSize.y,
+										   -10.0f, 10.0f);
 
+		m_Buffers[Enums::value_to_index(Type::ViewConstants)]->Write(&view, sizeof(view), 0);
 	}
 
 	ObjectConstants obj;
 	{
 		//obj.model = glm::rotate(obj.model, glm::radians(45.0f), glm::vec3(0, 0, 1));
 		//obj.model = glm::translate(obj.model, glm::vec3(-300, 0, 0));
-		obj.model = glm::rotate<float>(obj.model, 0.5 * glm::radians(90.0), glm::vec3(0, 0, 1));
-		obj.model = glm::scale<float>(obj.model, glm::vec3(300));
+		obj.modelToWorld = glm::rotate<float>(obj.modelToWorld, frame.time * glm::radians(90.0), glm::vec3(0, 0, 1));
+		obj.modelToWorld = glm::scale<float>(obj.modelToWorld, glm::vec3(300));
 
 		//obj.view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
-		const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
-		const float swapchainAspect = float(swapchainExtent.width) / swapchainExtent.height;
-		const glm::vec2 swapchainHalfSize(swapchainExtent.width / 2.0f, swapchainExtent.height / 2.0f);
-		obj.proj = glm::ortho<float>(-swapchainHalfSize.x, swapchainHalfSize.x, -swapchainHalfSize.y, swapchainHalfSize.y,
-									 -10.0f, 10.0f);
 
 		//Log::Msg("spew: {0}", obj.proj);
 		//obj.proj = glm::ortho<float>(-swapchainAspect, swapchainAspect, -1, 1, -10, 10);
