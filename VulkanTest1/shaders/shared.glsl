@@ -12,10 +12,9 @@ layout(binding = 1) uniform ViewConstants
 {
 	vec2 camPos;
 	mat4 orthoProj;
-	mat4 view;
 } view;
 
-layout(binding = 2) uniform ObjectConstants
+layout(set = 1, binding = 0) uniform ObjectConstants
 {
 	mat4 modelToWorld;
 } object;

@@ -3,7 +3,7 @@
 class Transform
 {
 public:
-	Transform();
+	Transform(const glm::vec2& translation = glm::vec2(), const glm::vec2& scale = glm::vec2(1), float rotationRad = 0);
 
 	const glm::vec2& GetTranslation() const { return m_Translation; }
 	void SetTranslation(const glm::vec2& translation) { m_Translation = translation; }

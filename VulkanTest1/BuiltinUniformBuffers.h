@@ -29,14 +29,13 @@ public:
 
 	struct ViewConstants
 	{
-		alignas(16) glm::vec2 camPos;
+		glm::vec2 camPos;
 		alignas(16) glm::mat4 orthoProj;	// "model" in MVP matrix set
-		alignas(16) glm::mat4 view;
 	};
 
 	struct ObjectConstants
 	{
-		glm::mat4 modelToWorld;	// "projection" in MVP set
+		alignas(16) glm::mat4 modelToWorld;	// "projection" in MVP set
 	};
 
 	vk::DescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout.get(); }

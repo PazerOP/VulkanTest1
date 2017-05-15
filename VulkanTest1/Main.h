@@ -6,6 +6,8 @@
 
 #include "Window.h"
 
+struct GlobalValues;
+
 class IMain
 {
 public:
@@ -17,6 +19,9 @@ public:
 	virtual Window& GetAppWindow() = 0;
 
 	virtual void SetGameLoopFn(const GameLoopFn& gameLoop) = 0;
+
+	virtual const GlobalValues& GetGlobals() const = 0;
 };
 
 extern IMain& Main();
+__forceinline const GlobalValues& Globals() { return Main().GetGlobals(); }

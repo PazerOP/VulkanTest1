@@ -14,6 +14,7 @@ class IDrawable
 public:
 	virtual ~IDrawable() = default;
 
+	virtual void Update() = 0;
 	virtual void Draw(const vk::CommandBuffer& cmdBuf) const = 0;
 
 	virtual const Material& GetMaterial() const = 0;

@@ -15,6 +15,6 @@ out gl_PerVertex
 
 void main()
 {
-    gl_Position = view.orthoProj * view.view * object.modelToWorld * vec4(inPosition, 0.0, 1.0);
+    gl_Position = view.orthoProj * object.modelToWorld * vec4(inPosition, 0.0, 1.0);
     fragColor = inColor;
 }

@@ -24,6 +24,7 @@ void BuiltinUniformBuffers::Update()
 		static auto lastTime = startTime;
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
+		auto test = currentTime - startTime;
 		frame.time = std::chrono::duration<float>(currentTime - startTime).count();
 		frame.dt = std::chrono::duration<float>(currentTime - lastTime).count();
 		lastTime = currentTime;
@@ -39,23 +40,6 @@ void BuiltinUniformBuffers::Update()
 										   -10.0f, 10.0f);
 
 		m_Buffers[Enums::value_to_index(Type::ViewConstants)]->Write(&view, sizeof(view), 0);
-	}
-
-	ObjectConstants obj;
-	{
-		//obj.model = glm::rotate(obj.model, glm::radians(45.0f), glm::vec3(0, 0, 1));
-		//obj.model = glm::translate(obj.model, glm::vec3(-300, 0, 0));
-		obj.modelToWorld = glm::rotate<float>(obj.modelToWorld, frame.time * glm::radians(90.0), glm::vec3(0, 0, 1));
-		obj.modelToWorld = glm::scale<float>(obj.modelToWorld, glm::vec3(300));
-
-		//obj.view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-
-
-		//Log::Msg("spew: {0}", obj.proj);
-		//obj.proj = glm::ortho<float>(-swapchainAspect, swapchainAspect, -1, 1, -10, 10);
-		//obj.proj = glm::perspective(glm::radians(45.0f), float(swapchainExtent.width) / swapchainExtent.height, 0.1f, 10.0f);
-
-		m_Buffers[Enums::value_to_index(Type::ObjectConstants)]->Write(&obj, sizeof(obj), 0);
 	}
 }
 
@@ -75,7 +59,6 @@ void BuiltinUniformBuffers::InitBuffers()
 
 	m_Buffers[Enums::value_to_index(Type::FrameConstants)].emplace(m_Device, sizeof(FrameConstants), flags);
 	m_Buffers[Enums::value_to_index(Type::ViewConstants)].emplace(m_Device, sizeof(ViewConstants), flags);
-	m_Buffers[Enums::value_to_index(Type::ObjectConstants)].emplace(m_Device, sizeof(ObjectConstants), flags);
 }
 
 void BuiltinUniformBuffers::InitDescriptorSetLayout()
@@ -84,7 +67,6 @@ void BuiltinUniformBuffers::InitDescriptorSetLayout()
 	{
 		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
 		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
-		vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
 	};
 
 	vk::DescriptorSetLayoutCreateInfo createInfo;
@@ -118,7 +100,7 @@ void BuiltinUniformBuffers::InitDescriptorSet()
 		bufferInfo.setRange(buffer->GetCreateInfo().size);
 	}
 
-	std::array<vk::WriteDescriptorSet, 1> descriptorWrites;
+	std::array<vk::WriteDescriptorSet, 2> descriptorWrites;
 	std::array<vk::CopyDescriptorSet, 0> descriptorCopies;
 
 	descriptorWrites[0].setDstSet(m_DescriptorSets.front().get());

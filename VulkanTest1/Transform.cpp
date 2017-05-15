@@ -4,10 +4,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-Transform::Transform()
+Transform::Transform(const glm::vec2& translation, const glm::vec2& scale, float rotationRad) :
+	m_Translation(translation),
+	m_Scale(scale),
+	m_RotationRad(rotationRad)
 {
-	m_Scale = glm::vec2(1, 1);
-	m_RotationRad = 0;
 }
 
 glm::mat4 Transform::ComputeMatrix() const

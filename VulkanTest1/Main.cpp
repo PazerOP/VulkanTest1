@@ -6,6 +6,7 @@
 #include <clocale>
 #include "FixedWindows.h"
 #include <glm/glm.hpp>
+#include "GlobalValues.h"
 #include "JSON.h"
 #include "Log.h"
 #include "LogicalDevice.h"
@@ -27,11 +28,15 @@ public:
 	const GameLoopFn& GetGameLoopFn() { return m_GameLoopFn; }
 	void SetGameLoopFn(const GameLoopFn& fn) override { m_GameLoopFn = fn; }
 
-private:
+	const GlobalValues& GetGlobals() const { return m_GlobalValuesManager.GetGlobals(); }
+	void UpdateGlobals() { m_GlobalValuesManager.Update(); }
 
+private:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	static void BrushDeleter(HBRUSH brush) { DeleteObject(brush); }
+
+	GlobalValuesManager m_GlobalValuesManager;
 
 	//static void Init
 
@@ -92,6 +97,8 @@ int CALLBACK WinMain(
 			auto current = std::chrono::high_resolution_clock::now();
 			dt = std::chrono::duration<float, std::ratio<1, 1>> (current - last).count();
 			last = current;
+
+			LocalMain().UpdateGlobals();
 
 			if (!LocalMain().GetAppWindow().GetWindow())
 				break;

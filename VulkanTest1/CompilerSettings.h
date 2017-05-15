@@ -3,6 +3,7 @@
 #pragma warning(disable : 4061)		// enumerator 'identifier' in switch of enum 'enumeration' is not explicitly handled by a case label
 #pragma warning(disable : 4201)		// nonstandard extension used : nameless struct/union
 #pragma warning(disable : 4267)		// 'var' : conversion from 'size_t' to 'type', possible loss of data
+#pragma warning(disable : 4324)		// 'struct_name' : structure was padded due to alignment specifier
 #pragma warning(disable : 4365)		// 'action' : conversion from 'type_1' to 'type_2', signed/unsigned mismatch
 #pragma warning(disable : 4464)		// relative include path contains '..'
 #pragma warning(disable : 4514)		// 'function': unreferenced inline function has been removed

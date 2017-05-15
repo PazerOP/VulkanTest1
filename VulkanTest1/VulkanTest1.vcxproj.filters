@@ -204,6 +204,9 @@
     <ClInclude Include="TransformBuffer.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalValues.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -310,6 +313,9 @@
     </ClCompile>
     <ClCompile Include="TestDrawable.cpp">
       <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalValues.cpp">
+      <Filter>Engine\Support</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
