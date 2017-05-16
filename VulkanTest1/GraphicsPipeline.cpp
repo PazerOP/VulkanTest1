@@ -1,5 +1,9 @@
 #include "stdafx.h"
 #include "GraphicsPipeline.h"
+
+#include "DescriptorSet.h"
+#include "DescriptorSetCreateInfo.h"
+#include "DescriptorSetLayout.h"
 #include "LogicalDevice.h"
 #include "SimpleVertex.h"
 #include "ShaderGroup.h"
@@ -11,11 +15,20 @@ GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<
 {
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
 
-	if (!m_CreateInfo->GetShaderGroup())
+	if (!m_CreateInfo->m_ShaderGroup)
 		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have a ShaderGroup set.");
+	if (!m_CreateInfo->m_VertexInputBindingDescription.has_value())
+		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have a VertexInputBindingDescription specified.");
+	if (m_CreateInfo->m_VertexInputAttributeDescriptions.empty())
+		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have any VertexInputAttributeDescriptions specified.");
 
 	InitDescriptorSets();
 	CreatePipeline();
+}
+
+const std::vector<std::shared_ptr<const DescriptorSet>>& GraphicsPipeline::GetDescriptorSets() const
+{
+	return reinterpret_cast<const std::vector<std::shared_ptr<const DescriptorSet>>&>(m_DescriptorSets);
 }
 
 void GraphicsPipeline::RecreatePipeline()
@@ -26,12 +39,10 @@ void GraphicsPipeline::RecreatePipeline()
 void GraphicsPipeline::CreatePipeline()
 {
 	vk::PipelineVertexInputStateCreateInfo vertexInputState;
-	auto bindingDescription = SimpleVertex::GetBindingDescription();
-	auto attributeDescriptions = SimpleVertex::GetAttributeDescriptions();
 	vertexInputState.setVertexBindingDescriptionCount(1);
-	vertexInputState.setPVertexBindingDescriptions(&bindingDescription);
-	vertexInputState.setVertexAttributeDescriptionCount(attributeDescriptions.size());
-	vertexInputState.setPVertexAttributeDescriptions(attributeDescriptions.data());
+	vertexInputState.setPVertexBindingDescriptions(&m_CreateInfo->m_VertexInputBindingDescription.value());
+	vertexInputState.setVertexAttributeDescriptionCount(m_CreateInfo->m_VertexInputAttributeDescriptions.size());
+	vertexInputState.setPVertexAttributeDescriptions(m_CreateInfo->m_VertexInputAttributeDescriptions.data());
 
 	vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
 	inputAssemblyState.setTopology(vk::PrimitiveTopology::eTriangleList);
@@ -109,11 +120,11 @@ void GraphicsPipeline::CreatePipeline()
 	}
 
 	vk::PipelineLayoutCreateInfo plCreateInfo;
-	const auto& descriptorSetLayout = GetDevice().GetBuiltinUniformBuffers().GetDescriptorSetLayout();
-	plCreateInfo.setSetLayoutCount(1);
-	plCreateInfo.setPSetLayouts(&descriptorSetLayout);
+	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
+	plCreateInfo.setSetLayoutCount(descriptorSetLayouts.size());
+	plCreateInfo.setPSetLayouts(descriptorSetLayouts.data());
 
-	const auto device = GetCreateInfo().GetDevice().Get();
+	const auto device = GetDevice().Get();
 	m_Layout = device.createPipelineLayoutUnique(plCreateInfo);
 
 	const auto shaderStages = GenerateShaderStageCreateInfos();
@@ -174,7 +185,7 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
 	for (std::underlying_type_t<ShaderType> i = 0; i < Enums::count<ShaderType>(); i++)
 	{
-		const auto& current = m_CreateInfo->GetShaderGroup()->GetModule(Enums::index_to_value<ShaderType>(i));
+		const auto& current = m_CreateInfo->m_ShaderGroup->GetModule(Enums::index_to_value<ShaderType>(i));
 		if (!current)
 			continue;
 
@@ -187,4 +198,13 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 		currentInfo.setPName("main");
 	}
 	return createInfos;
+}
+
+std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
+{
+	std::vector<vk::DescriptorSetLayout> retVal;
+	for (const auto& descSet : m_CreateInfo->m_DescriptorSetLayouts)
+		retVal.push_back(descSet->Get());
+
+	return retVal;
 }

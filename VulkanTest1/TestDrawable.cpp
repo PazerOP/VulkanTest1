@@ -5,6 +5,9 @@
 
 #include "SimpleVertex.h"
 #include "VertexList.h"
+
+#include <random>
+
 static UniqueVertexList<SimpleVertex> GetTestVertexList()
 {
 	UniqueVertexList<SimpleVertex> retVal = VertexList<SimpleVertex>::Create();
@@ -25,6 +28,15 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 TestDrawable::TestDrawable(LogicalDevice& device) :
 	Drawable(device)
 {
+	m_Transform.SetTranslation(glm::vec2(300, 200));
+	m_Transform.SetScale(glm::vec2(300));
+
 	m_Material = MaterialManager::Instance().Find("test_material");
 	m_Mesh = Mesh::Create(GetTestVertexList());
+}
+
+void TestDrawable::Update()
+{
+	Drawable::Update();
+	//std::uniform
 }

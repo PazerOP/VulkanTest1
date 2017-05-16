@@ -28,5 +28,8 @@
 #pragma warning(error : 4566)		// character represented by universal-character-name 'char' cannot be represented in the current code page (%d)
 
 
-
+// Vulkan
 #define VK_USE_PLATFORM_WIN32_KHR
+
+// GLM
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE

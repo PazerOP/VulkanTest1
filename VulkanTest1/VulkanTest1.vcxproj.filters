@@ -207,6 +207,18 @@
     <ClInclude Include="GlobalValues.h">
       <Filter>Engine\Support</Filter>
     </ClInclude>
+    <ClInclude Include="DescriptorSet.h">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSetCreateInfo.h">
+      <Filter>Engine\Vulkan\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSetLayout.h">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSetLayoutCreateInfo.h">
+      <Filter>Engine\Vulkan\Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -238,9 +250,6 @@
     </ClCompile>
     <ClCompile Include="GraphicsPipeline.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
-    </ClCompile>
-    <ClCompile Include="GraphicsPipelineCreateInfo.cpp">
-      <Filter>Engine\Vulkan\Data</Filter>
     </ClCompile>
     <ClCompile Include="GameObjectManager.cpp">
       <Filter>Engine</Filter>
@@ -316,6 +325,12 @@
     </ClCompile>
     <ClCompile Include="GlobalValues.cpp">
       <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorSet.cpp">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorSetLayout.cpp">
+      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

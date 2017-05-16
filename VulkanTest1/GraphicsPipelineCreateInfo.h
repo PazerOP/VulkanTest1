@@ -1,21 +1,15 @@
 #pragma once
+#include <optional>
+#include <vulkan/vulkan.hpp>
 
-class LogicalDevice;
+class DescriptorSetLayout;
 class ShaderGroup;
 
-class GraphicsPipelineCreateInfo
+struct GraphicsPipelineCreateInfo
 {
-public:
-	GraphicsPipelineCreateInfo(LogicalDevice& device);
-
-	const LogicalDevice& GetDevice() const { return m_Device; }
-	LogicalDevice& GetDevice() { return m_Device; }
-
-	const std::shared_ptr<ShaderGroup>& GetShaderGroup() const { return m_ShaderGroup; }
-	void SetShaderGroup(const std::shared_ptr<ShaderGroup>& shaderGroup) { m_ShaderGroup = shaderGroup; }
-
-private:
 	std::shared_ptr<ShaderGroup> m_ShaderGroup;
+	std::vector<std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;
 
-	LogicalDevice& m_Device;
+	std::optional<vk::VertexInputBindingDescription> m_VertexInputBindingDescription;
+	std::vector<vk::VertexInputAttributeDescription> m_VertexInputAttributeDescriptions;
 };

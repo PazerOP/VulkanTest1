@@ -25,6 +25,7 @@ uint32_t LogicalDevice::GetQueueFamily(QueueType q) const
 void LogicalDevice::DrawFrame()
 {
 	m_BuiltinUniformBuffers->Update();
+	m_TestDrawable->Update();
 
 	using namespace std::chrono_literals;
 	const auto result = Get().acquireNextImageKHR(m_Swapchain->Get(), std::chrono::nanoseconds(1s).count(), *m_ImageAvailableSemaphore, nullptr);

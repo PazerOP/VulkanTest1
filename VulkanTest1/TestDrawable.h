@@ -7,4 +7,6 @@ class TestDrawable : public Drawable
 {
 public:
 	TestDrawable(LogicalDevice& device);
+
+	virtual void Update() override;
 };

@@ -13,9 +13,11 @@ Transform::Transform(const glm::vec2& translation, const glm::vec2& scale, float
 
 glm::mat4 Transform::ComputeMatrix() const
 {
-	const auto translation = glm::translate(glm::vec3(m_Translation, 1));
-	const auto rotation = glm::rotate(m_RotationRad, glm::vec3(0, 1, 0));
-	const auto scale = glm::scale(glm::vec3(m_Scale, 1));
+	glm::mat4 retVal;
+	retVal = glm::translate(glm::vec3(m_Translation, 0));
+	retVal = glm::rotate(retVal, m_RotationRad, glm::vec3(0, 0, 1));
+	
+	retVal = glm::scale(retVal, glm::vec3(m_Scale, 1));
 
-	return translation * rotation * scale;
+	return retVal;
 }

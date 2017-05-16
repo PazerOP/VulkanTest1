@@ -21,5 +21,7 @@ private:
 	LogicalDevice& m_Device;
 	std::shared_ptr<const MaterialData> m_Data;
 
+	std::vector<vk::DescriptorSet> GetDescriptorSets() const;
+
 	std::optional<GraphicsPipeline> m_GraphicsPipeline;
 };

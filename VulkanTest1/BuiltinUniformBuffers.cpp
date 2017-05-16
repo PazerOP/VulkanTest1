@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "BuiltinUniformBuffers.h"
 
+#include "DescriptorSet.h"
+#include "DescriptorSetCreateInfo.h"
+#include "DescriptorSetLayout.h"
+#include "DescriptorSetLayoutCreateInfo.h"
 #include "LogicalDevice.h"
 
 #include <chrono>
@@ -9,11 +13,9 @@
 BuiltinUniformBuffers::BuiltinUniformBuffers(LogicalDevice& device) :
 	m_Device(device)
 {
-	static_assert(Enums::count<Type>() == std::tuple_size_v<decltype(m_Buffers)>);
-
 	InitBuffers();
-	InitDescriptorSetLayout();
-	InitDescriptorSet();
+	InitDescriptorSetLayouts();
+	InitDescriptorSets();
 }
 
 void BuiltinUniformBuffers::Update()
@@ -29,89 +31,91 @@ void BuiltinUniformBuffers::Update()
 		frame.dt = std::chrono::duration<float>(currentTime - lastTime).count();
 		lastTime = currentTime;
 
-		m_Buffers[Enums::value_to_index(Type::FrameConstants)]->Write(&frame, sizeof(frame), 0);
+		m_Buffers[Enums::value_to_index(Binding::FrameConstants)]->Write(&frame, sizeof(frame), 0);
 	}
 
 	ViewConstants view;
 	{
 		const auto& swapchainExtent = GetDevice().GetSwapchain().GetInitValues().m_Extent2D;
 		const glm::vec2 swapchainHalfSize(swapchainExtent.width / 2.0f, swapchainExtent.height / 2.0f);
-		view.orthoProj = glm::ortho<float>(-swapchainHalfSize.x, swapchainHalfSize.x, -swapchainHalfSize.y, swapchainHalfSize.y,
-										   -10.0f, 10.0f);
 
-		m_Buffers[Enums::value_to_index(Type::ViewConstants)]->Write(&view, sizeof(view), 0);
+		view.view = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, -1, 0));
+
+		view.orthoProj = glm::ortho<float>(-swapchainHalfSize.x, swapchainHalfSize.x, -swapchainHalfSize.y, swapchainHalfSize.y,
+										   0, 10);
+
+		m_Buffers[Enums::value_to_index(Binding::ViewConstants)]->Write(&view, sizeof(view), 0);
 	}
 }
 
-std::vector<vk::DescriptorSet> BuiltinUniformBuffers::GetDescriptorSets() const
+const std::vector<std::shared_ptr<const DescriptorSet>>& BuiltinUniformBuffers::GetDescriptorSets() const
 {
-	std::vector<vk::DescriptorSet> retVal;
+	return reinterpret_cast<const std::vector<std::shared_ptr<const DescriptorSet>>&>(m_DescriptorSets);
+}
 
-	for (const auto& set : m_DescriptorSets)
-		retVal.push_back(set.get());
-
-	return retVal;
+std::shared_ptr<const DescriptorSetLayout> BuiltinUniformBuffers::GetDescriptorSetLayout(Set set) const
+{
+	assert(Enums::validate(set));
+	return m_DescriptorSetLayouts[Enums::value(set)];
 }
 
 void BuiltinUniformBuffers::InitBuffers()
 {
 	const vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible;
 
-	m_Buffers[Enums::value_to_index(Type::FrameConstants)].emplace(m_Device, sizeof(FrameConstants), flags);
-	m_Buffers[Enums::value_to_index(Type::ViewConstants)].emplace(m_Device, sizeof(ViewConstants), flags);
+	m_Buffers.push_back(std::make_shared<UniformBuffer>(m_Device, sizeof(FrameConstants), flags));
+	m_Buffers.push_back(std::make_shared<UniformBuffer>(m_Device, sizeof(ViewConstants), flags));
 }
 
-void BuiltinUniformBuffers::InitDescriptorSetLayout()
+void BuiltinUniformBuffers::InitDescriptorSetLayouts()
 {
-	vk::DescriptorSetLayoutBinding layoutBindings[] =
+	m_DescriptorSetLayouts.clear();
+
+	// They're mostly all the same (for now?)
+	vk::DescriptorSetLayoutBinding binding;
 	{
-		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
-		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAllGraphics),
-	};
-
-	vk::DescriptorSetLayoutCreateInfo createInfo;
-	createInfo.setBindingCount(std::size(layoutBindings));
-	createInfo.setPBindings(layoutBindings);
-
-	m_DescriptorSetLayout = GetDevice()->createDescriptorSetLayoutUnique(createInfo);
-}
-
-void BuiltinUniformBuffers::InitDescriptorSet()
-{
-	vk::DescriptorSetLayout layouts[] =
-	{
-		m_DescriptorSetLayout.get(),
-	};
-
-	vk::DescriptorSetAllocateInfo allocInfo;
-	allocInfo.setDescriptorPool(GetDevice().GetDescriptorPool());
-	allocInfo.setDescriptorSetCount(std::size(layouts));
-	allocInfo.setPSetLayouts(layouts);
-
-	m_DescriptorSets = GetDevice()->allocateDescriptorSetsUnique(allocInfo);
-
-	std::vector<vk::DescriptorBufferInfo> bufferInfos;
-	for (auto& buffer : m_Buffers)
-	{
-		bufferInfos.emplace_back();
-
-		vk::DescriptorBufferInfo& bufferInfo = bufferInfos.back();
-		bufferInfo.setBuffer(buffer->GetBuffer());
-		bufferInfo.setRange(buffer->GetCreateInfo().size);
+		binding.setDescriptorCount(1);
+		binding.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		binding.setStageFlags(vk::ShaderStageFlagBits::eAll);
 	}
 
-	std::array<vk::WriteDescriptorSet, 2> descriptorWrites;
-	std::array<vk::CopyDescriptorSet, 0> descriptorCopies;
+	// Frame/view constants
+	{
+		auto createInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
 
-	descriptorWrites[0].setDstSet(m_DescriptorSets.front().get());
-	descriptorWrites[0].setDescriptorType(vk::DescriptorType::eUniformBuffer);
-	descriptorWrites[0].setDescriptorCount(Enums::count<Type>());
-	descriptorWrites[0].setPBufferInfo(&bufferInfos.front());
+		// Frame constants
+		binding.setBinding(0);
+		createInfo->m_Bindings.push_back(binding);
 
-	/*descriptorWrites[1].setDstSet(m_DescriptorSets.front().get());
-	descriptorWrites[1].setDescriptorType(vk::DescriptorType::eUniformBuffer);
-	descriptorWrites[1].setDescriptorCount(1);
-	descriptorWrites[1].setPBufferInfo(&bufferInfos[1]);*/
-	
-	GetDevice()->updateDescriptorSets(descriptorWrites, descriptorCopies);
+		// View constants
+		binding.setBinding(1);
+		createInfo->m_Bindings.push_back(binding);
+
+		m_DescriptorSetLayouts.emplace_back(std::make_shared<DescriptorSetLayout>(m_Device, createInfo));
+	}
+
+	// Object constants
+	{
+		auto createInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
+
+		binding.setBinding(0);
+		createInfo->m_Bindings.push_back(binding);
+
+		m_DescriptorSetLayouts.emplace_back(std::make_shared<DescriptorSetLayout>(m_Device, createInfo));
+	}
+}
+
+void BuiltinUniformBuffers::InitDescriptorSets()
+{
+	// Frame/view constants
+	{
+		auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
+
+		createInfo->m_Data.push_back(m_Buffers[Enums::value(Binding::FrameConstants)]);
+		createInfo->m_Data.push_back(m_Buffers[Enums::value(Binding::ViewConstants)]);
+
+		createInfo->m_Layout = m_DescriptorSetLayouts[Enums::value(Set::FrameView)];
+
+		m_DescriptorSets.push_back(std::make_shared<DescriptorSet>(m_Device, createInfo));
+	}
 }

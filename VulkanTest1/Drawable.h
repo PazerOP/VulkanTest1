@@ -1,4 +1,5 @@
 #pragma once
+#include "DescriptorSet.h"
 #include "IDrawable.h"
 #include "Material.h"
 #include "Mesh.h"
@@ -29,5 +30,8 @@ private:
 		alignas(16) glm::mat4 modelToWorld;	// "projection" in MVP set
 	};
 
-	UniformBuffer m_ObjectConstantsBuffer;
+	void CreateObjectConstants();
+
+	std::shared_ptr<UniformBuffer> m_ObjectConstantsBuffer;
+	std::optional<DescriptorSet> m_ObjectConstantsDescriptorSet;
 };

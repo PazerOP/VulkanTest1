@@ -125,6 +125,10 @@
     <ClInclude Include="BuiltinUniformBuffers.h" />
     <ClInclude Include="CompilerSettings.h" />
     <ClInclude Include="DataStore.h" />
+    <ClInclude Include="DescriptorSet.h" />
+    <ClInclude Include="DescriptorSetCreateInfo.h" />
+    <ClInclude Include="DescriptorSetLayout.h" />
+    <ClInclude Include="DescriptorSetLayoutCreateInfo.h" />
     <ClInclude Include="Drawable.h" />
     <ClInclude Include="Enums.h" />
     <ClInclude Include="FixedWindows.h" />
@@ -178,12 +182,13 @@
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="BuiltinUniformBuffers.cpp" />
+    <ClCompile Include="DescriptorSet.cpp" />
+    <ClCompile Include="DescriptorSetLayout.cpp" />
     <ClCompile Include="Drawable.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObjectManager.cpp" />
     <ClCompile Include="GlobalValues.cpp" />
     <ClCompile Include="GraphicsPipeline.cpp" />
-    <ClCompile Include="GraphicsPipelineCreateInfo.cpp" />
     <ClCompile Include="JSON.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
