@@ -332,6 +332,9 @@
     <ClCompile Include="DescriptorSetLayout.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
+    <ClCompile Include="StringConverter.cpp">
+      <Filter>Engine\Support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

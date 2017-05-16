@@ -1,4 +1,9 @@
 {
 	"name": "test_material",
-	"shaderGroup": "test_shader_group"
+	"shaderGroup": {
+		"name": "test_shader_group",
+		"inputs": {
+			"baseTexture": "invaders/invader_1.png"
+		}
+	}
 }

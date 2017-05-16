@@ -28,7 +28,7 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 TestDrawable::TestDrawable(LogicalDevice& device) :
 	Drawable(device)
 {
-	m_Transform.SetTranslation(glm::vec2(300, 200));
+	m_Transform.SetTranslation(glm::vec2(300, 0));
 	m_Transform.SetScale(glm::vec2(300));
 
 	m_Material = MaterialManager::Instance().Find("test_material");

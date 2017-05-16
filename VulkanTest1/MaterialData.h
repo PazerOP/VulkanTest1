@@ -16,7 +16,10 @@ public:
 
 	const std::shared_ptr<ShaderGroup>& GetShaderGroup() const { return m_ShaderGroup; }
 
+	const std::map<std::string, std::string>& GetShaderGroupInputs() const { return m_ShaderGroupInputs; }
+
 private:
 	std::string m_Name;
 	std::shared_ptr<ShaderGroup> m_ShaderGroup;
+	std::map<std::string, std::string> m_ShaderGroupInputs;
 };

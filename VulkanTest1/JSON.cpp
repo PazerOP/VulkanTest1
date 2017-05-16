@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "JSON.h"
 
+#include "Enums.h"
+
 #include <fstream>
 
 JSONValue JSONSerializer::FromFile(const std::filesystem::path& path)
@@ -229,4 +231,19 @@ std::pair<std::string, JSONValue> JSONSerializer::GatherNamedValue(const char** 
 
 	auto value = GatherValue(input);
 	return std::make_pair(std::move(name), std::move(value));
+}
+
+std::ostream& operator<<(std::ostream& lhs, JSONDataType rhs)
+{
+	switch (rhs)
+	{
+	case JSONDataType::Number:		return lhs << "JSONDataType::Number"sv;
+	case JSONDataType::String:		return lhs << "JSONDataType::String"sv;
+	case JSONDataType::Bool:		return lhs << "JSONDataType::Bool"sv;
+	case JSONDataType::Array:		return lhs << "JSONDataType::Array"sv;
+	case JSONDataType::Object:		return lhs << "JSONDataType::Object"sv;
+		
+	default:
+		return lhs << StringTools::CSFormat("<*** UNKNOWN JSONDataType {0} ***>", Enums::value(rhs));
+	}
 }

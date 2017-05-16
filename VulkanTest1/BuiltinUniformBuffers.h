@@ -42,11 +42,6 @@ public:
 		alignas(16) glm::mat4 orthoProj;	// "model" in MVP matrix set
 	};
 
-	struct ObjectConstants
-	{
-		alignas(16) glm::mat4 modelToWorld;	// "projection" in MVP set
-	};
-
 	const std::vector<std::shared_ptr<const DescriptorSet>>& GetDescriptorSets() const;
 	const std::vector<std::shared_ptr<DescriptorSet>>& GetDescriptorSets() { return m_DescriptorSets; }
 

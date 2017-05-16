@@ -1,15 +1,19 @@
 #pragma once
 #include <cassert>
-#include <filesystem>			// More to_string stuff
-#include <glm/detail/type_mat4x4.hpp>
+//#include <filesystem>			// More to_string stuff
+//#include <glm/detail/type_mat4x4.hpp>
 #include <locale>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <vulkan/vulkan.hpp>	// For all the to_string goodness
+//#include <vulkan/vulkan.hpp>	// For all the to_string goodness
 
 #include "Util.h"
 #include "StringConverter.h"
+
+// Implementation detail, use STRINGIFY() instead.
+#define ZSTRINGIFY(x) #x
+#define STRINGIFY(x) ZSTRINGIFY(x)
 
 using namespace std::string_literals;
 
@@ -37,12 +41,19 @@ constexpr std::wstring_view operator "" sv(const wchar_t* str, size_t len) noexc
 #pragma warning(pop)
 #endif
 
-inline std::string& to_string(std::string& str) { return str; }
-inline std::string to_string(const std::string& str) { return str; }
-inline std::string to_string(const char* str) { return std::string(str); }
-inline std::string to_string(const std::filesystem::path& path) { return path.string(); }
-extern std::string to_string(const vk::Extent2D& extent2D);
-extern std::string to_string(const glm::mat4& mat4);
+template<class T> std::string to_string(const T& value)
+{
+	std::ostringstream ss;
+	ss << value;
+	return ss.str();
+}
+
+//inline std::string& to_string(std::string& str) { return str; }
+//inline std::string to_string(const std::string& str) { return str; }
+//inline std::string to_string(const char* str) { return std::string(str); }
+//inline std::string to_string(const std::filesystem::path& path) { return path.string(); }
+//extern std::string to_string(const vk::Extent2D& extent2D);
+//extern std::string to_string(const glm::mat4& mat4);
 
 class utf8_exception : public std::runtime_error
 {
@@ -106,7 +117,6 @@ private:
 template<class... Args>
 inline std::string StringTools::CSFormat(std::string fmt, const Args&... args)
 {
-	using namespace std;
 	std::string strArgs[] = { to_string(args)... };
 
 	constexpr size_t argCount = sizeof...(args);

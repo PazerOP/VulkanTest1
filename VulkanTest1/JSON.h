@@ -15,6 +15,8 @@ enum class JSONDataType
 	Object
 };
 
+extern std::ostream& operator<<(std::ostream& lhs, JSONDataType rhs);
+
 class JSONValue;
 using JSONArray = std::vector<JSONValue>;
 using JSONObject = std::map<std::string, JSONValue>;
@@ -46,6 +48,8 @@ public:
 
 	const JSONObject& GetObject() const { return std::get<JSONObject>(m_Data); }
 	JSONObject& GetObject() { return std::get<JSONObject>(m_Data); }
+
+	JSONDataType GetType() const { return JSONDataType(m_Data.index()); }
 
 private:
 	std::variant<double, std::string, bool, JSONArray, JSONObject> m_Data;

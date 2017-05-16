@@ -198,21 +198,3 @@ bool StringTools::IsEscaped(const char* str, size_t offset, char escapeChar)
 	return false;
 }
 #endif
-
-std::string to_string(const vk::Extent2D& extent2D)
-{
-	return StringTools::CSFormat("({0}x{1})", extent2D.width, extent2D.height);
-}
-
-std::string to_string(const glm::mat4& mat4)
-{
-	return StringTools::CSFormat(
-		"[{0} {1} {2} {3}]\n"
-		"[{4} {5} {6} {7}]\n"
-		"[{8} {9} {10} {11}]\n"
-		"[{12} {13} {14} {15}]",
-		mat4[0][0], mat4[1][0], mat4[2][0], mat4[3][0],
-		mat4[0][1], mat4[1][1], mat4[2][1], mat4[3][1],
-		mat4[0][2], mat4[1][2], mat4[2][2], mat4[3][2],
-		mat4[0][3], mat4[1][3], mat4[2][3], mat4[3][3]);
-}
