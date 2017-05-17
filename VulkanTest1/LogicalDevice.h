@@ -30,7 +30,7 @@ public:
 	operator vk::Device() const { return Get(); }
 
 	const vk::Queue& GetQueue(QueueType q) const;
-	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(const_this(this)->GetQueue(q)); }
+	vk::Queue& GetQueue(QueueType q) { return const_cast<vk::Queue&>(std::as_const(*this).GetQueue(q)); }
 
 	uint32_t GetQueueFamily(QueueType q) const;
 

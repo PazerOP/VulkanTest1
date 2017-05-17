@@ -130,8 +130,9 @@ void BuiltinUniformBuffers::InitDescriptorSets()
 	{
 		auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
 
-		createInfo->m_Data.insert(std::make_pair(Enums::value(FrameViewBindings::Frame), m_Buffers[Enums::value(FrameViewBindings::Frame)]));
-		createInfo->m_Data.insert(std::make_pair(Enums::value(FrameViewBindings::View), m_Buffers[Enums::value(FrameViewBindings::View)]));
+		createInfo->m_Data.push_back(DescriptorSetCreateInfo::Binding(Enums::value(FrameViewBindings::Frame), vk::ShaderStageFlagBits::eAll, m_Buffers[Enums::value(FrameViewBindings::Frame)], "FrameViewBindings::Frame"));
+
+		createInfo->m_Data.push_back(DescriptorSetCreateInfo::Binding(Enums::value(FrameViewBindings::View), vk::ShaderStageFlagBits::eAll, m_Buffers[Enums::value(FrameViewBindings::View)], "FrameViewBindings::View"));
 
 		createInfo->m_Layout = m_DescriptorSetLayouts.at(Set::FrameView);
 

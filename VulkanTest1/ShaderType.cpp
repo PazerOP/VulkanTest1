@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ShaderType.h"
 
+#pragma warning(push)
+#pragma warning(disable : 4715)	// 'function' : not all control paths return a value
 template<> vk::ShaderStageFlagBits Enums::convert(ShaderType type)
 {
 	assert(Enums::validate(type));
@@ -19,3 +21,4 @@ template<> vk::ShaderStageFlagBits Enums::convert(ShaderType type)
 	case ShaderType::Fragment:					return vk::ShaderStageFlagBits::eFragment;
 	}
 }
+#pragma warning(pop)

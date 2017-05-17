@@ -12,7 +12,7 @@ public:
 	ShaderGroup(const std::shared_ptr<const ShaderGroupData>& data, LogicalDevice& device);
 
 	std::shared_ptr<const ShaderModule> GetModule(ShaderType type) const;
-	std::shared_ptr<ShaderModule> GetModule(ShaderType type) { return std::const_pointer_cast<ShaderModule>(const_this(this)->GetModule(type)); }
+	std::shared_ptr<ShaderModule> GetModule(ShaderType type) { return std::const_pointer_cast<ShaderModule>(std::as_const(*this).GetModule(type)); }
 
 	const std::shared_ptr<const ShaderGroupData>& GetData() const { return m_Data; }
 

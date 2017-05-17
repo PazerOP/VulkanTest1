@@ -74,10 +74,40 @@ void Material::InitDescriptorSet()
 {
 	auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
 
-	for (const auto& texture : m_Textures)
+	const auto& shaderGroupData = m_Data->GetShaderGroup()->GetData();
+
+	for (const auto& shaderDefinition : shaderGroupData->GetShaderDefinitions())
 	{
-		createInfo->m_Data.insert(std::make_pair()
+		const auto shaderStage = Enums::convert<vk::ShaderStageFlagBits>(shaderDefinition->m_Type);
+		for (const auto& shaderBinding : shaderDefinition->m_Bindings)
+		{
+			// Try to see if there's an existing binding with the same name and
+			// binding index that we should add our stage flag to.
+			bool foundExisting = false;
+			for (auto& existingBinding : createInfo->m_Data)
+			{
+				if (existingBinding.m_BindingIndex == shaderBinding.m_BindingIndex &&
+					existingBinding.m_DebugName == shaderBinding.m_ParameterName)
+				{
+					existingBinding.m_Stages |= shaderStage;
+					foundExisting = true;
+					break;
+				}
+			}
+
+			if (!foundExisting)
+			{
+				DescriptorSetCreateInfo::Binding newBinding;
+				newBinding.m_BindingIndex = shaderBinding.m_BindingIndex;
+				newBinding.m_DebugName = shaderBinding.m_ParameterName;
+				newBinding.m_Stages = shaderStage;
+				newBinding.m_Data = m_Textures[shaderBinding.m_ParameterName];
+
+				createInfo->m_Data.push_back(std::move(newBinding));
+			}
+		}
 	}
+
 	createInfo->m_Layout = m_DescriptorSetLayout;
 
 	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
@@ -163,7 +193,7 @@ std::map<uint32_t, std::vector<vk::DescriptorSet>> Material::GetDescriptorSets()
 	}
 
 	std::vector<vk::DescriptorSet> descriptorSets;
-	for (auto it = start; start != ordered.end(); it++)
+	for (auto it = start; it != ordered.end(); it++)
 		descriptorSets.push_back(it->second->GetDescriptorSet());
 
 	if (!descriptorSets.empty())

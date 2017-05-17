@@ -91,7 +91,7 @@ std::vector<ShaderGroupData::ParameterDependency> ShaderGroupData::FindByParamet
 			{
 				retVal.emplace_back();
 				ParameterDependency& newDep = retVal.back();
-				newDep.m_BindingIndex = binding.m_BindingIndex;
+				newDep.m_BindingIndex = binding.m_BindingIndex.value();
 				newDep.m_Definition = shaderDef;
 
 				break;

@@ -19,7 +19,7 @@ public:
 	virtual void Reload() = 0;
 
 	std::shared_ptr<const ElementType> Find(const std::string& name) const;
-	std::shared_ptr<ElementType> Find(const std::string& name) { return std::const_pointer_cast<ElementType>(const_this(this)->Find(name)); }
+	std::shared_ptr<ElementType> Find(const std::string& name) { return std::const_pointer_cast<ElementType>(std::as_const(*this).Find(name)); }
 
 	auto begin() const { return m_Data.begin(); }
 	auto begin() { return m_Data.begin(); }
@@ -37,7 +37,7 @@ private:
 	struct Storage
 	{
 		std::shared_ptr<const ElementType> Get() const;
-		std::shared_ptr<ElementType> Get() { return std::const_pointer_cast<ElementType>(const_this(this)->Get()); }
+		std::shared_ptr<ElementType> Get() { return std::const_pointer_cast<ElementType>(std::as_const(*this).Get()); }
 
 	protected:
 		Storage(const std::shared_ptr<StorageType>& storage) : m_Storage(storage) { }

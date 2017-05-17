@@ -30,4 +30,5 @@ namespace Enums
 	}
 
 	template<class To, class From> inline constexpr To convert(From from);
+	template<class To, class From> inline To convert(const std::optional<From>& from) { return convert<To, From>(from.value()); }
 }

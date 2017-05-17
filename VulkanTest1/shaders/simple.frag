@@ -1,4 +1,3 @@
-// shadertype=glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
@@ -189,5 +188,5 @@ void main()
 	rgb.b = clamp(rgb.b, 0, 1);
 
 	//outColor = vec4(rgb, 1.0);
-	outColor = texture(baseTexture, fragTexCoord);
+	outColor = vec4(texture(baseTexture, fragTexCoord).rg, 0.5, 1);
 }

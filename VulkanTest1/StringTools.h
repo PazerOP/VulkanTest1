@@ -3,6 +3,7 @@
 //#include <filesystem>			// More to_string stuff
 //#include <glm/detail/type_mat4x4.hpp>
 #include <locale>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -47,13 +48,17 @@ template<class T> std::string to_string(const T& value)
 	ss << value;
 	return ss.str();
 }
+template<class T> std::string to_string(const std::optional<T>& value)
+{
+	std::ostringstream ss;
 
-//inline std::string& to_string(std::string& str) { return str; }
-//inline std::string to_string(const std::string& str) { return str; }
-//inline std::string to_string(const char* str) { return std::string(str); }
-//inline std::string to_string(const std::filesystem::path& path) { return path.string(); }
-//extern std::string to_string(const vk::Extent2D& extent2D);
-//extern std::string to_string(const glm::mat4& mat4);
+	if (value.has_value())
+		ss << "{optional: "sv << value.value() << "}"sv;
+	else
+		ss << "{optional "sv << typeid(T).name() << ": nullopt}"sv;
+
+	return ss.str();
+}
 
 class utf8_exception : public std::runtime_error
 {

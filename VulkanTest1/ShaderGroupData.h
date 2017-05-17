@@ -22,13 +22,13 @@ public:
 
 	struct ShaderBinding
 	{
-		uint32_t m_BindingIndex;
+		std::optional<uint32_t> m_BindingIndex;
 		std::string m_ParameterName;
 	};
 
 	struct ShaderDefinition
 	{
-		ShaderType m_Type;
+		std::optional<ShaderType> m_Type;
 		std::filesystem::path m_Path;
 		std::vector<ShaderBinding> m_Bindings;
 	};
