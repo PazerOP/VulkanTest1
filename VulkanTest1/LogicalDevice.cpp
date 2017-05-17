@@ -1,12 +1,7 @@
 #include "stdafx.h"
 #include "LogicalDevice.h"
 
-#include "GraphicsPipeline.h"
-#include "GraphicsPipelineCreateInfo.h"
 #include "Log.h"
-#include "Material.h"
-#include "Mesh.h"
-#include "ShaderGroupManager.h"
 #include "Swapchain.h"
 #include "Texture.h"
 
@@ -204,7 +199,7 @@ void LogicalDevice::InitDevice()
 		dqCreateInfos.push_back(presentationQueue);
 		presentationQueueIndex = dqCreateInfos.size() - 1;
 	}
-	
+
 	vk::DeviceCreateInfo deviceCreateInfo;
 	deviceCreateInfo.setQueueCreateInfoCount(dqCreateInfos.size());
 	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
@@ -222,13 +217,15 @@ void LogicalDevice::InitDevice()
 
 void LogicalDevice::InitDescriptorPool()
 {
-	vk::DescriptorPoolSize poolSize;
-	poolSize.setType(vk::DescriptorType::eUniformBuffer);
-	poolSize.setDescriptorCount(10);
+	const vk::DescriptorPoolSize poolSizes[] =
+	{
+		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 10),
+		vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 10),
+	};
 
 	vk::DescriptorPoolCreateInfo createInfo;
-	createInfo.setPoolSizeCount(1);
-	createInfo.setPPoolSizes(&poolSize);
+	createInfo.setPoolSizeCount(std::size(poolSizes));
+	createInfo.setPPoolSizes(poolSizes);
 	createInfo.setMaxSets(10);
 	createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 

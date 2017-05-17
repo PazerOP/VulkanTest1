@@ -21,8 +21,8 @@ void Mesh::Draw(const vk::CommandBuffer& cmdBuf) const
 
 	//cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetPipeline());
 
-	cmdBuf.bindVertexBuffers(0, GetBuffer().GetBuffer(), vk::DeviceSize(0));
-	cmdBuf.bindIndexBuffer(GetBuffer().GetBuffer(), m_VertexList->GetVertexDataSize(), vk::IndexType::eUint32);
+	cmdBuf.bindVertexBuffers(0, GetBuffer().Get(), vk::DeviceSize(0));
+	cmdBuf.bindIndexBuffer(GetBuffer().Get(), m_VertexList->GetVertexDataSize(), vk::IndexType::eUint32);
 
 	//const auto& descriptorSets = pipeline.GetDescriptorSets();
 	//cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);

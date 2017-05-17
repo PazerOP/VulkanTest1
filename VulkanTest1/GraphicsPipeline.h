@@ -23,14 +23,10 @@ public:
 	const vk::PipelineLayout GetPipelineLayout() const { return m_Layout.get(); }
 	vk::PipelineLayout GetPipelineLayout() { return m_Layout.get(); }
 
-	const std::vector<std::shared_ptr<const DescriptorSet>>& GetDescriptorSets() const;
-	const std::vector<std::shared_ptr<DescriptorSet>>& GetDescriptorSets() { return m_DescriptorSets; }
-
 	void RecreatePipeline();
 
 private:
 	void CreatePipeline();
-	void InitDescriptorSets();
 	std::vector<vk::PipelineShaderStageCreateInfo> GenerateShaderStageCreateInfos() const;
 
 	LogicalDevice& m_Device;
@@ -41,7 +37,4 @@ private:
 
 	vk::UniquePipelineLayout m_Layout;
 	vk::UniquePipeline m_Pipeline;
-
-	std::vector<vk::UniqueDescriptorSet> m_UniqueDescriptorSetHandles;
-	std::vector<std::shared_ptr<DescriptorSet>> m_DescriptorSets;
 };

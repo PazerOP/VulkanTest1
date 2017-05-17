@@ -3,6 +3,7 @@
 #include "UniformBuffer.h"
 #include "Util.h"
 
+#include <map>
 #include <optional>
 
 class DescriptorSet;
@@ -17,15 +18,15 @@ public:
 
 	void Update();
 
-	enum class Binding
+	enum class FrameViewBindings : uint32_t
 	{
-		FrameConstants,
-		ViewConstants,
-		ObjectConstants,
+		Frame,
+		View,
 	};
-	enum class Set
+	enum class Set : uint32_t
 	{
 		FrameView,
+		Material,
 		Object,
 	};
 
@@ -42,11 +43,14 @@ public:
 		alignas(16) glm::mat4 orthoProj;	// "model" in MVP matrix set
 	};
 
-	const std::vector<std::shared_ptr<const DescriptorSet>>& GetDescriptorSets() const;
-	const std::vector<std::shared_ptr<DescriptorSet>>& GetDescriptorSets() { return m_DescriptorSets; }
+	const std::map<Set, std::shared_ptr<const DescriptorSet>>& GetDescriptorSets() const;
+	const auto& GetDescriptorSets() { return m_DescriptorSets; }
 
-	const std::vector<std::shared_ptr<const DescriptorSetLayout>>& GetDescriptorSetLayouts() const;
-	const std::vector<std::shared_ptr<DescriptorSetLayout>>& GetDescriptorSetLayouts() { return m_DescriptorSetLayouts; }
+	const std::map<Set, std::shared_ptr<const DescriptorSetLayout>>& GetDescriptorSetLayouts() const;
+	const auto& GetDescriptorSetLayouts() { return m_DescriptorSetLayouts; }
+
+	const std::map<uint32_t, std::shared_ptr<const DescriptorSetLayout>>& GetDescriptorSetLayoutsUint() const;
+	const std::map<uint32_t, std::shared_ptr<DescriptorSetLayout>>& GetDescriptorSetLayoutsUint();
 
 	std::shared_ptr<const DescriptorSetLayout> GetDescriptorSetLayout(Set set) const;
 
@@ -59,11 +63,11 @@ private:
 	void InitDescriptorSets();
 
 	std::vector<std::shared_ptr<Buffer>> m_Buffers;
-	std::vector<std::shared_ptr<DescriptorSet>> m_DescriptorSets;
-	std::vector<std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;
+	std::map<Set, std::shared_ptr<DescriptorSet>> m_DescriptorSets;
+	std::map<Set, std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;
 };
 
-template<> __forceinline constexpr auto Enums::min<BuiltinUniformBuffers::Binding>() { return Enums::value(BuiltinUniformBuffers::Binding::FrameConstants); }
-template<> __forceinline constexpr auto Enums::max<BuiltinUniformBuffers::Binding>() { return Enums::value(BuiltinUniformBuffers::Binding::ObjectConstants); }
+template<> __forceinline constexpr auto Enums::min<BuiltinUniformBuffers::FrameViewBindings>() { return Enums::value(BuiltinUniformBuffers::FrameViewBindings::Frame); }
+template<> __forceinline constexpr auto Enums::max<BuiltinUniformBuffers::FrameViewBindings>() { return Enums::value(BuiltinUniformBuffers::FrameViewBindings::View); }
 template<> __forceinline constexpr auto Enums::min<BuiltinUniformBuffers::Set>() { return Enums::value(BuiltinUniformBuffers::Set::FrameView); }
 template<> __forceinline constexpr auto Enums::max<BuiltinUniformBuffers::Set>() { return Enums::value(BuiltinUniformBuffers::Set::Object); }

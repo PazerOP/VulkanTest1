@@ -13,7 +13,9 @@ public:
 	LogicalDevice& GetDevice() { return m_Device; }
 
 	vk::DeviceMemory GetDeviceMemory() const { return m_DeviceMemory.get(); }
-	vk::Buffer GetBuffer() const { return m_Buffer.get(); }
+	vk::Buffer Get() const { return m_Buffer.get(); }
+	vk::DeviceSize GetOffset() const { return 0; }
+	vk::DeviceSize GetSize() const { return m_CreateInfo.size; }
 
 	const vk::BufferCreateInfo& GetCreateInfo() const { return m_CreateInfo; }
 

@@ -16,6 +16,7 @@ Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevic
 	m_Data(data), m_Device(device)
 {
 	InitTextures();
+	InitDescriptorSetLayout();
 	InitGraphicsPipeline();
 	InitDescriptorSet();
 }
@@ -26,8 +27,10 @@ void Material::Bind(const vk::CommandBuffer& cmdBuf) const
 
 	cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetPipeline());
 
-	const auto& descriptorSets = GetDescriptorSets();
-	cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+	for (const auto& descriptorSetGroup : GetDescriptorSets())
+	{
+		cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), descriptorSetGroup.first, descriptorSetGroup.second.size(), descriptorSetGroup.second.data(), 0, nullptr);
+	}
 }
 
 void Material::InitTextures()
@@ -58,8 +61,8 @@ void Material::InitGraphicsPipeline()
 	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>();
 
 	createInfo->m_ShaderGroup = m_Data->GetShaderGroup();
-	createInfo->m_DescriptorSetLayouts = m_Device.GetBuiltinUniformBuffers().GetDescriptorSetLayouts();
-	createInfo->m_DescriptorSetLayouts.push_back(m_DescriptorSetLayout);
+	createInfo->m_DescriptorSetLayouts = m_Device.GetBuiltinUniformBuffers().GetDescriptorSetLayoutsUint();
+	createInfo->m_DescriptorSetLayouts.insert(std::make_pair(Enums::value(BuiltinUniformBuffers::Set::Material), m_DescriptorSetLayout));
 
 	createInfo->m_VertexInputBindingDescription = SimpleVertex::GetBindingDescription();
 	createInfo->m_VertexInputAttributeDescriptions = SimpleVertex::GetAttributeDescriptions();
@@ -71,7 +74,10 @@ void Material::InitDescriptorSet()
 {
 	auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
 
-	//createInfo->m_Data = nullptr;
+	for (const auto& texture : m_Textures)
+	{
+		createInfo->m_Data.insert(std::make_pair()
+	}
 	createInfo->m_Layout = m_DescriptorSetLayout;
 
 	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
@@ -93,6 +99,7 @@ void Material::InitDescriptorSetLayout()
 		return;
 
 	auto newCreateInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
+	newCreateInfo->m_DebugName = __FUNCSIG__;
 
 	for (const auto& texture : m_Textures)
 	{
@@ -127,12 +134,40 @@ void Material::InitDescriptorSetLayout()
 	m_DescriptorSetLayout = std::make_shared<DescriptorSetLayout>(m_Device, newCreateInfo);
 }
 
-std::vector<vk::DescriptorSet> Material::GetDescriptorSets() const
+// Breaks up all the descriptor sets that need to be bound for this material into
+// contiguous groups so we can make fewer calls to vkBindDescriptorSets. The key is
+// the start index of each set.
+std::map<uint32_t, std::vector<vk::DescriptorSet>> Material::GetDescriptorSets() const
 {
-	std::vector<vk::DescriptorSet> retVal;
+	auto ordered = m_Device.GetBuiltinUniformBuffers().GetDescriptorSets();
+	ordered.insert(std::make_pair(BuiltinUniformBuffers::Set::Material, m_DescriptorSet));
 
-	for (const auto& setWrapper : GetPipeline().GetDescriptorSets())
-		retVal.push_back(setWrapper->GetDescriptorSet());
+	std::map<uint32_t, std::vector<vk::DescriptorSet>> retVal;
+	auto start = ordered.begin();
+	auto previous = ordered.begin();
+	for (auto it = std::next(ordered.begin()); it != ordered.end(); it++)
+	{
+		if (Enums::value(it->first) > (Enums::value(previous->first) + 1))
+		{
+			// Break ourselves off
+			std::vector<vk::DescriptorSet> descriptorSets;
+			for (auto brokenOffIt = start; brokenOffIt != it; brokenOffIt++)
+				descriptorSets.push_back(brokenOffIt->second->GetDescriptorSet());
+
+			retVal.insert(std::make_pair(Enums::value(start->first), std::move(descriptorSets)));
+
+			start = it;
+		}
+
+		previous = it;
+	}
+
+	std::vector<vk::DescriptorSet> descriptorSets;
+	for (auto it = start; start != ordered.end(); it++)
+		descriptorSets.push_back(it->second->GetDescriptorSet());
+
+	if (!descriptorSets.empty())
+		retVal.insert(std::make_pair(Enums::value(start->first), std::move(descriptorSets)));
 
 	return retVal;
 }

@@ -34,7 +34,7 @@ private:
 
 	std::map<std::string, std::shared_ptr<Texture>> m_Textures;
 
-	std::vector<vk::DescriptorSet> GetDescriptorSets() const;
+	std::map<uint32_t, std::vector<vk::DescriptorSet>> GetDescriptorSets() const;
 
 	std::shared_ptr<DescriptorSetLayout> m_DescriptorSetLayout;
 	std::shared_ptr<DescriptorSet> m_DescriptorSet;

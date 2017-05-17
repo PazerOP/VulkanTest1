@@ -4,7 +4,7 @@
 
 #include "shared.glsl"
 
-layout(set = 2, binding = 5) uniform sampler2D baseTexture;
+layout(set = SET_MATERIAL, binding = 5) uniform sampler2D baseTexture;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;

@@ -33,7 +33,7 @@ void Drawable::CreateObjectConstants()
 	m_ObjectConstantsBuffer = std::make_shared<UniformBuffer>(m_Device, sizeof(ObjectConstants), vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 	std::shared_ptr<DescriptorSetCreateInfo> createInfo = std::make_shared<DescriptorSetCreateInfo>();
-	createInfo->m_Data.push_back(m_ObjectConstantsBuffer);
+	createInfo->m_Data.insert(std::make_pair(0, m_ObjectConstantsBuffer));
 	createInfo->m_Layout = m_Device.GetBuiltinUniformBuffers().GetDescriptorSetLayout(BuiltinUniformBuffers::Set::Object);
 
 	m_ObjectConstantsDescriptorSet.emplace(m_Device, createInfo);

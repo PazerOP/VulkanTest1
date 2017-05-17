@@ -21,8 +21,7 @@ public:
 private:
 	void CreateDescriptorSetLayout();
 
-	LogicalDevice& m_Device;
-
 	std::shared_ptr<const DescriptorSetLayoutCreateInfo> m_CreateInfo;
 	vk::UniqueDescriptorSetLayout m_Layout;
+	LogicalDevice& m_Device;
 };

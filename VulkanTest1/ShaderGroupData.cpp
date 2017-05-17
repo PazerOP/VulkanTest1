@@ -66,8 +66,8 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 			binding.m_BindingIndex = (uint32_t)inputObj.find("binding")->second.GetNumber();
 			binding.m_ParameterName = inputObj.find("parameter")->second.GetString();
 
-			if (binding.m_BindingIndex <= Enums::max<BuiltinUniformBuffers::Binding>())
-				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind parameter \"{0}\" to reserved binding index {1} on {2} shader in group {3}! All indices below {4} are reserved for builtin uniform buffers.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name, Enums::max<BuiltinUniformBuffers::Binding>()));
+			if (binding.m_BindingIndex <= Enums::max<BuiltinUniformBuffers::FrameViewBindings>())
+				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind parameter \"{0}\" to reserved binding index {1} on {2} shader in group {3}! All indices below {4} are reserved for builtin uniform buffers.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name, Enums::max<BuiltinUniformBuffers::FrameViewBindings>()));
 
 			if (!IsValidParameterName(binding.m_ParameterName))
 				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind invalid parameter name \"{0}\" @ binding {1} on {2} shader in group {3}.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name));

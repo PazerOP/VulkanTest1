@@ -14,6 +14,9 @@ public:
 	const std::shared_ptr<const TextureCreateInfo>& GetCreateInfoPtr() const { return m_CreateInfo; }
 	const TextureCreateInfo& GetCreateInfo() const { return *m_CreateInfo; }
 
+	vk::ImageView GetImageView() const { return m_ImageView.get(); }
+	vk::Sampler GetSampler() const { return m_Sampler.get(); }
+
 private:
 	void CreateImageView();
 	void CreateSampler();

@@ -36,7 +36,7 @@ void Buffer::CopyTo(Buffer& buffer) const
 	vk::UniqueCommandBuffer cmdBuf = GetDevice().AllocCommandBuffer();
 
 	cmdBuf->begin(VulkanHelpers::CBBI_ONE_TIME_SUBMIT);
-	cmdBuf->copyBuffer(m_Buffer.get(), buffer.GetBuffer(), vk::BufferCopy(0, 0, GetCreateInfo().size));
+	cmdBuf->copyBuffer(m_Buffer.get(), buffer.Get(), vk::BufferCopy(0, 0, GetCreateInfo().size));
 	cmdBuf->end();
 
 	GetDevice().SubmitCommandBuffers(cmdBuf.get());

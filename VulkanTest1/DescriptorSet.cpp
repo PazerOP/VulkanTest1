@@ -6,6 +6,9 @@
 #include "DescriptorSetLayout.h"
 #include "DescriptorSetLayoutCreateInfo.h"
 #include "LogicalDevice.h"
+#include "Texture.h"
+
+#include <forward_list>
 
 DescriptorSet::DescriptorSet(LogicalDevice& device, const std::shared_ptr<const DescriptorSetCreateInfo>& createInfo) :
 	m_Device(device),
@@ -38,25 +41,53 @@ void DescriptorSet::CreateDescriptorSet()
 	m_DescriptorSet = std::move(GetDevice()->allocateDescriptorSetsUnique(allocInfo).front());
 
 	const auto& bindings = m_CreateInfo->m_Layout->GetCreateInfo()->m_Bindings;
-	std::vector<vk::WriteDescriptorSet> descriptorWrites(bindings.size());
-	std::vector<vk::DescriptorBufferInfo> bufferInfos(bindings.size());
-	
-	for (size_t i = 0; i < bindings.size(); i++)
+	std::vector<vk::WriteDescriptorSet> descriptorWrites;
+
+	// forward_list so the pointers don't move around (linked list)
+	std::forward_list<vk::DescriptorBufferInfo> bufferInfos;
+	std::forward_list<vk::DescriptorImageInfo> imageInfos;
+
+	for (const auto& binding : m_CreateInfo->m_Layout->GetCreateInfo()->m_Bindings)
 	{
-		const auto& binding = bindings[i];
-
-		vk::DescriptorBufferInfo& bufferInfo = bufferInfos[i];
-
-		auto buffer = std::get<std::shared_ptr<Buffer>>(m_CreateInfo->m_Data[i]);
-		bufferInfo.setBuffer(buffer->GetBuffer());
-		bufferInfo.setRange(buffer->GetCreateInfo().size);
-
-		vk::WriteDescriptorSet& write = descriptorWrites[i];
+		descriptorWrites.emplace_back();
+		vk::WriteDescriptorSet& write = descriptorWrites.back();
 		write.setDstSet(m_DescriptorSet.get());
 		write.setDescriptorType(binding.descriptorType);
 		write.setDescriptorCount(binding.descriptorCount);
-		write.setDstBinding(i);
-		write.setPBufferInfo(&bufferInfo);
+		write.setDstBinding(binding.binding);
+
+		const auto& dataVariant = m_CreateInfo->m_Data.at(binding.binding);
+		switch (dataVariant.index())
+		{
+		case 0:	// buffer
+		{
+			auto buffer = std::get<std::shared_ptr<Buffer>>(dataVariant);
+
+			bufferInfos.emplace_front();
+			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.front();
+
+			bufferInfo.setBuffer(buffer->Get());
+			bufferInfo.setRange(buffer->GetSize());
+			bufferInfo.setOffset(buffer->GetOffset());
+
+			write.setPBufferInfo(&bufferInfo);
+			break;
+		}
+		case 1:	// texture
+		{
+			auto texture = std::get<std::shared_ptr<Texture>>(dataVariant);
+
+			imageInfos.emplace_front();
+			vk::DescriptorImageInfo& imageInfo = imageInfos.front();
+
+			//imageInfo.setImageLayout(texture->GetCreateInfo)
+			imageInfo.setImageView(texture->GetImageView());
+			imageInfo.setSampler(texture->GetSampler());
+
+			write.setPImageInfo(&imageInfo);
+			break;
+		}
+		}
 	}
 
 	std::array<vk::CopyDescriptorSet, 0> descriptorCopies;

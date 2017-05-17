@@ -23,13 +23,7 @@ GraphicsPipeline::GraphicsPipeline(LogicalDevice& device, const std::shared_ptr<
 	if (m_CreateInfo->m_VertexInputAttributeDescriptions.empty())
 		throw std::invalid_argument("Attempted to create a GraphicsPipeline object with a GraphicsPipelineCreateInfo that did not have any VertexInputAttributeDescriptions specified.");
 
-	InitDescriptorSets();
 	CreatePipeline();
-}
-
-const std::vector<std::shared_ptr<const DescriptorSet>>& GraphicsPipeline::GetDescriptorSets() const
-{
-	return reinterpret_cast<const std::vector<std::shared_ptr<const DescriptorSet>>&>(m_DescriptorSets);
 }
 
 void GraphicsPipeline::RecreatePipeline()
@@ -155,11 +149,6 @@ void GraphicsPipeline::CreatePipeline()
 	m_Pipeline = device.createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
-void GraphicsPipeline::InitDescriptorSets()
-{
-	m_DescriptorSets = GetDevice().GetBuiltinUniformBuffers().GetDescriptorSets();
-}
-
 std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderStageCreateInfos() const
 {
 	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
@@ -182,9 +171,12 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 
 std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
 {
-	std::vector<vk::DescriptorSetLayout> retVal;
+	// Potentially non-contiguous
+	uint32_t highest = std::prev(m_CreateInfo->m_DescriptorSetLayouts.end())->first;
+
+	std::vector<vk::DescriptorSetLayout> retVal(highest + 1);
 	for (const auto& descSet : m_CreateInfo->m_DescriptorSetLayouts)
-		retVal.push_back(descSet->Get());
+		retVal[descSet.first] = descSet.second->Get();
 
 	return retVal;
 }
