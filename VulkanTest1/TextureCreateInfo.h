@@ -6,4 +6,6 @@
 struct TextureCreateInfo
 {
 	std::filesystem::path m_Path;
+
+	vk::Filter m_Filter;
 };

@@ -188,5 +188,6 @@ void main()
 	rgb.b = clamp(rgb.b, 0, 1);
 
 	//outColor = vec4(rgb, 1.0);
-	outColor = vec4(texture(baseTexture, fragTexCoord).rg, 0.5, 1);
+	//outColor = vec4(fragTexCoord, 0.0, 1.0);
+	outColor = texture(baseTexture, fragTexCoord);
 }

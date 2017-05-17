@@ -21,8 +21,8 @@ private:
 	void CreateImageView();
 	void CreateSampler();
 
-	void TransitionImageLayout(const vk::Image& img, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
-	void CopyImage(const vk::Image& src, const vk::Image& dst, uint32_t width, uint32_t height);
+	void TransitionImageLayout(const vk::Image& img, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) const;
+	void CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, uint32_t width, uint32_t height) const;
 
 	LogicalDevice& m_Device;
 

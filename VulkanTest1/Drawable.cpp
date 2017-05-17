@@ -14,8 +14,18 @@ Drawable::Drawable(LogicalDevice& device) :
 
 void Drawable::Update()
 {
+	static const auto startTimePoint = std::chrono::high_resolution_clock::now();
+
+	const float time = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - startTimePoint).count();
+
 	ObjectConstants obj;
-	obj.modelToWorld = m_Transform.ComputeMatrix();
+
+	Transform copy = m_Transform;
+
+	const float jokeScale = Remap(600, 1000, -1, 1, sin(fmodf(time, 2 * 3.14159)));
+	copy.SetScale(glm::vec2(jokeScale));
+
+	obj.modelToWorld = copy.ComputeMatrix();
 	m_ObjectConstantsBuffer->Write(&obj, sizeof(obj), 0);
 }
 
