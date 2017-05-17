@@ -1,14 +1,15 @@
 #pragma once
+#include <memory>
 #include <variant>
 #include <vector>
-#include <vulkan/vulkan.hpp>
 
 class Buffer;
 class DescriptorSetLayout;
+class Texture;
 
 struct DescriptorSetCreateInfo
 {
-	using DataVariant = std::variant<std::shared_ptr<Buffer>>;
+	using DataVariant = std::variant<std::shared_ptr<Buffer>, std::shared_ptr<Texture>>;
 
 	std::vector<DataVariant> m_Data;
 

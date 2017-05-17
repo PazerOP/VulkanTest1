@@ -116,6 +116,8 @@ void LogicalDevice::SubmitCommandBuffers(const std::initializer_list<vk::Command
 LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physicalDevice) :
 	m_PhysicalDeviceData(physicalDevice)
 {
+	m_InitData = m_PhysicalDeviceData->GetInitData();
+
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
 	ChooseQueueFamilies();
 
@@ -127,6 +129,7 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 	m_ShaderGroupManagerInstance.emplace(*this);
 	m_MaterialDataManagerInstance.emplace(*this);
 	m_MaterialManagerInstance.emplace(*this);
+	m_TextureManagerInstance.emplace(*this);
 
 	InitSwapchain();
 	InitRenderPass();
@@ -157,6 +160,7 @@ LogicalDevice::~LogicalDevice()
 	m_TestDrawable.reset();
 
 	// Manager instances
+	m_TextureManagerInstance.reset();
 	m_MaterialManagerInstance.reset();
 	m_MaterialDataManagerInstance.reset();
 	m_ShaderGroupManagerInstance.reset();
@@ -200,16 +204,15 @@ void LogicalDevice::InitDevice()
 		dqCreateInfos.push_back(presentationQueue);
 		presentationQueueIndex = dqCreateInfos.size() - 1;
 	}
-
-	vk::PhysicalDeviceFeatures features;
-
+	
 	vk::DeviceCreateInfo deviceCreateInfo;
 	deviceCreateInfo.setQueueCreateInfoCount(dqCreateInfos.size());
 	deviceCreateInfo.setPQueueCreateInfos(dqCreateInfos.data());
+	deviceCreateInfo.setPEnabledFeatures(&m_InitData->m_Features);
 
 	// Extensions
-	deviceCreateInfo.setPpEnabledExtensionNames(m_PhysicalDeviceData->ChooseBestExtensionSet().data());
-	deviceCreateInfo.setEnabledExtensionCount(m_PhysicalDeviceData->ChooseBestExtensionSet().size());
+	deviceCreateInfo.setPpEnabledExtensionNames(m_InitData->m_Extensions.data());
+	deviceCreateInfo.setEnabledExtensionCount(m_InitData->m_Extensions.size());
 
 	m_LogicalDevice = m_PhysicalDeviceData->GetPhysicalDevice().createDeviceUnique(deviceCreateInfo);
 

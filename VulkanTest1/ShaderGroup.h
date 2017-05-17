@@ -1,6 +1,9 @@
 #pragma once
-#include "ShaderGroupData.h"
-#include "ShaderModule.h"
+#include "ShaderType.h"
+
+class LogicalDevice;
+class ShaderGroupData;
+class ShaderModule;
 
 // A group of shader modules to be used together, for example a vertex+pixel shader combo.
 class ShaderGroup

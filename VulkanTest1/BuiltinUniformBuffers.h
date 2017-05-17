@@ -57,7 +57,7 @@ private:
 	void InitBuffers();
 	void InitDescriptorSetLayouts();
 	void InitDescriptorSets();
-	
+
 	std::vector<std::shared_ptr<Buffer>> m_Buffers;
 	std::vector<std::shared_ptr<DescriptorSet>> m_DescriptorSets;
 	std::vector<std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;

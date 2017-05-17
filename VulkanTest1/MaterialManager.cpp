@@ -12,13 +12,13 @@ MaterialManager::MaterialManager(LogicalDevice& device) :
 
 void MaterialManager::Reload()
 {
-	m_Data.clear();
+	ClearData();
 
 	for (const auto& entry : MaterialDataManager::Instance())
 	{
-		const auto& data = entry.second;
+		const auto& data = entry.second.Get();
 
-		m_Data.insert(std::make_pair(data->GetName(), std::make_shared<Material>(data, m_Device)));
+		AddPair(data->GetName(), std::make_shared<Material>(data, m_Device));
 	}
 }
 
@@ -26,6 +26,6 @@ void MaterialManager::RecreatePipelines()
 {
 	for (auto& entry : Instance())
 	{
-		entry.second->GetPipeline().RecreatePipeline();
+		entry.second.Get()->GetPipeline().RecreatePipeline();
 	}
 }

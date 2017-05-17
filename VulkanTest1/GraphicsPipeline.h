@@ -31,7 +31,6 @@ public:
 private:
 	void CreatePipeline();
 	void InitDescriptorSets();
-	static vk::ShaderStageFlagBits ConvertShaderType(ShaderType type);
 	std::vector<vk::PipelineShaderStageCreateInfo> GenerateShaderStageCreateInfos() const;
 
 	LogicalDevice& m_Device;

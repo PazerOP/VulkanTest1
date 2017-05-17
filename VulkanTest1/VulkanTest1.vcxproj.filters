@@ -48,6 +48,12 @@
     <Filter Include="Engine\Vulkan\Shaders">
       <UniqueIdentifier>{62933ed2-9520-468e-8d19-64379ad1ea9d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Graphics\Textures">
+      <UniqueIdentifier>{67e68718-0ba8-4fa9-8614-d9d1b190e8a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Mesh">
+      <UniqueIdentifier>{4b85fd8f-aad3-468f-84fe-25b08f672fc5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -95,27 +101,12 @@
     <ClInclude Include="Sprite.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="IVertexList.h">
-      <Filter>Engine\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleVertex.h">
-      <Filter>Engine\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="VertexList.h">
-      <Filter>Engine\Test</Filter>
-    </ClInclude>
     <ClInclude Include="Buffer.h">
-      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.h">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
     <ClInclude Include="CompilerSettings.h" />
     <ClInclude Include="stb_image.h">
       <Filter>Engine\Support\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClInclude>
     <ClInclude Include="VulkanDebug.h">
       <Filter>Engine\Vulkan</Filter>
@@ -136,9 +127,6 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="ShaderParameterType.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderType.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="ShaderGroup.h">
@@ -219,6 +207,33 @@
     <ClInclude Include="DescriptorSetLayoutCreateInfo.h">
       <Filter>Engine\Vulkan\Data</Filter>
     </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Engine\Graphics\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Engine\Graphics\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureCreateInfo.h">
+      <Filter>Engine\Graphics\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderType.h">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceFeature.h">
+      <Filter>Engine\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexList.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleVertex.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="IVertexList.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -257,14 +272,8 @@
     <ClCompile Include="Buffer.cpp">
       <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>Engine\Support\stb</Filter>
-    </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>Engine\Vulkan\ObjectWrappers</Filter>
     </ClCompile>
     <ClCompile Include="VulkanDebug.cpp">
       <Filter>Engine\Vulkan</Filter>
@@ -334,6 +343,21 @@
     </ClCompile>
     <ClCompile Include="StringConverter.cpp">
       <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Engine\Graphics\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderType.cpp">
+      <Filter>Engine\Graphics\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceFeature.cpp">
+      <Filter>Engine\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Engine\Graphics\Mesh</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

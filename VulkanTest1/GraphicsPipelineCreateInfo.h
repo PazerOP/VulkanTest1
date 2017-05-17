@@ -7,7 +7,7 @@ class ShaderGroup;
 
 struct GraphicsPipelineCreateInfo
 {
-	std::shared_ptr<ShaderGroup> m_ShaderGroup;
+	std::shared_ptr<const ShaderGroup> m_ShaderGroup;
 	std::vector<std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;
 
 	std::optional<vk::VertexInputBindingDescription> m_VertexInputBindingDescription;

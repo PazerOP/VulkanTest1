@@ -129,6 +129,7 @@
     <ClInclude Include="DescriptorSetCreateInfo.h" />
     <ClInclude Include="DescriptorSetLayout.h" />
     <ClInclude Include="DescriptorSetLayoutCreateInfo.h" />
+    <ClInclude Include="DeviceFeature.h" />
     <ClInclude Include="Drawable.h" />
     <ClInclude Include="Enums.h" />
     <ClInclude Include="FixedWindows.h" />
@@ -162,6 +163,8 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="TestDrawable.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TextureCreateInfo.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="UniformBuffer.h" />
     <ClInclude Include="TransformBuffer.h" />
@@ -184,6 +187,7 @@
     <ClCompile Include="BuiltinUniformBuffers.cpp" />
     <ClCompile Include="DescriptorSet.cpp" />
     <ClCompile Include="DescriptorSetLayout.cpp" />
+    <ClCompile Include="DeviceFeature.cpp" />
     <ClCompile Include="Drawable.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObjectManager.cpp" />
@@ -203,6 +207,7 @@
     <ClCompile Include="ShaderGroupDataManager.cpp" />
     <ClCompile Include="ShaderGroupManager.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
+    <ClCompile Include="ShaderType.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -217,6 +222,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="TestDrawable.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="Vulkan.cpp" />

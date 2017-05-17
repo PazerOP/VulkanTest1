@@ -4,7 +4,10 @@
 
 #include "shared.glsl"
 
+layout(set = 2, binding = 5) uniform sampler2D baseTexture;
+
 layout(location = 0) in vec3 fragColor;
+layout(location = 1) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
@@ -185,5 +188,6 @@ void main()
 	rgb.g = clamp(rgb.g, 0, 1);
 	rgb.b = clamp(rgb.b, 0, 1);
 
-    outColor = vec4(rgb, 1.0);
+	//outColor = vec4(rgb, 1.0);
+	outColor = texture(baseTexture, fragTexCoord);
 }

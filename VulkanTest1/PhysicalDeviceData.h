@@ -1,4 +1,5 @@
 #pragma once
+#include "DeviceFeature.h"
 #include "SwapChainData.h"
 #include "Util.h"
 
@@ -19,16 +20,24 @@ public:
 		MissingQueue_Presentation,
 
 		MissingRequiredExtension,
+		MissingRequiredFeature,
 
 		SwapChain_Unsuitable,
 	};
 
+	struct InitData
+	{
+		std::vector<const char*> m_Extensions;
+		vk::PhysicalDeviceFeatures m_Features;
+	};
+	std::shared_ptr<const InitData> GetInitData() const { return m_InitData; }
 
 	float GetRating() const { return m_Rating; }
 	Suitability GetSuitability() const;
 	std::string GetSuitabilityMessage() const;
 
 	bool HasExtension(const std::string_view& name) const;
+	bool HasFeature(DeviceFeature feature) const;
 	const std::vector<vk::ExtensionProperties>& GetSupportedExtensions() const { return m_SupportedExtensions; }
 	const std::vector<vk::LayerProperties>& GetSupportedLayers() const { return m_SupportedLayers; }
 
@@ -43,8 +52,6 @@ public:
 	std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> GetQueueFamilies(const vk::QueueFlags& queueFlags);
 	const std::vector<uint32_t>& GetPresentationQueueFamilies() const { return m_PresentationQueueFamilies; }
 
-	const std::vector<const char*>& ChooseBestExtensionSet() const { return m_BestExtensionSet; }
-
 	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation, vk::QueueFlags flags) const;
 	std::optional<std::pair<uint32_t, vk::QueueFamilyProperties>> ChooseBestQueue(bool presentation) const;
 
@@ -58,14 +65,19 @@ private:
 	PhysicalDeviceData();
 	void Init(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface);
 
+	static vk::Bool32* GetFeaturePtr(vk::PhysicalDeviceFeatures& features, DeviceFeature feature);
+	static const vk::Bool32* GetFeaturePtr(const vk::PhysicalDeviceFeatures& features, DeviceFeature feature);
+
 	void RateDeviceSuitability();
+	void RateDeviceExtensions();
+	void RateDeviceFeatures();
 	void FindPresentationQueueFamilies();
 
 	bool m_Init;
 
 	float m_Rating;
 	float m_SwapchainRating;
-	Suitability m_Suitability;
+	std::optional<Suitability> m_Suitability;
 	SwapchainData::Suitability m_SwapchainSuitability;
 
 	std::string m_SuitabilityMessageBase;
@@ -84,16 +96,5 @@ private:
 	std::vector<vk::QueueFamilyProperties> m_QueueFamilies;
 	std::vector<uint32_t> m_PresentationQueueFamilies;
 
-	static constexpr const char* REQUIRED_EXTENSIONS[] =
-	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-
-	// A list of optional extensions to enable, along with a weight of how important they are.
-	static constexpr std::pair<const char*, float> OPTIONAL_EXTENSIONS[] =
-	{
-		{ VK_EXT_DEBUG_MARKER_EXTENSION_NAME, 5.0f }
-	};
-
-	std::vector<const char*> m_BestExtensionSet;
+	std::shared_ptr<InitData> m_InitData;
 };

@@ -7,7 +7,7 @@
 
 class ShaderGroupData
 {
-	using ShaderParameterList = std::map<std::string, std::vector<ShaderParameterType>>;
+	using ShaderParameterList = std::map<std::string, ShaderParameterType>;
 public:
 	ShaderGroupData(const std::filesystem::path& path);
 	ShaderGroupData(const std::string& str);
@@ -37,6 +37,13 @@ public:
 	const auto& GetParameters() const { return m_Parameters; }
 	const auto& GetShaderDefinitions() const { return m_Shaders; }
 
+	struct ParameterDependency
+	{
+		uint32_t m_BindingIndex;
+		std::shared_ptr<const ShaderDefinition> m_Definition;
+	};
+	std::vector<ParameterDependency> FindByParameterDependency(const std::string& paramName) const;
+
 private:
 	std::filesystem::path m_Path;
 
@@ -44,5 +51,5 @@ private:
 
 	std::string m_Name;
 	ShaderParameterList m_Parameters;
-	std::vector<ShaderDefinition> m_Shaders;
+	std::vector<std::shared_ptr<ShaderDefinition>> m_Shaders;
 };

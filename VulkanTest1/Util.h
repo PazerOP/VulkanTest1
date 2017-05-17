@@ -53,6 +53,14 @@ constexpr std::array<T, sizeof...(Args)> make_array(Args&&... t)
 	return { std::forward<Args>(t)... };
 }
 
+// Somehow didn't get added until C++17...
+template< class T, class U >
+std::shared_ptr<T> reinterpret_pointer_cast(const std::shared_ptr<U>& r) noexcept
+{
+	auto p = reinterpret_cast<typename std::shared_ptr<T>::element_type*>(r.get());
+	return std::shared_ptr<T>(r, p);
+}
+
 // Remaps x from [0, 1] to [a, b]
 __forceinline constexpr float Lerp(float a, float b, float x)
 {

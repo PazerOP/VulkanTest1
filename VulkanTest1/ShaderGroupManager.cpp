@@ -12,12 +12,12 @@ ShaderGroupManager::ShaderGroupManager(LogicalDevice& device) :
 
 void ShaderGroupManager::Reload()
 {
-	m_Data.clear();
+	ClearData();
 
 	for (const auto& entry : ShaderGroupDataManager::Instance())
 	{
-		const auto& data = entry.second;
+		const auto& data = entry.second.Get();
 		
-		m_Data.insert(std::make_pair(data->GetName(), std::make_shared<ShaderGroup>(data, m_Device)));
+		AddPair(data->GetName(), std::make_shared<ShaderGroup>(data, m_Device));
 	}
 }

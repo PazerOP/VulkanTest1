@@ -11,7 +11,7 @@ ShaderGroupDataManager::ShaderGroupDataManager(LogicalDevice& device) :
 
 void ShaderGroupDataManager::Reload()
 {
-	m_Data.clear();
+	ClearData();
 
 	static const std::filesystem::path s_ShadersFolderPath(std::filesystem::current_path().append("shaders"s));
 
@@ -31,6 +31,6 @@ void ShaderGroupDataManager::Reload()
 
 		std::shared_ptr<const ShaderGroupData> data(std::make_shared<ShaderGroupData>(path));
 
-		m_Data.insert(std::make_pair(data->GetName(), data));
+		AddPair(data->GetName(), data);
 	}
 }

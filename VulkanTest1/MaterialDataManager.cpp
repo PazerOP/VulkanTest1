@@ -12,7 +12,7 @@ void MaterialDataManager::Reload()
 {
 	static const std::filesystem::path s_ShadersFolderPath(std::filesystem::current_path().append("materials"s));
 
-	m_Data.clear();
+	ClearData();
 
 	for (auto& item : std::filesystem::recursive_directory_iterator(s_ShadersFolderPath))
 	{
@@ -30,6 +30,6 @@ void MaterialDataManager::Reload()
 
 		std::shared_ptr<const MaterialData> data(std::make_shared<MaterialData>(path));
 
-		m_Data.insert(std::make_pair(data->GetName(), data));
+		AddPair(data->GetName(), data);
 	}
 }

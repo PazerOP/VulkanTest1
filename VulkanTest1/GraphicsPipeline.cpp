@@ -7,6 +7,7 @@
 #include "LogicalDevice.h"
 #include "SimpleVertex.h"
 #include "ShaderGroup.h"
+#include "ShaderModule.h"
 #include "Swapchain.h"
 #include "Vulkan.h"
 
@@ -159,27 +160,6 @@ void GraphicsPipeline::InitDescriptorSets()
 	m_DescriptorSets = GetDevice().GetBuiltinUniformBuffers().GetDescriptorSets();
 }
 
-vk::ShaderStageFlagBits GraphicsPipeline::ConvertShaderType(ShaderType type)
-{
-	switch (type)
-	{
-	case ShaderType::Vertex:					return vk::ShaderStageFlagBits::eVertex;
-
-	case ShaderType::TessellationControl:		return vk::ShaderStageFlagBits::eTessellationControl;
-	case ShaderType::TessellationEvaluation:	return vk::ShaderStageFlagBits::eTessellationEvaluation;
-
-	case ShaderType::Gemoetry:					return vk::ShaderStageFlagBits::eGeometry;
-
-	case ShaderType::Compute:					return vk::ShaderStageFlagBits::eCompute;
-
-	case ShaderType::Fragment:					return vk::ShaderStageFlagBits::eFragment;
-
-	default:
-		assert(!"Invalid ShaderType!");
-		return (vk::ShaderStageFlagBits)0;
-	}
-}
-
 std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderStageCreateInfos() const
 {
 	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
@@ -192,7 +172,7 @@ std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderS
 		createInfos.emplace_back();
 		auto& currentInfo = createInfos.back();
 
-		currentInfo.setStage(ConvertShaderType((ShaderType)i));
+		currentInfo.setStage(Enums::convert<vk::ShaderStageFlagBits>((ShaderType)i));
 
 		currentInfo.setModule(current->Get());
 		currentInfo.setPName("main");

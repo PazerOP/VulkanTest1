@@ -2,15 +2,12 @@
 #include "Texture.h"
 
 #include "LogicalDevice.h"
-#include "stb_image.h"
+#include "TextureCreateInfo.h"
 #include "Vulkan.h"
 #include "VulkanDebug.h"
 #include "VulkanHelpers.h"
 
-std::unique_ptr<Texture> Texture::Create(const std::filesystem::path& imgPath, LogicalDevice* device)
-{
-	return std::unique_ptr<Texture>(new Texture(imgPath, device));
-}
+#include "stb_image.h"
 
 Texture::~Texture()
 {
@@ -19,15 +16,14 @@ Texture::~Texture()
 	m_DeviceMemory.reset();
 }
 
-Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
-	m_Device(device ? *device : Vulkan().GetLogicalDevice())
+Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreateInfo>& createInfo) :
+	m_Device(device),
+	m_CreateInfo(createInfo)
 {
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
 
-	m_ImagePath = imgPath;
-
 	int w, h, channels;
-	auto rawImg = std::shared_ptr<stbi_uc>(stbi_load(imgPath.string().c_str(), &w, &h, &channels, STBI_rgb_alpha),
+	auto rawImg = std::shared_ptr<stbi_uc>(stbi_load(GetCreateInfo().m_Path.string().c_str(), &w, &h, &channels, STBI_rgb_alpha),
 										   [](stbi_uc* i) { stbi_image_free(i); });
 	if (w <= 0 || h <= 0 || channels <= 0)
 		throw std::runtime_error(StringTools::CSFormat("Failed to load raw img in texture constructor: width {0}, height {1}, channels {2}", w, h, channels));
@@ -126,6 +122,9 @@ Texture::Texture(const std::filesystem::path& imgPath, LogicalDevice* device) :
 
 	stagingImage.reset();
 	stagingMemory.reset();
+
+	CreateImageView();
+	CreateSampler();
 }
 
 void Texture::CreateImageView()
@@ -138,6 +137,33 @@ void Texture::CreateImageView()
 	m_ImageViewCreateInfo.subresourceRange.setLayerCount(1);
 
 	m_ImageView = m_Device->createImageViewUnique(m_ImageViewCreateInfo);
+}
+
+void Texture::CreateSampler()
+{
+	m_SamplerCreateInfo.setMagFilter(vk::Filter::eLinear);
+	m_SamplerCreateInfo.setMinFilter(vk::Filter::eLinear);
+
+	m_SamplerCreateInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);
+	m_SamplerCreateInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);
+	m_SamplerCreateInfo.setAddressModeW(vk::SamplerAddressMode::eRepeat);
+
+	m_SamplerCreateInfo.setAnisotropyEnable(true);
+	m_SamplerCreateInfo.setMaxAnisotropy(16);
+
+	m_SamplerCreateInfo.setBorderColor(vk::BorderColor::eIntOpaqueBlack);
+
+	m_SamplerCreateInfo.setUnnormalizedCoordinates(false);
+
+	m_SamplerCreateInfo.setCompareEnable(false);
+	m_SamplerCreateInfo.setCompareOp(vk::CompareOp::eAlways);
+
+	m_SamplerCreateInfo.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+	m_SamplerCreateInfo.setMipLodBias(0);
+	m_SamplerCreateInfo.setMinLod(0);
+	m_SamplerCreateInfo.setMaxLod(0);
+
+	m_Sampler = m_Device->createSamplerUnique(m_SamplerCreateInfo);
 }
 
 void Texture::TransitionImageLayout(const vk::Image& img, vk::Format /*format*/, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)

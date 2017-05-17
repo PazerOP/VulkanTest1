@@ -25,12 +25,13 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 		std::vector<ShaderParameterType> parameterTypes;
 
 		const std::string& typeName = parameterObj.find("type")->second.GetString();
+		std::optional<ShaderParameterType> paramType;
 		if (!typeName.compare("texture"))
-			parameterTypes.push_back(ShaderParameterType::Texture);
+			paramType = ShaderParameterType::Texture;
 		else
 			throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Unexpected shader parameter type \"{0}\"", typeName));
 
-		m_Parameters.insert(std::make_pair(parameterObj.find("name")->second.GetString(), parameterTypes));
+		m_Parameters.insert(std::make_pair(parameterObj.find("name")->second.GetString(), paramType.value()));
 	}
 
 	// Load shaders
@@ -38,22 +39,22 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 	{
 		const JSONObject& shaderObj = value.GetObject();
 
-		ShaderDefinition def;
-		def.m_Path = std::filesystem::current_path().append(std::filesystem::path(shaderObj.find("filename")->second.GetString()));
+		std::shared_ptr<ShaderDefinition> def = std::make_shared<ShaderDefinition>();
+		def->m_Path = std::filesystem::current_path().append(std::filesystem::path(shaderObj.find("filename")->second.GetString()));
 
 		const std::string& typeName = shaderObj.find("type")->second.GetString();
 		if (!typeName.compare("vertex"))
-			def.m_Type = ShaderType::Vertex;
+			def->m_Type = ShaderType::Vertex;
 		else if (!typeName.compare("tessellationControl"))
-			def.m_Type = ShaderType::TessellationControl;
+			def->m_Type = ShaderType::TessellationControl;
 		else if (!typeName.compare("tessellationEvaluation"))
-			def.m_Type = ShaderType::TessellationEvaluation;
+			def->m_Type = ShaderType::TessellationEvaluation;
 		else if (!typeName.compare("geometry"))
-			def.m_Type = ShaderType::Gemoetry;
+			def->m_Type = ShaderType::Gemoetry;
 		else if (!typeName.compare("compute"))
-			def.m_Type = ShaderType::Compute;
+			def->m_Type = ShaderType::Compute;
 		else if (!typeName.compare("fragment"))
-			def.m_Type = ShaderType::Fragment;
+			def->m_Type = ShaderType::Fragment;
 		else
 			throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Unexpected shader type \"{0}\"", typeName));
 
@@ -71,11 +72,34 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 			if (!IsValidParameterName(binding.m_ParameterName))
 				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind invalid parameter name \"{0}\" @ binding {1} on {2} shader in group {3}.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name));
 
-			def.m_Bindings.push_back(binding);
+			def->m_Bindings.push_back(binding);
 		}
 
 		m_Shaders.push_back(def);
 	}
+}
+
+std::vector<ShaderGroupData::ParameterDependency> ShaderGroupData::FindByParameterDependency(const std::string& paramName) const
+{
+	std::vector<ParameterDependency> retVal;
+
+	for (const auto& shaderDef : m_Shaders)
+	{
+		for (const auto& binding : shaderDef->m_Bindings)
+		{
+			if (!binding.m_ParameterName.compare(paramName))
+			{
+				retVal.emplace_back();
+				ParameterDependency& newDep = retVal.back();
+				newDep.m_BindingIndex = binding.m_BindingIndex;
+				newDep.m_Definition = shaderDef;
+
+				break;
+			}
+		}
+	}
+
+	return retVal;
 }
 
 bool ShaderGroupData::IsValidParameterName(const std::string& paramName) const

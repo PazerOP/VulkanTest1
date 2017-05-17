@@ -8,38 +8,38 @@
 
 struct SimpleVertex
 {
-	glm::vec2 pos;
-	glm::vec3 color;
+	constexpr SimpleVertex(const glm::vec2& pos, const glm::vec3& color, const glm::vec2& texCoord) :
+		m_Pos(pos), m_Color(color), m_TexCoord(texCoord)
+	{
+	}
+
+	glm::vec2 m_Pos;
+	glm::vec3 m_Color;
+	glm::vec2 m_TexCoord;
 
 	bool operator==(const SimpleVertex& rhs) const
 	{
-		return (pos == rhs.pos && color == rhs.color);
+		return (m_Pos == rhs.m_Pos &&
+				m_Color == rhs.m_Color &&
+				m_TexCoord == rhs.m_TexCoord);
 	}
 
-	static vk::VertexInputBindingDescription GetBindingDescription()
+	static const vk::VertexInputBindingDescription& GetBindingDescription()
 	{
-		vk::VertexInputBindingDescription desc;
-		desc.setBinding(0);
-		desc.setStride(sizeof(SimpleVertex));
-		desc.setInputRate(vk::VertexInputRate::eVertex);
+		static vk::VertexInputBindingDescription s_BindingDescription(0, sizeof(SimpleVertex), vk::VertexInputRate::eVertex);
 
-		return desc;
+		return s_BindingDescription;
 	}
 
-	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions()
+	static const std::vector<vk::VertexInputAttributeDescription>& GetAttributeDescriptions()
 	{
-		std::vector<vk::VertexInputAttributeDescription> retVal(2);
+		static std::vector<vk::VertexInputAttributeDescription> s_AttributeDescriptions(
+		{
+			vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32Sfloat, offsetof(SimpleVertex, m_Pos)),
+			vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(SimpleVertex, m_Color)),
+			vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(SimpleVertex, m_TexCoord)),
+		});
 
-		retVal[0].setBinding(0);
-		retVal[0].setLocation(0);
-		retVal[0].setFormat(vk::Format::eR32G32Sfloat);
-		retVal[0].setOffset(offsetof(SimpleVertex, pos));
-
-		retVal[1].setBinding(0);
-		retVal[1].setLocation(1);
-		retVal[1].setFormat(vk::Format::eR32G32B32Sfloat);
-		retVal[1].setOffset(offsetof(SimpleVertex, color));
-
-		return retVal;
+		return s_AttributeDescriptions;
 	}
 };

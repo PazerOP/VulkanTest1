@@ -13,10 +13,8 @@ void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const vk::Surfac
 	m_Device = device;
 	m_WindowSurface = windowSurface;
 
-	m_SupportedExtensions = device.enumerateDeviceExtensionProperties();
 	m_SupportedLayers = device.enumerateDeviceLayerProperties();
 	m_Properties = device.getProperties();
-	m_Features = device.getFeatures();
 	m_QueueFamilies = device.getQueueFamilyProperties();
 
 	FindPresentationQueueFamilies();
@@ -24,6 +22,25 @@ void PhysicalDeviceData::Init(const vk::PhysicalDevice& device, const vk::Surfac
 	RateDeviceSuitability();
 
 	m_Init = true;
+}
+
+vk::Bool32* PhysicalDeviceData::GetFeaturePtr(vk::PhysicalDeviceFeatures& features, DeviceFeature feature)
+{
+	return const_cast<vk::Bool32*>(GetFeaturePtr(const_cast<const vk::PhysicalDeviceFeatures&>(features), feature));
+}
+
+const vk::Bool32* PhysicalDeviceData::GetFeaturePtr(const vk::PhysicalDeviceFeatures& features, DeviceFeature feature)
+{
+	assert(Enums::validate(feature));
+
+	switch (feature)
+	{
+	case DeviceFeature::SamplerAnisotropy:
+		return &features.samplerAnisotropy;
+	}
+
+	assert(false);
+	return nullptr;
 }
 
 std::shared_ptr<PhysicalDeviceData> PhysicalDeviceData::Create(const vk::PhysicalDevice& device, const vk::SurfaceKHR& windowSurface)
@@ -38,7 +55,7 @@ PhysicalDeviceData::Suitability PhysicalDeviceData::GetSuitability() const
 	if (m_SwapchainSuitability != SwapchainData::Suitability::Suitable)
 		return Suitability::SwapChain_Unsuitable;
 
-	return m_Suitability;
+	return m_Suitability.value();
 }
 
 std::string PhysicalDeviceData::GetSuitabilityMessage() const
@@ -58,6 +75,11 @@ bool PhysicalDeviceData::HasExtension(const std::string_view& name) const
 	}
 
 	return false;
+}
+
+bool PhysicalDeviceData::HasFeature(DeviceFeature feature) const
+{
+	return *GetFeaturePtr(m_Features, feature);
 }
 
 std::vector<std::pair<uint32_t, vk::QueueFamilyProperties>> PhysicalDeviceData::GetQueueFamilies(const vk::QueueFlags& queueFlags)
@@ -126,6 +148,7 @@ uint32_t PhysicalDeviceData::FindMemoryType(uint32_t typeFilter, const vk::Memor
 void PhysicalDeviceData::RateDeviceSuitability()
 {
 	m_Rating = 0;
+	m_InitData = std::make_shared<InitData>();
 
 	m_SuitabilityMessageBase = StringTools::CSFormat("Physical physicalDevice '{0}' (id {1})", m_Properties.deviceName, m_Properties.deviceID);
 
@@ -158,29 +181,13 @@ void PhysicalDeviceData::RateDeviceSuitability()
 		}
 	}
 
-	// Required extensions
-	for (size_t i = 0; i < std::size(REQUIRED_EXTENSIONS); i++)
-	{
-		if (!HasExtension(REQUIRED_EXTENSIONS[i]))
-		{
-			m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, missing required extension {0}", REQUIRED_EXTENSIONS[i]);
-			m_Suitability = Suitability::MissingRequiredExtension;
-			return;
-		}
+	RateDeviceExtensions();
+	if (m_Suitability.has_value())
+		return;
 
-		m_BestExtensionSet.push_back(REQUIRED_EXTENSIONS[i]);
-	}
-
-	// Optional extensions
-	for (size_t i = 0; i < std::size(OPTIONAL_EXTENSIONS); i++)
-	{
-		const auto& current = OPTIONAL_EXTENSIONS[i];
-		if (HasExtension(current.first))
-		{
-			m_Rating += current.second;
-			m_BestExtensionSet.push_back(current.first);
-		}
-	}
+	RateDeviceFeatures();
+	if (m_Suitability.has_value())
+		return;
 
 	if (m_QueueFamilies.empty())
 	{
@@ -205,6 +212,79 @@ void PhysicalDeviceData::RateDeviceSuitability()
 
 	m_SuitabilityMessageExtra = StringTools::CSFormat(" suitable, rating {0}", m_Rating);
 	m_Suitability = Suitability::Suitable;
+}
+
+void PhysicalDeviceData::RateDeviceExtensions()
+{
+	m_SupportedExtensions = m_Device.enumerateDeviceExtensionProperties();
+
+	static constexpr const char* REQUIRED_EXTENSIONS[] =
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
+	// A list of optional extensions to enable, along with a weight of how important they are.
+	static constexpr std::pair<const char*, float> OPTIONAL_EXTENSIONS[] =
+	{
+		{ VK_EXT_DEBUG_MARKER_EXTENSION_NAME, 5.0f }
+	};
+
+	// Required extensions
+	for (size_t i = 0; i < std::size(REQUIRED_EXTENSIONS); i++)
+	{
+		if (!HasExtension(REQUIRED_EXTENSIONS[i]))
+		{
+			m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, missing required extension {0}", REQUIRED_EXTENSIONS[i]);
+			m_Suitability = Suitability::MissingRequiredExtension;
+			return;
+		}
+
+		m_InitData->m_Extensions.push_back(REQUIRED_EXTENSIONS[i]);
+	}
+
+	// Optional extensions
+	for (size_t i = 0; i < std::size(OPTIONAL_EXTENSIONS); i++)
+	{
+		const auto& current = OPTIONAL_EXTENSIONS[i];
+		if (HasExtension(current.first))
+		{
+			m_Rating += current.second;
+			m_InitData->m_Extensions.push_back(current.first);
+		}
+	}
+}
+
+void PhysicalDeviceData::RateDeviceFeatures()
+{
+	m_Features = m_Device.getFeatures();
+
+	static constexpr auto REQUIRED_FEATURES = make_array<DeviceFeature>(
+
+	);
+
+	static constexpr std::pair<DeviceFeature, float> OPTIONAL_FEATURES[] =
+	{
+		{ DeviceFeature::SamplerAnisotropy, 10.0f },
+	};
+
+	for (const auto& feature : REQUIRED_FEATURES)
+	{
+		if (!HasFeature(feature))
+		{
+			m_SuitabilityMessageExtra = StringTools::CSFormat(" unsuitable, missing required feature {0}", feature);
+			m_Suitability = Suitability::MissingRequiredFeature;
+			return;
+		}
+	}
+
+	for (const auto& feature : OPTIONAL_FEATURES)
+	{
+		if (HasFeature(feature.first))
+		{
+			m_Rating += feature.second;
+			*GetFeaturePtr(m_InitData->m_Features, feature.first) = true;
+		}
+	}
 }
 
 void PhysicalDeviceData::FindPresentationQueueFamilies()

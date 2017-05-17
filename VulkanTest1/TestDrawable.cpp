@@ -12,12 +12,12 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 {
 	UniqueVertexList<SimpleVertex> retVal = VertexList<SimpleVertex>::Create();
 
-	SimpleVertex v[4] =
+	constexpr SimpleVertex v[4] =
 	{
-		{ { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.5f, -0.5f }, { 0.5f, 1.0f, 0.0f } },
-		{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.5f }, { 0.5f, 0.0f, 1.0f } },
+		SimpleVertex(glm::vec2(-0.5, -0.5), glm::vec3(1, 0, 0), glm::vec2(0, 0)),
+		SimpleVertex(glm::vec2(0.5, -0.5), glm::vec3(0.5, 1, 0), glm::vec2(1, 0)),
+		SimpleVertex(glm::vec2(0.5, 0.5), glm::vec3(0, 1, 1), glm::vec2(1, 1)),
+		SimpleVertex(glm::vec2(-0.5, 0.5), glm::vec3(1, 1, 1), glm::vec2(0, 1)),
 	};
 
 	retVal->AddVertex({ v[0], v[1], v[2], v[2], v[3], v[0] });

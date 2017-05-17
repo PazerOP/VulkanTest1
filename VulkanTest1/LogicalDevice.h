@@ -9,6 +9,7 @@
 #include "ShaderGroupDataManager.h"
 #include "Swapchain.h"
 #include "TestDrawable.h"
+#include "TextureManager.h"
 #include "Util.h"
 
 #include <memory>
@@ -75,6 +76,7 @@ private:
 
 	std::optional<TestDrawable> m_TestDrawable;
 
+	std::shared_ptr<const PhysicalDeviceData::InitData> m_InitData;
 	std::shared_ptr<PhysicalDeviceData> m_PhysicalDeviceData;
 	vk::UniqueDevice m_LogicalDevice;
 
@@ -83,6 +85,7 @@ private:
 	std::optional<ShaderGroupDataManager> m_ShaderGroupDataManagerInstance;
 	std::optional<MaterialDataManager> m_MaterialDataManagerInstance;
 	std::optional<MaterialManager> m_MaterialManagerInstance;
+	std::optional<TextureManager> m_TextureManagerInstance;
 
 	uint32_t m_QueueFamilies[Enums::count<QueueType>()];
 	vk::Queue m_Queues[Enums::count<QueueType>()];

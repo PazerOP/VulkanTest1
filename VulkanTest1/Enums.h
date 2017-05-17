@@ -28,4 +28,6 @@ namespace Enums
 	{
 		return value(val) >= min<T>() && value(val) <= max<T>();
 	}
+
+	template<class To, class From> inline constexpr To convert(From from);
 }
