@@ -27,6 +27,8 @@ private:
 	void InitGraphicsPipeline();
 	void InitDescriptorSet();
 
+	uint32_t AdjustTextureBinding(const std::string& paramName, uint32_t originalBinding) const;
+
 	void LoadTexture(const std::string& paramName, const std::string& textureName);
 
 	LogicalDevice& m_Device;

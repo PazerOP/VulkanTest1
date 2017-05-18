@@ -14,7 +14,11 @@ public:
 	void Reload() override;
 
 private:
+	static constexpr char TAG[] = "[TextureManager] ";
+
 	std::shared_ptr<Texture> Transform(const std::shared_ptr<TextureCreateInfo>& createInfo) const override;
 
 	static std::shared_ptr<TextureCreateInfo> LoadCreateInfo(const std::filesystem::path& path);
+
+	static vk::Filter ToFilter(const std::string& filterText);
 };

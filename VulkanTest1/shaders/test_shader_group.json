@@ -6,8 +6,8 @@
 			"filename": "shaders/simple.frag.spv",
 			"inputs": [
 				{
-					"binding": 5,
-					"parameter": "baseTexture"
+					"parameter": "baseTexture",
+					"binding": 0
 				}
 			]
 		},

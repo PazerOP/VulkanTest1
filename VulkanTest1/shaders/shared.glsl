@@ -2,6 +2,8 @@
 // in a shader and aren't completely optimized away because of that,
 // I will be disappointed.
 
+#define M_PI 3.14159265358979323846f
+
 #define SET_FRAMEVIEW 0
 #define BINDING_FRAMEVIEW_FRAME 0
 #define BINDING_FRAMEVIEW_VIEW 1

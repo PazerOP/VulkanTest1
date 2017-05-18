@@ -58,19 +58,19 @@ ShaderGroupData::ShaderGroupData(const JSONObject& json)
 		else
 			throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Unexpected shader type \"{0}\"", typeName));
 
-		for (const JSONValue& input : shaderObj.find("inputs")->second.GetArray())
+		for (const JSONValue& input : shaderObj.at("inputs").GetArray())
 		{
 			const JSONObject& inputObj = input.GetObject();
 			ShaderBinding binding;
 
-			binding.m_BindingIndex = (uint32_t)inputObj.find("binding")->second.GetNumber();
-			binding.m_ParameterName = inputObj.find("parameter")->second.GetString();
-
-			if (binding.m_BindingIndex <= Enums::max<BuiltinUniformBuffers::FrameViewBindings>())
-				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind parameter \"{0}\" to reserved binding index {1} on {2} shader in group {3}! All indices below {4} are reserved for builtin uniform buffers.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name, Enums::max<BuiltinUniformBuffers::FrameViewBindings>()));
+			binding.m_ParameterName = inputObj.at("parameter").GetString();
 
 			if (!IsValidParameterName(binding.m_ParameterName))
-				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind invalid parameter name \"{0}\" @ binding {1} on {2} shader in group {3}.", binding.m_ParameterName, binding.m_BindingIndex, typeName, m_Name));
+				throw ParseException(StringTools::CSFormat(__FUNCTION__ ": Attempted to bind invalid parameter name \"{0}\" on {1} shader in group {2}.", binding.m_ParameterName, typeName, m_Name));
+
+			const bool isTexture = m_Parameters.at(binding.m_ParameterName) == ShaderParameterType::Texture;
+
+			binding.m_BindingIndex = (uint32_t)inputObj.at("binding").GetNumber();
 
 			def->m_Bindings.push_back(binding);
 		}
@@ -91,6 +91,7 @@ std::vector<ShaderGroupData::ParameterDependency> ShaderGroupData::FindByParamet
 			{
 				retVal.emplace_back();
 				ParameterDependency& newDep = retVal.back();
+
 				newDep.m_BindingIndex = binding.m_BindingIndex.value();
 				newDep.m_Definition = shaderDef;
 

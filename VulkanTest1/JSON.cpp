@@ -242,8 +242,134 @@ std::ostream& operator<<(std::ostream& lhs, JSONDataType rhs)
 	case JSONDataType::Bool:		return lhs << "JSONDataType::Bool"sv;
 	case JSONDataType::Array:		return lhs << "JSONDataType::Array"sv;
 	case JSONDataType::Object:		return lhs << "JSONDataType::Object"sv;
-		
+
 	default:
 		return lhs << StringTools::CSFormat("<*** UNKNOWN JSONDataType {0} ***>", Enums::value(rhs));
 	}
+}
+
+double JSONObject::TryGetNumber(const std::string& name, double default, bool* success) const
+{
+	const auto& found = find(name);
+	if (found == end())
+	{
+		if (success)
+			*success = false;
+
+		return default;
+	}
+
+	if (success)
+		*success = true;
+
+	return found->second.GetNumber();
+}
+
+bool JSONObject::TryGetBool(const std::string& name, bool default, bool* success) const
+{
+	const auto& found = find(name);
+	if (found == end())
+	{
+		if (success)
+			*success = false;
+
+		return default;
+	}
+
+	if (success)
+		*success = true;
+
+	return found->second.GetBool();
+}
+
+std::string JSONObject::TryGetString(const std::string& name, const std::string& default, bool* success) const
+{
+	const auto& found = find(name);
+	if (found == end())
+	{
+		if (success)
+			*success = false;
+
+		return default;
+	}
+
+	if (success)
+		*success = true;
+
+	return found->second.GetString();
+}
+
+std::optional<double> JSONObject::TryGetNumber(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		return std::nullopt;
+
+	return found->second.GetNumber();
+}
+
+std::optional<bool> JSONObject::TryGetBool(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		return std::nullopt;
+
+	return found->second.GetBool();
+}
+
+std::optional<std::string> JSONObject::TryGetString(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		return std::nullopt;
+
+	return found->second.GetString();
+}
+
+const double& JSONValue::GetNumber() const
+{
+	if (GetType() != JSONDataType::Number)
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
+
+	return std::get<double>(m_Data);
+}
+
+const bool& JSONValue::GetBool() const
+{
+	if (GetType() != JSONDataType::Bool)
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
+
+	return std::get<bool>(m_Data);
+}
+
+const std::string& JSONValue::GetString() const
+{
+	if (GetType() != JSONDataType::String)
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
+
+	return std::get<std::string>(m_Data);
+}
+
+const JSONArray& JSONValue::GetArray() const
+{
+	if (GetType() != JSONDataType::Array)
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
+
+	return std::get<JSONArray>(m_Data);
+}
+
+const JSONObject& JSONValue::GetObject() const
+{
+	if (GetType() != JSONDataType::Object)
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
+
+	return std::get<JSONObject>(m_Data);
+}
+
+JSONDataType JSONValue::GetType() const
+{
+	if (m_Data.index() == 0)
+		throw std::runtime_error("Accessing uninitialized JSONValue");
+
+	return JSONDataType(m_Data.index() - 1);
 }

@@ -114,13 +114,14 @@ void GraphicsPipeline::CreatePipeline()
 		dynamicState.setPDynamicStates(dynamicStates);
 	}
 
-	vk::PipelineLayoutCreateInfo plCreateInfo;
-	const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
-	plCreateInfo.setSetLayoutCount(descriptorSetLayouts.size());
-	plCreateInfo.setPSetLayouts(descriptorSetLayouts.data());
+	{
+		vk::PipelineLayoutCreateInfo plCreateInfo;
+		const auto& descriptorSetLayouts = GetDescriptorSetLayouts();
+		plCreateInfo.setSetLayoutCount(descriptorSetLayouts.size());
+		plCreateInfo.setPSetLayouts(descriptorSetLayouts.data());
 
-	const auto device = GetDevice().Get();
-	m_Layout = device.createPipelineLayoutUnique(plCreateInfo);
+		m_Layout = GetDevice()->createPipelineLayoutUnique(plCreateInfo);
+	}
 
 	const auto shaderStages = GenerateShaderStageCreateInfos();
 	vk::GraphicsPipelineCreateInfo gpCreateInfo;
@@ -146,7 +147,7 @@ void GraphicsPipeline::CreatePipeline()
 		gpCreateInfo.setBasePipelineIndex(-1);
 	}
 
-	m_Pipeline = device.createGraphicsPipelineUnique(nullptr, gpCreateInfo);
+	m_Pipeline = GetDevice()->createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
 std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderStageCreateInfos() const

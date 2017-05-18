@@ -3,7 +3,13 @@
 
 #include "shared.glsl"
 
-layout(set = SET_MATERIAL, binding = 5) uniform sampler2D baseTexture;
+#define BINDING_MATERIAL_BASETEXTURE2D 1
+#define BINDING_MATERIAL_BASETEXTURE3D 2
+
+layout(constant_id = 1) const bool TEXTURE_3D = true;
+
+layout(set = SET_MATERIAL, binding = 0) uniform sampler2D baseTexture2D;
+layout(set = SET_MATERIAL, binding = 0) uniform sampler3D baseTexture3D;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -189,5 +195,9 @@ void main()
 
 	//outColor = vec4(rgb, 1.0);
 	//outColor = vec4(fragTexCoord, 0.0, 1.0);
-	outColor = texture(baseTexture, fragTexCoord);
+	
+	if (TEXTURE_3D)
+		outColor = texture(baseTexture3D, vec3(fragTexCoord, sin(mod(frame.time / 3, 2 * M_PI))));
+	else
+		outColor = texture(baseTexture2D, fragTexCoord);
 }

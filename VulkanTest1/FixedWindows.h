@@ -7,6 +7,7 @@
 
 #undef CreateWindow
 #undef GetObject
+#undef LoadImage
 
 //#undef min
 //#undef max

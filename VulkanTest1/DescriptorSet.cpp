@@ -47,8 +47,14 @@ void DescriptorSet::CreateDescriptorSet()
 	std::forward_list<vk::DescriptorBufferInfo> bufferInfos;
 	std::forward_list<vk::DescriptorImageInfo> imageInfos;
 
-	for (const auto& binding : m_CreateInfo->m_Layout->GetCreateInfo()->m_Bindings)
+	for (const auto& data : m_CreateInfo->m_Data)
 	{
+		const auto& foundBinding = std::find_if(bindings.begin(), bindings.end(),
+												[&data](const auto& other) { return data.m_BindingIndex == other.binding; });
+		assert(foundBinding != bindings.end());
+
+		const auto& binding = *foundBinding;
+
 		descriptorWrites.emplace_back();
 		vk::WriteDescriptorSet& write = descriptorWrites.back();
 		write.setDstSet(m_DescriptorSet.get());
@@ -56,17 +62,11 @@ void DescriptorSet::CreateDescriptorSet()
 		write.setDescriptorCount(binding.descriptorCount);
 		write.setDstBinding(binding.binding);
 
-		const auto& foundDataBinding = std::find_if(m_CreateInfo->m_Data.begin(), m_CreateInfo->m_Data.end(),
-													[&binding](const auto& other) { return binding.binding == other.m_BindingIndex; });
-		assert(foundDataBinding != m_CreateInfo->m_Data.end());
-
-		const auto& dataBinding = *foundDataBinding;
-
-		switch (dataBinding.m_Data.index())
+		switch (data.m_Data.index())
 		{
 		case 0:	// buffer
 		{
-			auto buffer = std::get<std::shared_ptr<Buffer>>(dataBinding.m_Data);
+			auto buffer = std::get<std::shared_ptr<Buffer>>(data.m_Data);
 
 			bufferInfos.emplace_front();
 			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.front();
@@ -80,7 +80,7 @@ void DescriptorSet::CreateDescriptorSet()
 		}
 		case 1:	// texture
 		{
-			auto texture = std::get<std::shared_ptr<Texture>>(dataBinding.m_Data);
+			auto texture = std::get<std::shared_ptr<Texture>>(data.m_Data);
 
 			imageInfos.emplace_front();
 			vk::DescriptorImageInfo& imageInfo = imageInfos.front();

@@ -20,7 +20,7 @@ using namespace std::string_literals;
 
 // Missing user-defined literals for string_view, apparently should be fixed in VS 15.3
 // https://developercommunity.visualstudio.com/comments/48859/view.html
-#if _MSC_VER == 1910
+#if _MSC_VER == 1910 || _MSC_VER == 1911
 #pragma warning(push)
 #pragma warning(disable : 4455)	// literal suffix identifiers that do not start with an underscore are reserved
 constexpr std::string_view operator "" sv(const char* str, size_t len) noexcept

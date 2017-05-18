@@ -359,6 +359,9 @@
     <ClCompile Include="Mesh.cpp">
       <Filter>Engine\Graphics\Mesh</Filter>
     </ClCompile>
+    <ClCompile Include="TextureCreateInfo.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

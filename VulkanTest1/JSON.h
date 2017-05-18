@@ -19,7 +19,18 @@ extern std::ostream& operator<<(std::ostream& lhs, JSONDataType rhs);
 
 class JSONValue;
 using JSONArray = std::vector<JSONValue>;
-using JSONObject = std::map<std::string, JSONValue>;
+
+class JSONObject : public std::map<std::string, JSONValue>
+{
+public:
+	double TryGetNumber(const std::string& name, double default, bool* success = nullptr) const;
+	bool TryGetBool(const std::string& name, bool default, bool* success = nullptr) const;
+	std::string TryGetString(const std::string& name, const std::string& default, bool* success = nullptr) const;
+
+	std::optional<double> TryGetNumber(const std::string& name) const;
+	std::optional<bool> TryGetBool(const std::string& name) const;
+	std::optional<std::string> TryGetString(const std::string& name) const;
+};
 
 class JSONValue
 {
@@ -37,29 +48,42 @@ public:
 	void Set(const JSONArray& array) { m_Data = array; }
 	void Set(const JSONObject& object) { m_Data = object; }
 
-	double GetNumber() const { return std::get<double>(m_Data); }
-	bool GetBool() const { return std::get<bool>(m_Data); }
+	const double& GetNumber() const;
+	double& GetNumber() { return const_cast<double&>(std::as_const(*this).GetNumber()); }
 
-	const std::string& GetString() const { return std::get<std::string>(m_Data); }
-	std::string& GetString() { return std::get<std::string>(m_Data); }
+	const bool& GetBool() const;
+	bool& GetBool() { return const_cast<bool&>(std::as_const(*this).GetBool()); }
 
-	const JSONArray& GetArray() const { return std::get<JSONArray>(m_Data); }
-	JSONArray& GetArray() { return std::get<JSONArray>(m_Data); }
+	const std::string& GetString() const;
+	std::string& GetString() { return const_cast<std::string&>(std::as_const(*this).GetString()); }
 
-	const JSONObject& GetObject() const { return std::get<JSONObject>(m_Data); }
-	JSONObject& GetObject() { return std::get<JSONObject>(m_Data); }
+	const JSONArray& GetArray() const;
+	JSONArray& GetArray() { return const_cast<JSONArray&>(std::as_const(*this).GetArray()); }
 
-	JSONDataType GetType() const { return JSONDataType(m_Data.index()); }
+	const JSONObject& GetObject() const;
+	JSONObject& GetObject() { return const_cast<JSONObject&>(std::as_const(*this).GetObject()); }
+
+	JSONDataType GetType() const;
 
 private:
-	std::variant<double, std::string, bool, JSONArray, JSONObject> m_Data;
+	std::variant<std::monostate, double, std::string, bool, JSONArray, JSONObject> m_Data;
 };
 
 class json_parsing_error : public std::runtime_error
 {
 public:
-	json_parsing_error(const char* msg) : std::runtime_error(msg) { }
-	json_parsing_error(const std::string& msg) : std::runtime_error(msg) { }
+	json_parsing_error(const std::string& msg) : std::runtime_error(msg)
+	{
+		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", typeid(*this).name(), msg));
+	}
+};
+class json_value_type_error : public std::runtime_error
+{
+public:
+	json_value_type_error(const std::string& msg) : std::runtime_error(msg)
+	{
+		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", typeid(*this).name(), msg));
+	}
 };
 
 class JSONSerializer

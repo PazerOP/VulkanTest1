@@ -17,12 +17,24 @@ public:
 	vk::ImageView GetImageView() const { return m_ImageView.get(); }
 	vk::Sampler GetSampler() const { return m_Sampler.get(); }
 
+	const vk::ImageType GetImageType() const { return m_ImageCreateInfo.imageType; }
+
 private:
+	struct SourceImage
+	{
+		std::shared_ptr<void> m_Image;
+		size_t GetImgDataSize() const { return m_Width * m_Height * 4; }
+		int m_Width;
+		int m_Height;
+		int m_Channels;
+	};
+	std::vector<SourceImage> LoadSourceImages();
+
 	void CreateImageView();
 	void CreateSampler();
 
 	void TransitionImageLayout(const vk::Image& img, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) const;
-	void CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, uint32_t width, uint32_t height) const;
+	void CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, const vk::Extent3D& extent) const;
 
 	LogicalDevice& m_Device;
 

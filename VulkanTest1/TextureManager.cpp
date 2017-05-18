@@ -31,7 +31,7 @@ void TextureManager::Reload()
 		const auto& extension = path.extension();
 		if (extension != ".json")
 			continue;
-		
+
 		auto name = path.string().erase(0, s_ShadersFolderPath.string().size() + 1);
 
 		// Remove file extension
@@ -42,6 +42,8 @@ void TextureManager::Reload()
 			if (c == '\\')
 				c = '/';
 		}
+
+		Log::TagMsg(TAG, "Loading texture {0}", name);
 
 		AddPair(name, LoadCreateInfo(path));
 	}
@@ -55,12 +57,32 @@ std::shared_ptr<Texture> TextureManager::Transform(const std::shared_ptr<Texture
 std::shared_ptr<TextureCreateInfo> TextureManager::LoadCreateInfo(const std::filesystem::path& path)
 {
 	std::shared_ptr<TextureCreateInfo> retVal = std::make_shared<TextureCreateInfo>();
+	retVal->m_DefinitionFile = path;
 
 	JSONObject obj = JSONSerializer::FromFile(path).GetObject();
 
-	const std::string& relativeFilename = obj.find("fileName")->second.GetString();
+	const auto& sourceFiles = obj.find("sourceFiles");
+	if (sourceFiles == obj.end())
+		throw json_parsing_error(StringTools::CSFormat("Failed to find required key \"sourceFiles\" in \"{0}\"", path));
+	else
+	{
+		for (const auto& sourceFile : sourceFiles->second.GetArray())
+			retVal->m_SourceFiles.push_back(s_ShadersFolderPath / sourceFile.GetString());
+	}
 
-	retVal->m_Path = s_ShadersFolderPath / relativeFilename;
+	retVal->m_Animated = obj.TryGetBool("animated", false);
+
+	retVal->m_Filter = ToFilter(obj.TryGetString("filter", "linear"));
 
 	return retVal;
+}
+
+vk::Filter TextureManager::ToFilter(const std::string& filterText)
+{
+	if (filterText == "linear")
+		return vk::Filter::eLinear;
+	else if (filterText == "nearest")
+		return vk::Filter::eNearest;
+	else
+		throw json_parsing_error(StringTools::CSFormat("Failed to convert \"{0}\" to a vk::Filter value", filterText));
 }

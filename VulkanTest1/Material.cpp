@@ -10,6 +10,7 @@
 #include "ShaderGroup.h"
 #include "ShaderGroupData.h"
 #include "SimpleVertex.h"
+#include "Texture.h"
 #include "TextureManager.h"
 
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
@@ -98,10 +99,11 @@ void Material::InitDescriptorSet()
 			if (!foundExisting)
 			{
 				DescriptorSetCreateInfo::Binding newBinding;
-				newBinding.m_BindingIndex = shaderBinding.m_BindingIndex;
+
 				newBinding.m_DebugName = shaderBinding.m_ParameterName;
 				newBinding.m_Stages = shaderStage;
-				newBinding.m_Data = m_Textures[shaderBinding.m_ParameterName];
+				newBinding.m_Data = m_Textures.at(shaderBinding.m_ParameterName);
+				newBinding.m_BindingIndex = AdjustTextureBinding(shaderBinding.m_ParameterName, shaderBinding.m_BindingIndex.value());
 
 				createInfo->m_Data.push_back(std::move(newBinding));
 			}
@@ -111,6 +113,23 @@ void Material::InitDescriptorSet()
 	createInfo->m_Layout = m_DescriptorSetLayout;
 
 	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
+}
+
+uint32_t Material::AdjustTextureBinding(const std::string& paramName, uint32_t originalBinding) const
+{
+	const auto& foundTexture = m_Textures.find(paramName);
+	if (foundTexture != m_Textures.end())
+	{
+		static_assert(Enums::value(vk::ImageType::e1D) == 0);
+		static_assert(Enums::value(vk::ImageType::e2D) == 1);
+		static_assert(Enums::value(vk::ImageType::e3D) == 2);
+
+		const auto value = Enums::value(foundTexture->second->GetImageType());
+		assert(value >= 0 && value <= 2);
+		return originalBinding + value;
+	}
+
+	return originalBinding;
 }
 
 void Material::LoadTexture(const std::string& paramName, const std::string& textureName)
@@ -154,10 +173,13 @@ void Material::InitDescriptorSetLayout()
 
 			binding.setStageFlags(groupedStage.second);
 			binding.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-			binding.setBinding(groupedStage.first);
 			binding.setDescriptorCount(1);
 
-			newCreateInfo->m_Bindings.push_back(binding);
+			for (uint_fast8_t i = 0; i < 3; i++)
+			{
+				binding.setBinding(groupedStage.first + i);	// 1D, 2D, 3D
+				newCreateInfo->m_Bindings.push_back(binding);
+			}
 		}
 	}
 

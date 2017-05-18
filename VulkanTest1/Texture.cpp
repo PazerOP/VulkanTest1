@@ -9,6 +9,8 @@
 
 #include "stb_image.h"
 
+#include <fstream>
+
 Texture::~Texture()
 {
 	m_ImageView.reset();
@@ -22,20 +24,21 @@ Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreat
 {
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
 
-	int w, h, channels;
-	auto rawImg = std::shared_ptr<stbi_uc>(stbi_load(GetCreateInfo().m_Path.string().c_str(), &w, &h, &channels, STBI_rgb_alpha),
-										   [](stbi_uc* i) { stbi_image_free(i); });
-	if (w <= 0 || h <= 0 || channels <= 0)
-		throw std::runtime_error(StringTools::CSFormat("Failed to load raw img in texture constructor: width {0}, height {1}, channels {2}", w, h, channels));
+	const auto& sourceImages = LoadSourceImages();
+	const auto& firstImg = sourceImages.front();
 
-	Buffer stagingBuffer(m_Device, w * h * 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	Buffer stagingBuffer(m_Device, firstImg.GetImgDataSize() * sourceImages.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-	stagingBuffer.Write(rawImg.get(), w * h * 4, 0);
+	for (size_t i = 0; i < sourceImages.size(); i++)
+	{
+		const auto& img = sourceImages[i];
+		stagingBuffer.Write(img.m_Image.get(), img.GetImgDataSize(), img.GetImgDataSize() * i);
+	}
 
 	// Setup final image
 	{
-		m_ImageCreateInfo.setImageType(vk::ImageType::e2D);
-		m_ImageCreateInfo.setExtent(vk::Extent3D(w, h, 1));
+		m_ImageCreateInfo.setImageType(sourceImages.size() == 1 ? vk::ImageType::e2D : vk::ImageType::e3D);
+		m_ImageCreateInfo.setExtent(vk::Extent3D(firstImg.m_Width, firstImg.m_Height, sourceImages.size()));
 		m_ImageCreateInfo.setMipLevels(1);
 		m_ImageCreateInfo.setArrayLayers(1);
 		m_ImageCreateInfo.setFormat(vk::Format::eR8G8B8A8Unorm);
@@ -63,7 +66,7 @@ Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreat
 	// Copy from staging to final
 	{
 		TransitionImageLayout(m_Image.get(), m_ImageCreateInfo.format, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eTransferDstOptimal);
-		CopyBufferToImage(stagingBuffer.Get(), m_Image.get(), w, h);
+		CopyBufferToImage(stagingBuffer.Get(), m_Image.get(), m_ImageCreateInfo.extent);
 		TransitionImageLayout(m_Image.get(), m_ImageCreateInfo.format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
@@ -71,10 +74,44 @@ Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreat
 	CreateSampler();
 }
 
+std::vector<Texture::SourceImage> Texture::LoadSourceImages()
+{
+	std::vector<SourceImage> retVal;
+
+	for (const auto& path : m_CreateInfo->m_SourceFiles)
+	{
+		std::ifstream file(path.string(), std::ios::binary | std::ios::ate);
+		assert(file.good());
+
+		const auto length = file.tellg();
+		std::shared_ptr<void> buffer(malloc(length));
+		file.seekg(0);
+
+		file.read(reinterpret_cast<char*>(buffer.get()), length);
+
+		SourceImage newImg;
+		newImg.m_Image.reset(stbi_load_from_memory(reinterpret_cast<stbi_uc*>(buffer.get()), length, &newImg.m_Width, &newImg.m_Height, &newImg.m_Channels, 4));
+
+		if (newImg.m_Width <= 0 || newImg.m_Height <= 0 || newImg.m_Channels <= 0)
+			throw std::runtime_error(StringTools::CSFormat("Failed to load raw img in {0}(): width {1}, height {2}, channels {3}, image pointer {4}",
+														   __FUNCTION__, newImg.m_Width, newImg.m_Height, newImg.m_Channels, newImg.m_Image.get()));
+
+		retVal.push_back(newImg);
+	}
+
+	return retVal;
+}
+
 void Texture::CreateImageView()
 {
+	if (m_ImageCreateInfo.extent.height > 1 && m_ImageCreateInfo.extent.depth > 1)
+		m_ImageViewCreateInfo.setViewType(vk::ImageViewType::e3D);
+	else if (m_ImageCreateInfo.extent.height > 1)
+		m_ImageViewCreateInfo.setViewType(vk::ImageViewType::e2D);
+	else
+		m_ImageViewCreateInfo.setViewType(vk::ImageViewType::e1D);
+
 	m_ImageViewCreateInfo.setImage(m_Image.get());
-	m_ImageViewCreateInfo.setViewType(vk::ImageViewType::e2D);
 	m_ImageViewCreateInfo.setFormat(m_ImageCreateInfo.format);
 	m_ImageViewCreateInfo.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
 	m_ImageViewCreateInfo.subresourceRange.setLevelCount(1);
@@ -150,7 +187,7 @@ void Texture::TransitionImageLayout(const vk::Image& img, vk::Format /*format*/,
 	m_Device.SubmitCommandBuffers(cmdBuf.get());
 }
 
-void Texture::CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, uint32_t width, uint32_t height) const
+void Texture::CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, const vk::Extent3D& extent) const
 {
 	vk::UniqueCommandBuffer cmdBuf = m_Device.AllocCommandBuffer();
 	cmdBuf->begin(VulkanHelpers::CBBI_ONE_TIME_SUBMIT);
@@ -161,7 +198,7 @@ void Texture::CopyBufferToImage(const vk::Buffer& src, const vk::Image& dst, uin
 	region.imageSubresource.setLayerCount(1);
 
 	//region.setImageOffset(vk::Offset3D(0, 0, 0));
-	region.setImageExtent(vk::Extent3D(width, height, 1));
+	region.setImageExtent(extent);
 
 	cmdBuf->copyBufferToImage(src, dst, vk::ImageLayout::eTransferDstOptimal, region);
 

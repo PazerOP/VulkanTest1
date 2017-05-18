@@ -10,7 +10,7 @@
 #define AssertAR(before, statement, after)	(statement)
 #endif
 
-#if _MSC_VER == 1910
+#if _MSC_VER == 1910 || _MSC_VER == 1911
 namespace std
 {
 	namespace experimental { namespace filesystem { } }
