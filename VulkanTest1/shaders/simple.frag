@@ -58,16 +58,66 @@ void main()
 
 		// Smooth alpha
 		{
-			vec2 delta = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y));
+			//vec2 delta = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y));
+			const vec2 delta = fwidth(fragTexCoord);
+#if 0
+			float[9] alphaSamples =
+			{
+				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y - delta.y, progress)).a,
+				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a,
+				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y + delta.y, progress)).a,
 
-			float leftAlpha = texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a;
-			float upAlpha = texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a;
-			float rightAlpha = texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a;
-			float downAlpha = texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a;
+				texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a,
+				outColor.a,
+				texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a,
 
-			float minAlpha = min(leftAlpha, min(upAlpha, min(rightAlpha, min(downAlpha, outColor.a))));
-			float maxAlpha = max(leftAlpha, max(upAlpha, max(rightAlpha, max(downAlpha, outColor.a))));
+				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y - delta.y, progress)).a,
+				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a,
+				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y + delta.y, progress)).a,
+			};
+
+			float minAlpha = alphaSamples[0];
+			float maxAlpha = alphaSamples[0];
+			for (int i = 1; i < 9; i++)
+			{
+				minAlpha = min(minAlpha, alphaSamples[i]);
+				maxAlpha = max(maxAlpha, alphaSamples[i]);
+			}
+
 			outColor.a = (minAlpha + maxAlpha) / 2;
+#endif
+			const vec2 baseTextureSize = textureSize(baseTexture3D, 0).xy;
+
+			const vec2 baseTexturePixelSize = 1 / baseTextureSize;
+			vec2 withinPixel = mod(fragTexCoord, baseTexturePixelSize);
+
+			//vec2 distToEdge = (baseTexturePixelSize / 2) - abs(withinPixel - (baseTexturePixelSize / 2));
+			const vec2 halfPixelSize = baseTexturePixelSize / 2;
+			vec2 distToEdge = halfPixelSize - abs(Remap(-halfPixelSize, halfPixelSize, vec2(0, 0), baseTexturePixelSize, withinPixel));
+
+			//outColor.rgb = mix(vec3(1, 0, 0), outColor.rgb, distToEdge.x);
+			//if (distToEdge.x < delta.x || distToEdge.y < delta.y)
+			{
+				//outColor.rgb = vec3(1, 0, 0);
+				vec2 fade = vec2(
+					Remap(1, 0, delta.x, 0, distToEdge.x),
+					Remap(1, 0, delta.y, 0, distToEdge.y));
+				//outColor.rgb = mix(outColor.rgb, vec3(1, 0, 0), fade);
+				outColor.a = min(fade.x, fade.y);
+			}
+
+			// See how close we are to the edge of a pixel
+#if 0
+			// From https://gist.github.com/slembcke/23e1d96d7e3c739caf12
+			
+			vec2 puv = fragTexCoord * textureSize(baseTexture3D, 0).xy;
+
+			vec2 hfw = fwidth(puv) / 2.0;
+			vec2 fl = floor(puv - 0.5) + 0.5;			
+
+			vec2 nnn = (fl + smoothstep(0.5 - hfw, 0.5 + hfw, puv - fl)) / textureSize(baseTexture3D, 0).xy;
+			outColor = texture(baseTexture3D, vec3(nnn, progress));
+#endif
 		}
 	}
 	else if (baseTextureMode == TEXTURE_MODE_2D)
@@ -77,5 +127,4 @@ void main()
 
 	if (VERTEXCOLOR)
 		outColor *= vec4(rgb, 1);
-
 }

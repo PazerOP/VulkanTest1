@@ -17,6 +17,10 @@ float Remap(float a, float b, float x, float y, float t)
 {
 	return mix(a, b, (t - x) / (y - x));
 }
+vec2 Remap(vec2 a, vec2 b, vec2 x, vec2 y, vec2 t)
+{
+	return mix(a, b, (t - x) / (y - x));
+}
 
 layout(set = SET_FRAMEVIEW, binding = BINDING_FRAMEVIEW_FRAME) uniform FrameConstants
 {

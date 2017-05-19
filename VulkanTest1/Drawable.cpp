@@ -24,6 +24,7 @@ void Drawable::Update()
 
 	const float jokeScale = Remap(600, 1000, -1, 1, sin(time / 10));
 	copy.SetScale(glm::vec2(jokeScale));
+	copy.SetRotationDeg(7.5 * time);
 
 	obj.modelToWorld = copy.ComputeMatrix();
 	m_ObjectConstantsBuffer->Write(&obj, sizeof(obj), 0);
