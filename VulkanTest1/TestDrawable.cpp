@@ -17,7 +17,7 @@ static UniqueVertexList<SimpleVertex> GetTestVertexList()
 		SimpleVertex(glm::vec2(-0.5, -0.5), glm::vec3(1, 0, 0), glm::vec2(0, 0)),
 		SimpleVertex(glm::vec2(0.5, -0.5), glm::vec3(0.5, 1, 0), glm::vec2(1, 0)),
 		SimpleVertex(glm::vec2(0.5, 0.5), glm::vec3(0, 1, 1), glm::vec2(1, 1)),
-		SimpleVertex(glm::vec2(-0.5, 0.5), glm::vec3(1, 1, 1), glm::vec2(0, 1)),
+		SimpleVertex(glm::vec2(-0.5, 0.5), glm::vec3(0.5, 0, 1), glm::vec2(0, 1)),
 	};
 
 	retVal->AddVertex({ v[0], v[1], v[2], v[2], v[3], v[0] });
@@ -30,6 +30,7 @@ TestDrawable::TestDrawable(LogicalDevice& device) :
 {
 	m_Transform.SetTranslation(glm::vec2(300, 0));
 	m_Transform.SetScale(glm::vec2(300));
+	m_Transform.SetRotationDeg(15);
 
 	m_Material = MaterialManager::Instance().Find("test_material");
 	m_Mesh = Mesh::Create(GetTestVertexList());

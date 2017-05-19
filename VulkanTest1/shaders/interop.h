@@ -2,6 +2,7 @@
 #define INTEROP_H
 
 #define ID_SMOOTH_ANIMATION 0
+#define ID_VERTEXCOLOR 1
 
 #define TEXTURE_MODE_START 1000
 

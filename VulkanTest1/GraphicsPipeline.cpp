@@ -85,6 +85,16 @@ void GraphicsPipeline::CreatePipeline()
 
 	vk::PipelineColorBlendAttachmentState pcbaState;
 	{
+#if true
+		pcbaState.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+		pcbaState.setBlendEnable(true);
+		pcbaState.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha);
+		pcbaState.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha);
+		pcbaState.setColorBlendOp(vk::BlendOp::eAdd);
+		pcbaState.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
+		pcbaState.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
+		pcbaState.setAlphaBlendOp(vk::BlendOp::eAdd);
+#else
 		pcbaState.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 		pcbaState.setBlendEnable(false);
 		pcbaState.setSrcColorBlendFactor(vk::BlendFactor::eOne);
@@ -92,6 +102,8 @@ void GraphicsPipeline::CreatePipeline()
 		pcbaState.setColorBlendOp(vk::BlendOp::eAdd);
 		pcbaState.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
 		pcbaState.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
+		pcbaState.setAlphaBlendOp(vk::BlendOp::eAdd);
+#endif
 	}
 
 	vk::PipelineColorBlendStateCreateInfo colorBlendState;

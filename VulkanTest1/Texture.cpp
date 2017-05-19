@@ -155,9 +155,9 @@ void Texture::CreateSampler()
 	m_SamplerCreateInfo.setMagFilter(m_CreateInfo->m_Filter);
 	m_SamplerCreateInfo.setMinFilter(m_CreateInfo->m_Filter);
 
-	m_SamplerCreateInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);
-	m_SamplerCreateInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);
-	m_SamplerCreateInfo.setAddressModeW(vk::SamplerAddressMode::eRepeat);
+	m_SamplerCreateInfo.setAddressModeU(m_CreateInfo->m_AddressModeU);
+	m_SamplerCreateInfo.setAddressModeV(m_CreateInfo->m_AddressModeV);
+	m_SamplerCreateInfo.setAddressModeW(m_CreateInfo->m_AddressModeW);
 
 	m_SamplerCreateInfo.setAnisotropyEnable(true);
 	m_SamplerCreateInfo.setMaxAnisotropy(16);

@@ -8,5 +8,7 @@
 		"invaders/invader_3_1.png"
 	],
 	"filter": "nearest",
-	"animated": true
+	"animated": true,
+
+	"addressMode": "clampEdge"
 }

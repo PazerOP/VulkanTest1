@@ -248,6 +248,7 @@ std::ostream& operator<<(std::ostream& lhs, JSONDataType rhs)
 	}
 }
 
+
 double JSONObject::TryGetNumber(const std::string& name, double default, bool* success) const
 {
 	const auto& found = find(name);
@@ -299,116 +300,169 @@ std::string JSONObject::TryGetString(const std::string& name, const std::string&
 	return found->second.GetString();
 }
 
-std::optional<double> JSONObject::TryGetNumber(const std::string& name) const
+const double* JSONObject::TryGetNumber(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		return std::nullopt;
-
-	return found->second.GetNumber();
+	const auto foundValue = TryGetValue(name);
+	return foundValue ? &foundValue->GetNumber() : nullptr;
 }
 
 const double& JSONObject::GetNumber(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		throw json_error(StringTools::CSFormat("Missing required number value {0}", name));
-
-	return found->second.GetNumber();
+	try
+	{
+		return GetValue(name).GetNumber();
+	}
+	catch (json_value_missing_error)
+	{
+		throw json_value_missing_error(StringTools::CSFormat("Missing required number value {0}", name));
+	}
 }
 
-std::optional<bool> JSONObject::TryGetBool(const std::string& name) const
+const bool* JSONObject::TryGetBool(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		return std::nullopt;
-
-	return found->second.GetBool();
+	const auto foundValue = TryGetValue(name);
+	return foundValue ? &foundValue->GetBool() : nullptr;
 }
 
 const bool& JSONObject::GetBool(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		throw json_error(StringTools::CSFormat("Missing required boolean value {0}", name));
-
-	return found->second.GetBool();
+	try
+	{
+		return GetValue(name).GetBool();
+	}
+	catch (json_value_missing_error)
+	{
+		throw json_value_missing_error(StringTools::CSFormat("Missing required boolean value {0}", name));
+	}
 }
 
-std::optional<std::string> JSONObject::TryGetString(const std::string& name) const
+const std::string* JSONObject::TryGetString(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		return std::nullopt;
-
-	return found->second.GetString();
+	const auto foundValue = TryGetValue(name);
+	return foundValue ? &foundValue->GetString() : nullptr;
 }
 
 const std::string& JSONObject::GetString(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		throw json_error(StringTools::CSFormat("Missing required string value {0}", name));
+	try
+	{
+		return GetValue(name).GetString();
+	}
+	catch (json_value_missing_error)
+	{
+		throw json_value_missing_error(StringTools::CSFormat("Missing required string value {0}", name));
+	}
+}
 
-	return found->second.GetString();
+const JSONArray* JSONObject::TryGetArray(const std::string& name) const
+{
+	const auto foundValue = TryGetValue(name);
+	return foundValue ? &foundValue->GetArray() : nullptr;
 }
 
 const JSONArray& JSONObject::GetArray(const std::string& name) const
 {
-	const auto& found = find(name);
-	if (found == end())
-		throw json_error(StringTools::CSFormat("Missing required array value {0}", name));
+	try
+	{
+		return GetValue(name).GetArray();
+	}
+	catch (json_value_missing_error)
+	{
+		throw json_value_missing_error(StringTools::CSFormat("Missing required array value {0}", name));
+	}
+}
 
-	return found->second.GetArray();
+const JSONObject* JSONObject::TryGetObject(const std::string& name) const
+{
+	const auto foundValue = TryGetValue(name);
+	return foundValue ? &foundValue->GetObject() : nullptr;
 }
 
 const JSONObject& JSONObject::GetObject(const std::string& name) const
 {
+	try
+	{
+		return GetValue(name).GetObject();
+	}
+	catch (json_value_missing_error)
+	{
+		throw json_value_missing_error(StringTools::CSFormat("Missing required object value {0}", name));
+	}
+}
+
+const JSONValue& JSONObject::GetValue(const std::string& name) const
+{
 	const auto& found = find(name);
 	if (found == end())
-		throw json_error(StringTools::CSFormat("Missing required object value {0}", name));
+		throw json_value_missing_error(StringTools::CSFormat("Missing required value {0}", name));
 
-	return found->second.GetObject();
+	return found->second;
+}
+
+const JSONValue* JSONObject::TryGetValue(const std::string& name) const
+{
+	const auto& found = find(name);
+	return (found != end()) ? &found->second : nullptr;
 }
 
 const double& JSONValue::GetNumber() const
 {
-	if (GetType() != JSONDataType::Number)
-		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
-
-	return std::get<double>(m_Data);
+	try
+	{
+		return std::get<double>(m_Data);
+	}
+	catch (std::bad_variant_access)
+	{
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type was {1}.", __FUNCTION__, GetType()));
+	}
 }
 
 const bool& JSONValue::GetBool() const
 {
-	if (GetType() != JSONDataType::Bool)
-		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
-
-	return std::get<bool>(m_Data);
+	try
+	{
+		return std::get<bool>(m_Data);
+	}
+	catch (std::bad_variant_access)
+	{
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type was {1}.", __FUNCTION__, GetType()));
+	}
 }
 
 const std::string& JSONValue::GetString() const
 {
-	if (GetType() != JSONDataType::String)
-		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
-
-	return std::get<std::string>(m_Data);
+	try
+	{
+		return std::get<std::string>(m_Data);
+	}
+	catch (std::bad_variant_access)
+	{
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type was {1}.", __FUNCTION__, GetType()));
+	}
 }
 
 const JSONArray& JSONValue::GetArray() const
 {
-	if (GetType() != JSONDataType::Array)
-		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
-
-	return std::get<JSONArray>(m_Data);
+	try
+	{
+		return std::get<JSONArray>(m_Data);
+	}
+	catch (std::bad_variant_access)
+	{
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type was {1}.", __FUNCTION__, GetType()));
+	}
 }
 
 const JSONObject& JSONValue::GetObject() const
 {
-	if (GetType() != JSONDataType::Object)
-		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type on was {1}.", __FUNCTION__, GetType()));
-
-	return std::get<JSONObject>(m_Data);
+	try
+	{
+		return std::get<JSONObject>(m_Data);
+	}
+	catch (std::bad_variant_access)
+	{
+		throw json_value_type_error(StringTools::CSFormat("Attempted to call {0}(), but data type was {1}.", __FUNCTION__, GetType()));
+	}
 }
 
 JSONDataType JSONValue::GetType() const

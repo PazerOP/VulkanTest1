@@ -22,7 +22,7 @@ void Drawable::Update()
 
 	Transform copy = m_Transform;
 
-	const float jokeScale = Remap(600, 1000, -1, 1, sin(fmodf(time, 2 * 3.14159)));
+	const float jokeScale = Remap(600, 1000, -1, 1, sin(time / 10));
 	copy.SetScale(glm::vec2(jokeScale));
 
 	obj.modelToWorld = copy.ComputeMatrix();
