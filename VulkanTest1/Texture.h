@@ -24,6 +24,7 @@ private:
 	{
 		std::shared_ptr<void> m_Image;
 		size_t GetImgDataSize() const { return m_Width * m_Height * 4; }
+		size_t GetImgDataStride() const { return m_Width * 4; }
 		int m_Width;
 		int m_Height;
 		int m_Channels;

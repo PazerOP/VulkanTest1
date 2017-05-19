@@ -1,6 +1,8 @@
 #ifndef INTEROP_H
 #define INTEROP_H
 
+#define ID_SMOOTH_ANIMATION 0
+
 #define TEXTURE_MODE_START 1000
 
 #define TEXTURE_MODE_INVALID (-1)

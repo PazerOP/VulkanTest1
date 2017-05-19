@@ -1,7 +1,11 @@
 {
 	"sourceFiles": [
 		"invaders/invader_1_0.png",
-		"invaders/invader_1_1.png"
+		"invaders/invader_1_1.png",
+		"invaders/invader_2_0.png",
+		"invaders/invader_2_1.png",
+		"invaders/invader_3_0.png",
+		"invaders/invader_3_1.png"
 	],
 	"filter": "nearest",
 	"animated": true

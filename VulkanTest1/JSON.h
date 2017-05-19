@@ -24,12 +24,25 @@ class JSONObject : public std::map<std::string, JSONValue>
 {
 public:
 	double TryGetNumber(const std::string& name, double default, bool* success = nullptr) const;
-	bool TryGetBool(const std::string& name, bool default, bool* success = nullptr) const;
-	std::string TryGetString(const std::string& name, const std::string& default, bool* success = nullptr) const;
-
 	std::optional<double> TryGetNumber(const std::string& name) const;
+	const double& GetNumber(const std::string& name) const;
+	double& GetNumber(const std::string& name) { return const_cast<double&>(std::as_const(*this).GetNumber(name)); }
+
+	bool TryGetBool(const std::string& name, bool default, bool* success = nullptr) const;
 	std::optional<bool> TryGetBool(const std::string& name) const;
+	const bool& GetBool(const std::string& name) const;
+	bool& GetBool(const std::string& name) { return const_cast<bool&>(std::as_const(*this).GetBool(name)); }
+
+	std::string TryGetString(const std::string& name, const std::string& default, bool* success = nullptr) const;
 	std::optional<std::string> TryGetString(const std::string& name) const;
+	const std::string& GetString(const std::string& name) const;
+	std::string& GetString(const std::string& name) { return const_cast<std::string&>(std::as_const(*this).GetString(name)); }
+
+	const JSONArray& GetArray(const std::string& name) const;
+	JSONArray& GetArray(const std::string& name) { return const_cast<JSONArray&>(std::as_const(*this).GetArray(name)); }
+
+	const JSONObject& GetObject(const std::string& name) const;
+	JSONObject& GetObject(const std::string& name) { return const_cast<JSONObject&>(std::as_const(*this).GetObject(name)); }
 };
 
 class JSONValue
@@ -68,22 +81,24 @@ public:
 private:
 	std::variant<std::monostate, double, std::string, bool, JSONArray, JSONObject> m_Data;
 };
-
-class json_parsing_error : public std::runtime_error
+class json_error : public std::runtime_error
 {
 public:
-	json_parsing_error(const std::string& msg) : std::runtime_error(msg)
+	json_error(const std::string& type, const std::string& msg) : std::runtime_error(msg)
 	{
-		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", typeid(*this).name(), msg));
+		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", type, msg));
 	}
+	json_error(const std::string& msg) : json_error(typeid(*this).name(), msg) { }
 };
-class json_value_type_error : public std::runtime_error
+class json_parsing_error : public json_error
 {
 public:
-	json_value_type_error(const std::string& msg) : std::runtime_error(msg)
-	{
-		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", typeid(*this).name(), msg));
-	}
+	json_parsing_error(const std::string& msg) : json_error(typeid(*this).name(), msg) { }
+};
+class json_value_type_error : public json_error
+{
+public:
+	json_value_type_error(const std::string& msg) : json_error(typeid(*this).name(), msg) { }
 };
 
 class JSONSerializer

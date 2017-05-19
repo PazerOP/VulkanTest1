@@ -7,7 +7,8 @@
     </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>
+      </Extensions>
     </Filter>
     <Filter Include="Engine\Vulkan">
       <UniqueIdentifier>{3b2143cf-bf31-4086-973a-20c2fd1728c4}</UniqueIdentifier>
@@ -347,9 +348,6 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Engine\Graphics\Textures</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
     <ClCompile Include="ShaderType.cpp">
       <Filter>Engine\Graphics\Shaders</Filter>
     </ClCompile>
@@ -360,7 +358,10 @@
       <Filter>Engine\Graphics\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="TextureCreateInfo.cpp">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Graphics\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Engine\Graphics\Textures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

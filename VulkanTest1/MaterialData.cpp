@@ -17,16 +17,16 @@ MaterialData::MaterialData(const std::string& str) :
 
 MaterialData::MaterialData(const JSONObject& json)
 {
-	m_Name = json.find("name")->second.GetString();
+	m_Name = json.GetString("name");
 
-	const JSONObject& shaderGroup = json.find("shaderGroup")->second.GetObject();
+	const JSONObject& shaderGroup = json.GetObject("shaderGroup");
 
-	const auto& shaderGroupName = shaderGroup.find("name")->second.GetString();
+	const auto& shaderGroupName = shaderGroup.GetString("name");
 	m_ShaderGroup = ShaderGroupManager::Instance().Find(shaderGroupName);
 
 	const auto& shaderGroupParameters = m_ShaderGroup->GetData()->GetParameters();
 
-	for (const auto& value : shaderGroup.find("inputs")->second.GetObject())
+	for (const auto& value : shaderGroup.GetObject("inputs"))
 	{
 		const auto& type = value.second.GetType();
 		const auto& name = value.first;

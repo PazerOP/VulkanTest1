@@ -61,14 +61,8 @@ std::shared_ptr<TextureCreateInfo> TextureManager::LoadCreateInfo(const std::fil
 
 	JSONObject obj = JSONSerializer::FromFile(path).GetObject();
 
-	const auto& sourceFiles = obj.find("sourceFiles");
-	if (sourceFiles == obj.end())
-		throw json_parsing_error(StringTools::CSFormat("Failed to find required key \"sourceFiles\" in \"{0}\"", path));
-	else
-	{
-		for (const auto& sourceFile : sourceFiles->second.GetArray())
-			retVal->m_SourceFiles.push_back(s_ShadersFolderPath / sourceFile.GetString());
-	}
+	for (const auto& sourceFile : obj.GetArray("sourceFiles"))
+		retVal->m_SourceFiles.push_back(s_ShadersFolderPath / sourceFile.GetString());
 
 	retVal->m_Animated = obj.TryGetBool("animated", false);
 

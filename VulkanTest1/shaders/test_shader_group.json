@@ -7,7 +7,7 @@
 			"inputs": [
 				{
 					"parameter": "baseTexture",
-					"binding": 0
+					"binding": 1
 				}
 			]
 		},

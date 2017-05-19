@@ -28,11 +28,40 @@ Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreat
 	const auto& firstImg = sourceImages.front();
 
 	Buffer stagingBuffer(m_Device, firstImg.GetImgDataSize() * sourceImages.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-	for (size_t i = 0; i < sourceImages.size(); i++)
 	{
-		const auto& img = sourceImages[i];
-		stagingBuffer.Write(img.m_Image.get(), img.GetImgDataSize(), img.GetImgDataSize() * i);
+		const size_t tempBufferSize = firstImg.GetImgDataSize();
+		const size_t tempBufferStride = firstImg.GetImgDataStride();
+
+		stagingBuffer.Write(firstImg.m_Image.get(), tempBufferSize, 0);
+
+		if (sourceImages.size() > 1)
+		{
+			std::unique_ptr<uint8_t> tempBuffer((uint8_t*)malloc(tempBufferSize));
+			for (size_t i = 1; i < sourceImages.size(); i++)
+			{
+				const auto& img = sourceImages[i];
+
+				if (img.m_Width != firstImg.m_Width)
+				{
+					if (i > 1)
+						memset(tempBuffer.get(), 0, tempBufferSize);
+
+					const auto imgStride = img.GetImgDataStride();
+					const auto minStride = std::min(imgStride, tempBufferStride);
+					const auto minHeight = std::min(img.m_Height, firstImg.m_Height);
+
+					// Copy line by line
+					for (size_t y = 0; y < minHeight; y++)
+						memcpy(tempBuffer.get() + tempBufferStride * y, (uint8_t*)img.m_Image.get() + imgStride * y, minStride);
+
+					stagingBuffer.Write(tempBuffer.get(), tempBufferSize, tempBufferSize * i);
+				}
+				else
+				{
+					stagingBuffer.Write(img.m_Image.get(), tempBufferSize, tempBufferSize * i);
+				}
+			}
+		}
 	}
 
 	// Setup final image

@@ -308,11 +308,29 @@ std::optional<double> JSONObject::TryGetNumber(const std::string& name) const
 	return found->second.GetNumber();
 }
 
+const double& JSONObject::GetNumber(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		throw json_error(StringTools::CSFormat("Missing required number value {0}", name));
+
+	return found->second.GetNumber();
+}
+
 std::optional<bool> JSONObject::TryGetBool(const std::string& name) const
 {
 	const auto& found = find(name);
 	if (found == end())
 		return std::nullopt;
+
+	return found->second.GetBool();
+}
+
+const bool& JSONObject::GetBool(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		throw json_error(StringTools::CSFormat("Missing required boolean value {0}", name));
 
 	return found->second.GetBool();
 }
@@ -324,6 +342,33 @@ std::optional<std::string> JSONObject::TryGetString(const std::string& name) con
 		return std::nullopt;
 
 	return found->second.GetString();
+}
+
+const std::string& JSONObject::GetString(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		throw json_error(StringTools::CSFormat("Missing required string value {0}", name));
+
+	return found->second.GetString();
+}
+
+const JSONArray& JSONObject::GetArray(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		throw json_error(StringTools::CSFormat("Missing required array value {0}", name));
+
+	return found->second.GetArray();
+}
+
+const JSONObject& JSONObject::GetObject(const std::string& name) const
+{
+	const auto& found = find(name);
+	if (found == end())
+		throw json_error(StringTools::CSFormat("Missing required object value {0}", name));
+
+	return found->second.GetObject();
 }
 
 const double& JSONValue::GetNumber() const
