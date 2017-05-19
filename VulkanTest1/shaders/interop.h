@@ -1,0 +1,11 @@
+#ifndef INTEROP_H
+#define INTEROP_H
+
+#define TEXTURE_MODE_START 1000
+
+#define TEXTURE_MODE_INVALID (-1)
+#define TEXTURE_MODE_1D 0
+#define TEXTURE_MODE_2D 1
+#define TEXTURE_MODE_3D 2
+
+#endif

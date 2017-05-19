@@ -12,6 +12,12 @@
 
 #define SET_OBJECT 2
 
+// Remaps t from [x, y] to [a, b]
+float Remap(float a, float b, float x, float y, float t)
+{
+	return mix(a, b, (t - x) / (y - x));
+}
+
 layout(set = SET_FRAMEVIEW, binding = BINDING_FRAMEVIEW_FRAME) uniform FrameConstants
 {
 	float time;

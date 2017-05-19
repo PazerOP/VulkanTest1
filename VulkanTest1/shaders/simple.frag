@@ -1,15 +1,15 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+#include "interop.h"
 #include "shared.glsl"
 
-#define BINDING_MATERIAL_BASETEXTURE2D 1
-#define BINDING_MATERIAL_BASETEXTURE3D 2
+#define BINDING_MATERIAL_BASETEXTURE 0
 
-layout(constant_id = 1) const bool TEXTURE_3D = true;
+layout(constant_id = TEXTURE_MODE_START + BINDING_MATERIAL_BASETEXTURE) const int baseTextureMode = TEXTURE_MODE_INVALID;
 
-layout(set = SET_MATERIAL, binding = 0) uniform sampler2D baseTexture2D;
-layout(set = SET_MATERIAL, binding = 0) uniform sampler3D baseTexture3D;
+layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_BASETEXTURE) uniform sampler2D baseTexture2D;
+layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_BASETEXTURE) uniform sampler3D baseTexture3D;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -196,8 +196,10 @@ void main()
 	//outColor = vec4(rgb, 1.0);
 	//outColor = vec4(fragTexCoord, 0.0, 1.0);
 	
-	if (TEXTURE_3D)
-		outColor = texture(baseTexture3D, vec3(fragTexCoord, sin(mod(frame.time / 3, 2 * M_PI))));
-	else
+	if (baseTextureMode == TEXTURE_MODE_3D)
+		outColor = texture(baseTexture3D, vec3(fragTexCoord, Remap(0, 1, -1, 1, sin(frame.time))));
+	else if (baseTextureMode == TEXTURE_MODE_2D)
 		outColor = texture(baseTexture2D, fragTexCoord);
+	else
+		outColor = vec4(mod(frame.time, 1), 0, 0, 1);
 }

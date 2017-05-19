@@ -77,6 +77,7 @@ Texture::Texture(LogicalDevice& device, const std::shared_ptr<const TextureCreat
 std::vector<Texture::SourceImage> Texture::LoadSourceImages()
 {
 	std::vector<SourceImage> retVal;
+	stbi_set_flip_vertically_on_load(true);
 
 	for (const auto& path : m_CreateInfo->m_SourceFiles)
 	{

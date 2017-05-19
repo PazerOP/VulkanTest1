@@ -12,6 +12,7 @@
 #include "SimpleVertex.h"
 #include "Texture.h"
 #include "TextureManager.h"
+#include "shaders/interop.h"
 
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
@@ -68,6 +69,8 @@ void Material::InitGraphicsPipeline()
 	createInfo->m_VertexInputBindingDescription = SimpleVertex::GetBindingDescription();
 	createInfo->m_VertexInputAttributeDescriptions = SimpleVertex::GetAttributeDescriptions();
 
+	createInfo->m_Specializations = SetupSpecializations();
+
 	m_GraphicsPipeline.emplace(m_Device, createInfo);
 }
 
@@ -103,7 +106,7 @@ void Material::InitDescriptorSet()
 				newBinding.m_DebugName = shaderBinding.m_ParameterName;
 				newBinding.m_Stages = shaderStage;
 				newBinding.m_Data = m_Textures.at(shaderBinding.m_ParameterName);
-				newBinding.m_BindingIndex = AdjustTextureBinding(shaderBinding.m_ParameterName, shaderBinding.m_BindingIndex.value());
+				newBinding.m_BindingIndex = shaderBinding.m_BindingIndex.value();
 
 				createInfo->m_Data.push_back(std::move(newBinding));
 			}
@@ -113,23 +116,6 @@ void Material::InitDescriptorSet()
 	createInfo->m_Layout = m_DescriptorSetLayout;
 
 	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
-}
-
-uint32_t Material::AdjustTextureBinding(const std::string& paramName, uint32_t originalBinding) const
-{
-	const auto& foundTexture = m_Textures.find(paramName);
-	if (foundTexture != m_Textures.end())
-	{
-		static_assert(Enums::value(vk::ImageType::e1D) == 0);
-		static_assert(Enums::value(vk::ImageType::e2D) == 1);
-		static_assert(Enums::value(vk::ImageType::e3D) == 2);
-
-		const auto value = Enums::value(foundTexture->second->GetImageType());
-		assert(value >= 0 && value <= 2);
-		return originalBinding + value;
-	}
-
-	return originalBinding;
 }
 
 void Material::LoadTexture(const std::string& paramName, const std::string& textureName)
@@ -174,12 +160,9 @@ void Material::InitDescriptorSetLayout()
 			binding.setStageFlags(groupedStage.second);
 			binding.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
 			binding.setDescriptorCount(1);
+			binding.setBinding(groupedStage.first);
 
-			for (uint_fast8_t i = 0; i < 3; i++)
-			{
-				binding.setBinding(groupedStage.first + i);	// 1D, 2D, 3D
-				newCreateInfo->m_Bindings.push_back(binding);
-			}
+			newCreateInfo->m_Bindings.push_back(binding);
 		}
 	}
 
@@ -220,6 +203,34 @@ std::map<uint32_t, std::vector<vk::DescriptorSet>> Material::GetDescriptorSets()
 
 	if (!descriptorSets.empty())
 		retVal.insert(std::make_pair(Enums::value(start->first), std::move(descriptorSets)));
+
+	return retVal;
+}
+
+GraphicsPipelineCreateInfo::Specializations Material::SetupSpecializations() const
+{
+	static const std::map<vk::ImageType, int> s_TextureModeMap =
+	{
+		{ vk::ImageType::e1D, TEXTURE_MODE_1D },
+		{ vk::ImageType::e2D, TEXTURE_MODE_2D },
+		{ vk::ImageType::e3D, TEXTURE_MODE_3D },
+	};
+
+	GraphicsPipelineCreateInfo::Specializations retVal;
+
+	const auto& shaderGroupData = m_Data->GetShaderGroup()->GetData();
+
+	for (const auto& shaderParameter : shaderGroupData->GetParameters())
+	{
+		if (shaderParameter.second != ShaderParameterType::Texture)
+			continue;
+
+		for (const auto& dependentShader : shaderGroupData->FindByParameterDependency(shaderParameter.first))
+		{
+			retVal[dependentShader.m_Definition->m_Type.value()][TEXTURE_MODE_START + dependentShader.m_BindingIndex] =
+				s_TextureModeMap.at(m_Textures.at(shaderParameter.first)->GetImageType());
+		}
+	}
 
 	return retVal;
 }

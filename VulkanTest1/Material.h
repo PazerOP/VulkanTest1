@@ -27,8 +27,6 @@ private:
 	void InitGraphicsPipeline();
 	void InitDescriptorSet();
 
-	uint32_t AdjustTextureBinding(const std::string& paramName, uint32_t originalBinding) const;
-
 	void LoadTexture(const std::string& paramName, const std::string& textureName);
 
 	LogicalDevice& m_Device;
@@ -37,6 +35,8 @@ private:
 	std::map<std::string, std::shared_ptr<Texture>> m_Textures;
 
 	std::map<uint32_t, std::vector<vk::DescriptorSet>> GetDescriptorSets() const;
+
+	GraphicsPipelineCreateInfo::Specializations SetupSpecializations() const;
 
 	std::shared_ptr<DescriptorSetLayout> m_DescriptorSetLayout;
 	std::shared_ptr<DescriptorSet> m_DescriptorSet;

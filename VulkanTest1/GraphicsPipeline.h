@@ -3,8 +3,10 @@
 #include "GraphicsPipelineCreateInfo.h"
 #include "ShaderType.h"
 
+#include <forward_list>
 #include <functional>
 #include <optional>
+#include <variant>
 
 class DescriptorSet;
 
@@ -26,8 +28,18 @@ public:
 	void RecreatePipeline();
 
 private:
+	struct ShaderStageData
+	{
+		ShaderStageData() = default;
+		ShaderStageData(const ShaderStageData& other) = delete;
+		ShaderStageData(ShaderStageData&& other) = delete;
+		std::vector<vk::PipelineShaderStageCreateInfo> m_StageCreateInfos;
+		std::forward_list<std::pair<vk::SpecializationInfo, std::vector<vk::SpecializationMapEntry>>> m_SpecializationInfoStorage;
+		std::vector<std::variant<vk::Bool32, int, float>> m_Storage;
+	};
+
 	void CreatePipeline();
-	std::vector<vk::PipelineShaderStageCreateInfo> GenerateShaderStageCreateInfos() const;
+	void GenerateShaderStageCreateInfos(ShaderStageData& data) const;
 
 	LogicalDevice& m_Device;
 

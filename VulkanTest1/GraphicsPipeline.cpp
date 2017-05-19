@@ -123,11 +123,12 @@ void GraphicsPipeline::CreatePipeline()
 		m_Layout = GetDevice()->createPipelineLayoutUnique(plCreateInfo);
 	}
 
-	const auto shaderStages = GenerateShaderStageCreateInfos();
+	ShaderStageData shaderStages;
+	GenerateShaderStageCreateInfos(shaderStages);
 	vk::GraphicsPipelineCreateInfo gpCreateInfo;
 	{
-		gpCreateInfo.setStageCount(shaderStages.size());
-		gpCreateInfo.setPStages(shaderStages.data());
+		gpCreateInfo.setStageCount(shaderStages.m_StageCreateInfos.size());
+		gpCreateInfo.setPStages(shaderStages.m_StageCreateInfos.data());
 
 		gpCreateInfo.setPVertexInputState(&vertexInputState);
 		gpCreateInfo.setPInputAssemblyState(&inputAssemblyState);
@@ -150,24 +151,71 @@ void GraphicsPipeline::CreatePipeline()
 	m_Pipeline = GetDevice()->createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
-std::vector<vk::PipelineShaderStageCreateInfo> GraphicsPipeline::GenerateShaderStageCreateInfos() const
+void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) const
 {
-	std::vector<vk::PipelineShaderStageCreateInfo> createInfos;
+	const auto& inputSpecializations = m_CreateInfo->m_Specializations;
+
 	for (std::underlying_type_t<ShaderType> i = 0; i < Enums::count<ShaderType>(); i++)
 	{
 		const auto& current = m_CreateInfo->m_ShaderGroup->GetModule(Enums::index_to_value<ShaderType>(i));
 		if (!current)
 			continue;
 
-		createInfos.emplace_back();
-		auto& currentInfo = createInfos.back();
+		data.m_StageCreateInfos.emplace_back();
+		auto& currentInfo = data.m_StageCreateInfos.back();
 
 		currentInfo.setStage(Enums::convert<vk::ShaderStageFlagBits>((ShaderType)i));
-
 		currentInfo.setModule(current->Get());
 		currentInfo.setPName("main");
+
+		const auto& foundInputSpecializations = inputSpecializations.find(ShaderType(i));
+		if (foundInputSpecializations != inputSpecializations.end())
+		{
+			data.m_SpecializationInfoStorage.emplace_front();
+			auto& outputSpecializations = data.m_SpecializationInfoStorage.front();
+
+			for (const auto& inputSpecialization : foundInputSpecializations->second)
+			{
+				outputSpecializations.second.emplace_back();
+				vk::SpecializationMapEntry& outputEntry = outputSpecializations.second.back();
+				outputEntry.setConstantID(inputSpecialization.first);
+
+				switch (inputSpecialization.second.index())
+				{
+				case 0:
+				{
+					data.m_Storage.push_back((vk::Bool32)std::get<bool>(inputSpecialization.second));
+					outputEntry.setSize(sizeof(vk::Bool32));
+					outputEntry.setOffset((char*)&std::get<vk::Bool32>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+					break;
+				}
+				case 1:
+				{
+					data.m_Storage.push_back(std::get<int>(inputSpecialization.second));
+					outputEntry.setSize(sizeof(int));
+					outputEntry.setOffset((char*)&std::get<int>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+					break;
+				}
+				case 2:
+				{
+					data.m_Storage.push_back(std::get<float>(inputSpecialization.second));
+					outputEntry.setSize(sizeof(float));
+					outputEntry.setOffset((char*)&std::get<float>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+					break;
+				}
+				}
+			}
+			outputSpecializations.first.setDataSize(data.m_Storage.size() * sizeof(decltype(data.m_Storage)::value_type));
+
+#pragma message("warning: Evil, evil, EVIL hack brought about by sleep deprivation: this pointer will become invalidated when the vector reallocates! need to have our own vector per specializationInfo!")
+			outputSpecializations.first.setPData(data.m_Storage.data());
+
+			outputSpecializations.first.setMapEntryCount(outputSpecializations.second.size());
+			outputSpecializations.first.setPMapEntries(outputSpecializations.second.data());
+
+			currentInfo.setPSpecializationInfo(&outputSpecializations.first);
+		}
 	}
-	return createInfos;
 }
 
 std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
