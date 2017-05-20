@@ -6,6 +6,23 @@
 
 #include <fstream>
 
+#include <spirv_cross.hpp>
+
+static void TestFunc(const std::vector<uint32_t>& alignedSPIRV)
+{
+	spirv_cross::Compiler compiler(alignedSPIRV);
+
+	for (const auto& specConst : compiler.get_specialization_constants())
+	{
+		const auto& test = compiler.get_constant(specConst.id);
+		const auto& testName = compiler.get_name(specConst.id);
+
+		continue;
+	}
+
+	return;
+}
+
 ShaderModule::ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device)
 {
 	Log::Msg<LogType::ObjectLifetime>(__FUNCSIG__);
@@ -19,17 +36,17 @@ ShaderModule::ShaderModule(const std::filesystem::path& path, ShaderType type, L
 		throw std::runtime_error(StringTools::CSFormat("Failed to open file \"{0}\"", path));
 
 	const size_t fileSize = stream.tellg();
-	std::vector<char> codeBytes(fileSize);
+	std::vector<uint32_t> codeBytes((fileSize + sizeof(uint32_t) - 1) / sizeof(uint32_t));
+	codeBytes.back() = 0;
 	stream.seekg(0);
-	stream.read(codeBytes.data(), fileSize);
+	stream.read((char*)codeBytes.data(), fileSize);
 
 	vk::ShaderModuleCreateInfo createInfo;
 
-	createInfo.setCodeSize(codeBytes.size());
+	createInfo.setCodeSize(fileSize);
+	createInfo.setPCode(codeBytes.data());
 
-	std::vector<uint32_t> alignedCode(codeBytes.size() / sizeof(uint32_t) + 1);
-	memcpy(alignedCode.data(), codeBytes.data(), codeBytes.size());
-	createInfo.setPCode(alignedCode.data());
+	TestFunc(codeBytes);
 
 	m_Shader = device->createShaderModuleUnique(createInfo);
 }

@@ -15,6 +15,7 @@
 #pragma warning(disable : 4626)		// 'derived class': assignment operator was implicitly defined as deleted because a base class assignment operator is inaccessible or deleted
 #pragma warning(disable : 4668)		// 'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directive'
 #pragma warning(disable : 4710)		// 'function': function not inlined
+#pragma warning(disable : 4711)		// 'function' selected for automatic inline expansion
 #pragma warning(disable : 4714)		// function 'function' marked as __forceinline not inlined
 #pragma warning(disable : 4774)		// ‘<function>’ : format string expected in argument <position> is not a string literal
 #pragma warning(disable : 4820)		// 'bytes' bytes padding added after construct 'member_name'

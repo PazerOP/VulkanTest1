@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanTest1", "VulkanTest1\VulkanTest1.vcxproj", "{D2A96D0A-C49A-4B35-8B3D-A2894A344AB1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SPIRV-Cross", "SPIRV-Cross\SPIRV-Cross.vcxproj", "{40CDB259-91F8-44F9-8380-1CF087C1B67A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{D2A96D0A-C49A-4B35-8B3D-A2894A344AB1}.Release|x64.Build.0 = Release|x64
 		{D2A96D0A-C49A-4B35-8B3D-A2894A344AB1}.Release|x86.ActiveCfg = Release|Win32
 		{D2A96D0A-C49A-4B35-8B3D-A2894A344AB1}.Release|x86.Build.0 = Release|Win32
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Debug|x64.ActiveCfg = Debug|x64
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Debug|x64.Build.0 = Debug|x64
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Debug|x86.ActiveCfg = Debug|Win32
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Debug|x86.Build.0 = Debug|Win32
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Release|x64.ActiveCfg = Release|x64
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Release|x64.Build.0 = Release|x64
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Release|x86.ActiveCfg = Release|Win32
+		{40CDB259-91F8-44F9-8380-1CF087C1B67A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

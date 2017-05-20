@@ -3,7 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(SolutionDir)SPIRV-Cross;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)SPIRV-Cross\source;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)SPIRV-Cross\$(Platform)\$(Configuration)\Output\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -13,6 +14,7 @@
     <Link />
     <Link>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>SPIRV-Cross.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
