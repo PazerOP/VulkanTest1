@@ -1,8 +1,0 @@
-#ifndef SIMPLE_INTEROP_H
-#define SIMPLE_INTEROP_H
-#include "interop.h"
-
-#define BINDING_MATERIAL_CONSTANTS 0
-#define BINDING_MATERIAL_BASETEXTURE 1
-
-#endif

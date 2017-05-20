@@ -3,7 +3,7 @@
 	"shaders": [
 		{
 			"type": "fragment",
-			"filename": "shaders/simple.frag.spv",
+			"filename": "shaders/simple/simple.frag.spv",
 			"inputs": [
 				{
 					"parameter": "baseTexture",
@@ -13,7 +13,7 @@
 		},
 		{
 			"type": "vertex",
-			"filename": "shaders/simple.vert.spv",
+			"filename": "shaders/simple/simple.vert.spv",
 			"inputs": []
 		}
 	],

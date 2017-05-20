@@ -233,7 +233,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <CustomBuild Include="shaders\simple.frag">
+    <CustomBuild Include="shaders\simple\simple.frag">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Identity) to SPIR-V...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
@@ -252,7 +252,7 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
-    <CustomBuild Include="shaders\simple.vert">
+    <CustomBuild Include="shaders\simple\simple.vert">
       <FileType>Document</FileType>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>

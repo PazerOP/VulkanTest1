@@ -371,10 +371,10 @@
     <Manifest Include="AppManifest.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="shaders\simple.frag">
+    <CustomBuild Include="shaders\simple\simple.frag">
       <Filter>Engine\Vulkan\Shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="shaders\simple.vert">
+    <CustomBuild Include="shaders\simple\simple.vert">
       <Filter>Engine\Vulkan\Shaders</Filter>
     </CustomBuild>
   </ItemGroup>

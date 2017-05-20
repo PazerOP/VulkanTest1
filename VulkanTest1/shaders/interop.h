@@ -1,14 +1,25 @@
 #ifndef INTEROP_H
 #define INTEROP_H
 
-#define ID_SMOOTH_ANIMATION 0
-#define ID_VERTEXCOLOR 1
+// Lots of poor man's enums in this :()
+#ifndef __cplusplus
+#define constexpr const
+#endif
 
-#define TEXTURE_MODE_START 1000
+///////////////////////////////////
+// Constant IDs, poor man's enum //
+///////////////////////////////////
+constexpr int CID_VERTEXCOLOR = 0;
+constexpr int LAST_SHARED_CID = CID_VERTEXCOLOR;
 
-#define TEXTURE_MODE_INVALID (-1)
-#define TEXTURE_MODE_1D 0
-#define TEXTURE_MODE_2D 1
-#define TEXTURE_MODE_3D 2
+constexpr int SB_MATERIAL_CONSTANTS = 0;
+constexpr int LAST_SHARED_BINDING = SB_MATERIAL_CONSTANTS;
+
+constexpr int CID_TEXTURE_MODE_START = 1000;
+
+constexpr int TEXTURE_MODE_INVALID = -1;
+constexpr int TEXTURE_MODE_1D = 0;
+constexpr int TEXTURE_MODE_2D = TEXTURE_MODE_1D + 1;
+constexpr int TEXTURE_MODE_3D = TEXTURE_MODE_2D + 1;
 
 #endif

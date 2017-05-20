@@ -12,7 +12,7 @@
 #include "SimpleVertex.h"
 #include "Texture.h"
 #include "TextureManager.h"
-#include "shaders/interop.h"
+#include "shaders/simple/simple_interop.h"
 
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
@@ -227,7 +227,7 @@ GraphicsPipelineCreateInfo::Specializations Material::SetupSpecializations() con
 
 		for (const auto& dependentShader : shaderGroupData->FindByParameterDependency(shaderParameter.first))
 		{
-			retVal[dependentShader.m_Definition->m_Type.value()][TEXTURE_MODE_START + dependentShader.m_BindingIndex] =
+			retVal[dependentShader.m_Definition->m_Type.value()][CID_TEXTURE_MODE_START + dependentShader.m_BindingIndex] =
 				s_TextureModeMap.at(m_Textures.at(shaderParameter.first)->GetImageType());
 		}
 	}

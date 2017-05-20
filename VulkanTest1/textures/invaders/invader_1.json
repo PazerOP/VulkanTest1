@@ -10,5 +10,9 @@
 	"filter": "nearest",
 	"animated": true,
 
-	"addressMode": "clampEdge"
+	"addressMode": {
+		"u": "clampBorder",
+		"v": "clampBorder",
+		"w": "clampEdge"
+	}
 }

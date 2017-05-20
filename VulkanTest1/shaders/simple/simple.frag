@@ -2,11 +2,13 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "simple_shared.glsl"
-#include "hsp.glsl"
+#include "../hsp.glsl"
 
-layout(constant_id = ID_SMOOTH_ANIMATION) const bool SMOOTH_ANIMATION = false;
-layout(constant_id = ID_VERTEXCOLOR) const bool VERTEXCOLOR = true;
-layout(constant_id = TEXTURE_MODE_START + BINDING_MATERIAL_BASETEXTURE) const int baseTextureMode = TEXTURE_MODE_INVALID;
+layout(constant_id = CID_ANIMATION_FRAME_BLENDING) const bool SMOOTH_ANIMATION = true;
+layout(constant_id = CID_VERTEXCOLOR) const bool VERTEXCOLOR = true;
+layout(constant_id = CID_SPLIT_PIXELS) const bool SPLIT_PIXELS = false;
+
+layout(constant_id = CID_BASETEXTURE_MODE) const int baseTextureMode = TEXTURE_MODE_INVALID;
 
 //layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_CONSTANTS) uniform MaterialConstants
 //{
@@ -58,34 +60,37 @@ void main()
 
 		// Smooth alpha
 		{
-			//vec2 delta = vec2(dFdx(fragTexCoord.x), dFdy(fragTexCoord.y));
 			const vec2 delta = fwidth(fragTexCoord);
-#if 0
-			float[9] alphaSamples =
+
+			float minAlpha = 1;
+			float maxAlpha = 1;
+			
+			if (!SPLIT_PIXELS)
 			{
-				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y - delta.y, progress)).a,
-				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a,
-				texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y + delta.y, progress)).a,
+				float[9] alphaSamples =
+				{
+					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y - delta.y, progress)).a,
+					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a,
+					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y + delta.y, progress)).a,
 
-				texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a,
-				outColor.a,
-				texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a,
+					texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a,
+					outColor.a,
+					texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a,
 
-				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y - delta.y, progress)).a,
-				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a,
-				texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y + delta.y, progress)).a,
-			};
+					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y - delta.y, progress)).a,
+					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a,
+					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y + delta.y, progress)).a,
+				};
 
-			float minAlpha = alphaSamples[0];
-			float maxAlpha = alphaSamples[0];
-			for (int i = 1; i < 9; i++)
-			{
-				minAlpha = min(minAlpha, alphaSamples[i]);
-				maxAlpha = max(maxAlpha, alphaSamples[i]);
+				minAlpha = alphaSamples[0];
+				maxAlpha = alphaSamples[0];
+				for (int i = 1; i < 9; i++)
+				{
+					minAlpha = min(minAlpha, alphaSamples[i]);
+					maxAlpha = max(maxAlpha, alphaSamples[i]);
+				}
 			}
 
-			outColor.a = (minAlpha + maxAlpha) / 2;
-#endif
 			const vec2 baseTextureSize = textureSize(baseTexture3D, 0).xy;
 
 			const vec2 baseTexturePixelSize = 1 / baseTextureSize;
@@ -100,8 +105,8 @@ void main()
 			{
 				//outColor.rgb = vec3(1, 0, 0);
 				vec2 fade = vec2(
-					Remap(1, 0, delta.x, 0, distToEdge.x),
-					Remap(1, 0, delta.y, 0, distToEdge.y));
+					Remap(maxAlpha, minAlpha, delta.x, 0, distToEdge.x),
+					Remap(maxAlpha, minAlpha, delta.y, 0, distToEdge.y));
 				//outColor.rgb = mix(outColor.rgb, vec3(1, 0, 0), fade);
 				outColor.a = min(fade.x, fade.y);
 			}
