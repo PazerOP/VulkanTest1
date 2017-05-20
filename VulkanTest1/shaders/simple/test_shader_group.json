@@ -1,5 +1,4 @@
 {
-	"name": "test_shader_group",
 	"shaders": [
 		{
 			"type": "fragment",
@@ -9,18 +8,37 @@
 					"parameter": "baseTexture",
 					"binding": 1
 				}
+			],
+			"constants": [
+				{
+					"name": "vertexColor",
+					"binding": 0
+				},
+				{
+					"name": "frameBlend",
+					"binding": 1
+				}
 			]
 		},
 		{
 			"type": "vertex",
-			"filename": "shaders/simple/simple.vert.spv",
-			"inputs": []
+			"filename": "shaders/simple/simple.vert.spv"
 		}
 	],
 	"parameters": [
 		{
 			"name": "baseTexture",
 			"type": "texture"
+		}
+	],
+	"specializationConstants":[
+		{
+			"name": "vertexColor",
+			"type": "bool"
+		},
+		{
+			"name": "frameBlend",
+			"type": "bool"
 		}
 	]
 }

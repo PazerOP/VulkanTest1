@@ -60,9 +60,6 @@
     <ClInclude Include="Main.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Util.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -235,6 +232,15 @@
     <ClInclude Include="IVertexList.h">
       <Filter>Engine\Graphics\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentPaths.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseException.h">
+      <Filter>Engine\Support</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -363,6 +369,13 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>Engine\Graphics\Textures</Filter>
     </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentPaths.cpp">
+      <Filter>Engine\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderParameterType.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -13,8 +13,25 @@
 #if _MSC_VER == 1910 || _MSC_VER == 1911
 namespace std
 {
-	namespace experimental { namespace filesystem { } }
+	namespace experimental
+	{
+		namespace filesystem
+		{
+			inline namespace v1
+			{
+				class path;
+			}
+		}
+	}
 	namespace filesystem = ::std::experimental::filesystem;
+}
+#else
+namespace std
+{
+	namespace filesystem
+	{
+		class path;
+	}
 }
 #endif
 
@@ -91,3 +108,6 @@ template<class T> __forceinline const std::weak_ptr<T>& weaken(const std::weak_p
 {
 	return weak;
 }
+
+// Gets the relative path and removes the file extension.
+extern std::string name_from_path(const std::filesystem::path& basePath, const std::filesystem::path& fullPath, bool removeExt = true);

@@ -10,11 +10,11 @@ MaterialDataManager::MaterialDataManager(LogicalDevice& device) :
 
 void MaterialDataManager::Reload()
 {
-	static const std::filesystem::path s_ShadersFolderPath(std::filesystem::current_path().append("materials"s));
+	static const std::filesystem::path s_TexturesFolderPath(std::filesystem::current_path().append("materials"s));
 
 	ClearData();
 
-	for (auto& item : std::filesystem::recursive_directory_iterator(s_ShadersFolderPath))
+	for (auto& item : std::filesystem::recursive_directory_iterator(s_TexturesFolderPath))
 	{
 		const auto& type = item.status().type();
 		if (type != std::filesystem::file_type::regular)

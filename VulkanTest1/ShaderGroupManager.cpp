@@ -17,7 +17,7 @@ void ShaderGroupManager::Reload()
 	for (const auto& entry : ShaderGroupDataManager::Instance())
 	{
 		const auto& data = entry.second.Get();
-		
+
 		AddPair(data->GetName(), std::make_shared<ShaderGroup>(data, m_Device));
 	}
 }

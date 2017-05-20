@@ -271,28 +271,16 @@ void VulkanInstance::AttachDebugMsgCallback()
 {
 	Log::TagMsg(TAG, "Attaching debug msg callback...");
 
-	auto func = (PFN_vkCreateDebugReportCallbackEXT)(void*)m_Instance->getProcAddr("vkCreateDebugReportCallbackEXT");
-	assert(func);
-	if (func != nullptr)
-	{
-		vk::DebugReportCallbackCreateInfoEXT createInfo;
+	vk::DebugReportCallbackCreateInfoEXT createInfo;
 
-		createInfo.flags |= vk::DebugReportFlagBitsEXT::eInformation;
-		createInfo.flags |= vk::DebugReportFlagBitsEXT::eWarning;
-		createInfo.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
-		createInfo.flags |= vk::DebugReportFlagBitsEXT::eError;
-		//createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
-		createInfo.setPfnCallback(&DebugCallback);
+	createInfo.flags |= vk::DebugReportFlagBitsEXT::eInformation;
+	createInfo.flags |= vk::DebugReportFlagBitsEXT::eWarning;
+	createInfo.flags |= vk::DebugReportFlagBitsEXT::ePerformanceWarning;
+	createInfo.flags |= vk::DebugReportFlagBitsEXT::eError;
+	//createInfo.flags |= vk::DebugReportFlagBitsEXT::eDebug;
+	createInfo.setPfnCallback(&DebugCallback);
 
-		VkDebugReportCallbackEXT callbackHandle;
-		VkResult result = func((VkInstance)m_Instance.get(), &(VkDebugReportCallbackCreateInfoEXT&)createInfo, nullptr, &callbackHandle);
-		if (result != VK_SUCCESS)
-			throw rkrp_vulkan_exception("Failed to attach debug callback!");
-
-		m_DebugMsgCallbackHandle.getDeleter() = vk::DebugReportCallbackEXTDeleter(m_Instance.get());
-
-		m_DebugMsgCallbackHandle.reset(vk::DebugReportCallbackEXT(callbackHandle));
-	}
+	m_DebugMsgCallbackHandle = m_Instance->createDebugReportCallbackEXTUnique(createInfo);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData)

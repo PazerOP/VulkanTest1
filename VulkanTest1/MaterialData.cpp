@@ -24,6 +24,9 @@ MaterialData::MaterialData(const JSONObject& json)
 	const auto& shaderGroupName = shaderGroup.GetString("name");
 	m_ShaderGroup = ShaderGroupManager::Instance().Find(shaderGroupName);
 
+	if (!m_ShaderGroup)
+		throw MissingShaderGroupException(m_Name, shaderGroupName);
+
 	const auto& shaderGroupParameters = m_ShaderGroup->GetData()->GetParameters();
 
 	for (const auto& value : shaderGroup.GetObject("inputs"))

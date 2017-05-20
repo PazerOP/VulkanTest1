@@ -1,4 +1,5 @@
 #pragma once
+#include "BaseException.h"
 #include "JSON.h"
 #include "ShaderParameterType.h"
 #include "ShaderType.h"
@@ -7,16 +8,15 @@
 
 class ShaderGroupData
 {
-	using ShaderParameterList = std::map<std::string, ShaderParameterType>;
 public:
 	ShaderGroupData(const std::filesystem::path& path);
-	ShaderGroupData(const std::string& str);
-	ShaderGroupData(const JSONObject& json);
+	ShaderGroupData(const std::string& name, const std::string& str);
+	ShaderGroupData(const std::string& name, const JSONObject& json);
 
-	class ParseException : public std::runtime_error
+	class ParseException : public BaseException<>
 	{
 	private:
-		ParseException(const std::string& str) : std::runtime_error(str) { Log::BlockMsg<LogType::Exception>(str); }
+		ParseException(const std::string& str) : BaseException("ShaderGroupData::ParseException"s, str) { }
 		friend class ShaderGroupData;
 	};
 
@@ -45,11 +45,16 @@ public:
 	std::vector<ParameterDependency> FindByParameterDependency(const std::string& paramName) const;
 
 private:
+	void LoadParameters(const JSONObject& root);
+	void LoadSpecializationConstants(const JSONObject& root);
+	void LoadShaders(const JSONObject& root);
+
 	std::filesystem::path m_Path;
 
 	bool IsValidParameterName(const std::string& paramName) const;
 
 	std::string m_Name;
-	ShaderParameterList m_Parameters;
+	std::map<std::string, ShaderParameterType> m_Parameters;
+	std::map<std::string, ShaderParameterType> m_SpecializationConstants;
 	std::vector<std::shared_ptr<ShaderDefinition>> m_Shaders;
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include "BaseException.h"
 
 #include <filesystem>
 #include <map>
@@ -95,14 +96,11 @@ public:
 private:
 	std::variant<std::monostate, double, std::string, bool, JSONArray, JSONObject> m_Data;
 };
-class json_error : public std::runtime_error
+class json_error : public BaseException<>
 {
 public:
-	json_error(const std::string& type, const std::string& msg) : std::runtime_error(msg)
-	{
-		Log::Msg<LogType::Exception>(StringTools::CSFormat("{0}: {1}", type, msg));
-	}
-	json_error(const std::string& msg) : json_error(typeid(*this).name(), msg) { }
+	json_error(const std::string& type, const std::string& msg) : BaseException(type, msg) { }
+	json_error(const std::string& msg) : json_error("json_error", msg) { }
 };
 class json_parsing_error : public json_error
 {
@@ -112,7 +110,7 @@ public:
 class json_value_missing_error : public json_error
 {
 public:
-	json_value_missing_error(const std::string& msg) : json_error(typeid(*this).name(), msg) { }
+	json_value_missing_error(const std::string& msg) : json_error("json_value_missing_error", msg) { }
 };
 class json_value_type_error : public json_error
 {

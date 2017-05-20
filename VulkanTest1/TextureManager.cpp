@@ -1,13 +1,12 @@
 #include "stdafx.h"
 #include "TextureManager.h"
 
+#include "ContentPaths.h"
 #include "JSON.h"
 #include "Texture.h"
 #include "TextureCreateInfo.h"
 
 #include <filesystem>
-
-static const std::filesystem::path s_ShadersFolderPath(std::filesystem::current_path().append("textures"s));
 
 TextureManager::TextureManager(LogicalDevice& device) :
 	DataStoreType(device)
@@ -18,7 +17,7 @@ void TextureManager::Reload()
 {
 	ClearData();
 
-	for (auto& item : std::filesystem::recursive_directory_iterator(s_ShadersFolderPath))
+	for (auto& item : std::filesystem::recursive_directory_iterator(ContentPaths::Textures()))
 	{
 		const auto& type = item.status().type();
 		if (type != std::filesystem::file_type::regular)
@@ -32,16 +31,7 @@ void TextureManager::Reload()
 		if (extension != ".json")
 			continue;
 
-		auto name = path.string().erase(0, s_ShadersFolderPath.string().size() + 1);
-
-		// Remove file extension
-		name.erase(name.size() - extension.string().size());
-
-		for (char& c : name)
-		{
-			if (c == '\\')
-				c = '/';
-		}
+		const auto name = name_from_path(ContentPaths::Textures(), item);
 
 		Log::TagMsg(TAG, "Loading texture {0}", name);
 
@@ -62,7 +52,7 @@ std::shared_ptr<TextureCreateInfo> TextureManager::LoadCreateInfo(const std::fil
 	const JSONObject root = JSONSerializer::FromFile(path).GetObject();
 
 	for (const auto& sourceFile : root.GetArray("sourceFiles"))
-		retVal->m_SourceFiles.push_back(s_ShadersFolderPath / sourceFile.GetString());
+		retVal->m_SourceFiles.push_back(ContentPaths::Textures() / sourceFile.GetString());
 
 	retVal->m_Animated = root.TryGetBool("animated", false);
 

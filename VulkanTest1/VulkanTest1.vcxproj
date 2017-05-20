@@ -76,18 +76,10 @@
     <Import Project="Shared_Release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
@@ -121,9 +113,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BaseException.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="BuiltinUniformBuffers.h" />
     <ClInclude Include="CompilerSettings.h" />
+    <ClInclude Include="ContentPaths.h" />
     <ClInclude Include="DataStore.h" />
     <ClInclude Include="DescriptorSet.h" />
     <ClInclude Include="DescriptorSetCreateInfo.h" />
@@ -185,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="BuiltinUniformBuffers.cpp" />
+    <ClCompile Include="ContentPaths.cpp" />
     <ClCompile Include="DescriptorSet.cpp" />
     <ClCompile Include="DescriptorSetLayout.cpp" />
     <ClCompile Include="DeviceFeature.cpp" />
@@ -207,6 +202,7 @@
     <ClCompile Include="ShaderGroupDataManager.cpp" />
     <ClCompile Include="ShaderGroupManager.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
+    <ClCompile Include="ShaderParameterType.cpp" />
     <ClCompile Include="ShaderType.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -226,6 +222,7 @@
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="UniformBuffer.cpp" />
+    <ClCompile Include="Util.cpp" />
     <ClCompile Include="Vulkan.cpp" />
     <ClCompile Include="VulkanDebug.cpp" />
     <ClCompile Include="VulkanHelpers.cpp" />
