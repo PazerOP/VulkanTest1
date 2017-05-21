@@ -1,2 +1,2 @@
 #include "../shared.glsl"
-#include "simple_interop.h"
+#include "../interop.h"

@@ -6,7 +6,7 @@ enum class ShaderType
 	Vertex,
 	TessellationControl,
 	TessellationEvaluation,
-	Gemoetry,
+	Geometry,
 	Compute,
 	Fragment,
 	Pixel = Fragment,

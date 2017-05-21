@@ -1,44 +1,16 @@
 {
 	"shaders": [
 		{
-			"type": "fragment",
-			"filename": "shaders/simple/simple.frag.spv",
-			"inputs": [
-				{
-					"parameter": "baseTexture",
-					"binding": 1
-				}
-			],
-			"constants": [
-				{
-					"name": "vertexColor",
-					"binding": 0
-				},
-				{
-					"name": "frameBlend",
-					"binding": 1
-				}
-			]
+			"file": "shaders/simple/simple.frag.spv",
+			"parameters": {
+				"baseTexture": "BaseTexture"
+			}
 		},
 		{
-			"type": "vertex",
-			"filename": "shaders/simple/simple.vert.spv"
+			"file": "shaders/simple/simple.vert.spv",
+			"parameters": {
+				"baseTexture": "BaseTexture"
+			}
 		}
 	],
-	"parameters": [
-		{
-			"name": "baseTexture",
-			"type": "texture"
-		}
-	],
-	"specializationConstants":[
-		{
-			"name": "vertexColor",
-			"type": "bool"
-		},
-		{
-			"name": "frameBlend",
-			"type": "bool"
-		}
-	]
 }

@@ -4,19 +4,18 @@
 #include "simple_shared.glsl"
 #include "../hsp.glsl"
 
-layout(constant_id = CID_ANIMATION_FRAME_BLENDING) const bool SMOOTH_ANIMATION = true;
-layout(constant_id = CID_VERTEXCOLOR) const bool VERTEXCOLOR = true;
-layout(constant_id = CID_SPLIT_PIXELS) const bool SPLIT_PIXELS = false;
-
-layout(constant_id = CID_BASETEXTURE_MODE) const int baseTextureMode = TEXTURE_MODE_INVALID;
+layout(constant_id = 0) const bool _param_FrameBlending = true;
+layout(constant_id = 1) const bool _param_VertexColor = true;
+layout(constant_id = 2) const bool _param_SplitPixels = false;
 
 //layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_CONSTANTS) uniform MaterialConstants
 //{
 //	int baseTextureMode;
 //} material;
 
-layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_BASETEXTURE) uniform sampler2D baseTexture2D;
-layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_BASETEXTURE) uniform sampler3D baseTexture3D;
+layout(set = SET_MATERIAL) uniform sampler2D _tex2D_BaseTexture;
+layout(set = SET_MATERIAL) uniform sampler3D _tex3D_BaseTexture;
+layout(constant_id = 3) const int _texMode_BaseTexture = TEXTURE_MODE_INVALID;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -30,32 +29,30 @@ void main()
 	//hsp.y = 1;
 	//hsp.z = 1;
 	vec3 rgb = toRGB(hsp);
-	rgb.r = clamp(rgb.r, 0, 1);
-	rgb.g = clamp(rgb.g, 0, 1);
-	rgb.b = clamp(rgb.b, 0, 1);
+	rgb.rgb = clamp(rgb.rgb, vec3(0, 0, 0), vec3(1, 1, 1));
 
 	//outColor = vec4(rgb, 1.0);
 	//outColor = vec4(fragTexCoord, 0.0, 1.0);
 	
-	if (baseTextureMode == TEXTURE_MODE_3D)
+	if (_texMode_BaseTexture == TEXTURE_MODE_3D)
 	{	
 		const float progress = Remap(0, 1, -1, 1, sin(frame.time / 10));
-		if (SMOOTH_ANIMATION)
+		if (_param_FrameBlending)
 		{
-			int frameCount = textureSize(baseTexture3D, 0).z;
+			int frameCount = textureSize(_tex3D_BaseTexture, 0).z;
 			float frame = mix(0, frameCount - 1, progress);
 
 			float frame0 = floor(frame);
 			float frame1 = ceil(frame);
 
-			vec4 frame0Sample = texture(baseTexture3D, vec3(fragTexCoord, Remap(0, 1, 0, frameCount - 1, frame0)));
-			vec4 frame1Sample = texture(baseTexture3D, vec3(fragTexCoord, Remap(0, 1, 0, frameCount - 1, frame1)));
+			vec4 frame0Sample = texture(_tex3D_BaseTexture, vec3(fragTexCoord, Remap(0, 1, 0, frameCount - 1, frame0)));
+			vec4 frame1Sample = texture(_tex3D_BaseTexture, vec3(fragTexCoord, Remap(0, 1, 0, frameCount - 1, frame1)));
 
 			outColor = mix(frame0Sample, frame1Sample, Remap(0, 1, frame0, frame1, frame));
 		}
 		else
 		{
-			outColor = texture(baseTexture3D, vec3(fragTexCoord, progress));
+			outColor = texture(_tex3D_BaseTexture, vec3(fragTexCoord, progress));
 		}
 
 		// Smooth alpha
@@ -65,21 +62,21 @@ void main()
 			float minAlpha = 1;
 			float maxAlpha = 1;
 			
-			if (!SPLIT_PIXELS)
+			if (!_param_SplitPixels)
 			{
 				float[9] alphaSamples =
 				{
-					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y - delta.y, progress)).a,
-					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a,
-					texture(baseTexture3D, vec3(fragTexCoord.x - delta.x, fragTexCoord.y + delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x - delta.x, fragTexCoord.y - delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x - delta.x, fragTexCoord.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x - delta.x, fragTexCoord.y + delta.y, progress)).a,
 
-					texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x, fragTexCoord.y - delta.y, progress)).a,
 					outColor.a,
-					texture(baseTexture3D, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x, fragTexCoord.y + delta.y, progress)).a,
 
-					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y - delta.y, progress)).a,
-					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a,
-					texture(baseTexture3D, vec3(fragTexCoord.x + delta.x, fragTexCoord.y + delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x + delta.x, fragTexCoord.y - delta.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x + delta.x, fragTexCoord.y, progress)).a,
+					texture(_tex3D_BaseTexture, vec3(fragTexCoord.x + delta.x, fragTexCoord.y + delta.y, progress)).a,
 				};
 
 				minAlpha = alphaSamples[0];
@@ -91,7 +88,7 @@ void main()
 				}
 			}
 
-			const vec2 baseTextureSize = textureSize(baseTexture3D, 0).xy;
+			const vec2 baseTextureSize = textureSize(_tex3D_BaseTexture, 0).xy;
 
 			const vec2 baseTexturePixelSize = 1 / baseTextureSize;
 			vec2 withinPixel = mod(fragTexCoord, baseTexturePixelSize);
@@ -110,26 +107,13 @@ void main()
 				//outColor.rgb = mix(outColor.rgb, vec3(1, 0, 0), fade);
 				outColor.a = min(fade.x, fade.y);
 			}
-
-			// See how close we are to the edge of a pixel
-#if 0
-			// From https://gist.github.com/slembcke/23e1d96d7e3c739caf12
-			
-			vec2 puv = fragTexCoord * textureSize(baseTexture3D, 0).xy;
-
-			vec2 hfw = fwidth(puv) / 2.0;
-			vec2 fl = floor(puv - 0.5) + 0.5;			
-
-			vec2 nnn = (fl + smoothstep(0.5 - hfw, 0.5 + hfw, puv - fl)) / textureSize(baseTexture3D, 0).xy;
-			outColor = texture(baseTexture3D, vec3(nnn, progress));
-#endif
 		}
 	}
-	else if (baseTextureMode == TEXTURE_MODE_2D)
-		outColor = texture(baseTexture2D, fragTexCoord);
+	else if (_texMode_BaseTexture == TEXTURE_MODE_2D)
+		outColor = texture(_tex2D_BaseTexture, fragTexCoord);
 	else
 		outColor = vec4(mod(frame.time, 1), 0, 0, 1);
 
-	if (VERTEXCOLOR)
+	if (_param_VertexColor)
 		outColor *= vec4(rgb, 1);
 }

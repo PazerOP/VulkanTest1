@@ -22,20 +22,22 @@ vec2 Remap(vec2 a, vec2 b, vec2 x, vec2 y, vec2 t)
 	return mix(a, b, (t - x) / (y - x));
 }
 
-layout(set = SET_FRAMEVIEW, binding = BINDING_FRAMEVIEW_FRAME) uniform FrameConstants
+layout(set = SET_FRAMEVIEW) uniform FrameConstants
 {
 	float time;
 	float dt;
 } frame;
 
-layout(set = SET_FRAMEVIEW, binding = BINDING_FRAMEVIEW_VIEW) uniform ViewConstants
+layout(set = SET_FRAMEVIEW) uniform ViewConstants
 {
 	vec2 camPos;
 	mat4 view;
 	mat4 orthoProj;
 } view;
 
-layout(set = SET_OBJECT, binding = 0) uniform ObjectConstants
+layout(set = SET_OBJECT) uniform ObjectConstants
 {
 	mat4 modelToWorld;
 } object;
+
+#define PARAM_ANIMATION_FRAME_BLENDING(id) layout(constant_id = id) const bool ANIMATION_FRAME_BLENDING = false

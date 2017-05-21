@@ -126,7 +126,7 @@ void ShaderGroupData::LoadShaders(const JSONObject& root)
 		{ "vertex"s, ShaderType::Vertex },
 		{ "tessellationControl"s, ShaderType::TessellationControl },
 		{ "tessellationEvaluation"s, ShaderType::TessellationEvaluation },
-		{ "geometry"s, ShaderType::Gemoetry },
+		{ "geometry"s, ShaderType::Geometry },
 		{ "compute"s, ShaderType::Compute },
 		{ "fragment"s, ShaderType::Fragment },
 	};

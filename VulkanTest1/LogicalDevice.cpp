@@ -120,6 +120,7 @@ LogicalDevice::LogicalDevice(const std::shared_ptr<PhysicalDeviceData>& physical
 	InitDescriptorPool();
 	m_BuiltinUniformBuffers.emplace(*this);
 
+	m_ShaderModuleDataManagerInstance.emplace(*this);
 	m_ShaderGroupDataManagerInstance.emplace(*this);
 	m_ShaderGroupManagerInstance.emplace(*this);
 	m_MaterialDataManagerInstance.emplace(*this);

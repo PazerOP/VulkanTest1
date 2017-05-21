@@ -1,17 +1,17 @@
 #include "stdafx.h"
-#include "ShaderGroupDataManager.h"
+#include "ShaderModuleDataManager.h"
 
 #include "ContentPaths.h"
-#include "ShaderGroupData.h"
+#include "ShaderModuleData.h"
 
 #include <filesystem>
 
-ShaderGroupDataManager::ShaderGroupDataManager(LogicalDevice& device) :
-	DataStoreType(device)
+ShaderModuleDataManager::ShaderModuleDataManager(LogicalDevice& device) :
+	DataStore(device)
 {
 }
 
-void ShaderGroupDataManager::Reload()
+void ShaderModuleDataManager::Reload()
 {
 	ClearData();
 
@@ -26,11 +26,11 @@ void ShaderGroupDataManager::Reload()
 			continue;
 
 		const auto& extension = path.extension();
-		if (extension != ".json")
+		if (extension != ".spv")
 			continue;
 
-		std::shared_ptr<const ShaderGroupData> data(std::make_shared<ShaderGroupData>(path));
+		std::shared_ptr<const ShaderModuleData> data(std::make_shared<ShaderModuleData>(path));
 
-		AddPair(name_from_path(ContentPaths::Shaders(), data->GetName()), data);
+		AddPair(data->GetPath().string(), data);
 	}
 }

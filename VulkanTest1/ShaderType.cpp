@@ -14,7 +14,7 @@ template<> vk::ShaderStageFlagBits Enums::convert(ShaderType type)
 	case ShaderType::TessellationControl:		return vk::ShaderStageFlagBits::eTessellationControl;
 	case ShaderType::TessellationEvaluation:	return vk::ShaderStageFlagBits::eTessellationEvaluation;
 
-	case ShaderType::Gemoetry:					return vk::ShaderStageFlagBits::eGeometry;
+	case ShaderType::Geometry:					return vk::ShaderStageFlagBits::eGeometry;
 
 	case ShaderType::Compute:					return vk::ShaderStageFlagBits::eCompute;
 

@@ -6,6 +6,8 @@
 
 #include <filesystem>
 
+class ShaderModuleData;
+
 class ShaderGroupData
 {
 public:
@@ -20,21 +22,13 @@ public:
 		friend class ShaderGroupData;
 	};
 
-	struct ShaderBinding
-	{
-		std::optional<uint32_t> m_BindingIndex;
-		std::string m_ParameterName;
-	};
-
 	struct ShaderDefinition
 	{
-		std::optional<ShaderType> m_Type;
-		std::filesystem::path m_Path;
-		std::vector<ShaderBinding> m_Bindings;
+		std::shared_ptr<ShaderModuleData> m_ShaderModule;
+		std::map<std::string, std::string> m_Parameters;
 	};
 
 	const auto& GetName() const { return m_Name; }
-	const auto& GetParameters() const { return m_Parameters; }
 	const auto& GetShaderDefinitions() const { return m_Shaders; }
 
 	struct ParameterDependency
@@ -45,16 +39,9 @@ public:
 	std::vector<ParameterDependency> FindByParameterDependency(const std::string& paramName) const;
 
 private:
-	void LoadParameters(const JSONObject& root);
-	void LoadSpecializationConstants(const JSONObject& root);
 	void LoadShaders(const JSONObject& root);
 
 	std::filesystem::path m_Path;
-
-	bool IsValidParameterName(const std::string& paramName) const;
-
 	std::string m_Name;
-	std::map<std::string, ShaderParameterType> m_Parameters;
-	std::map<std::string, ShaderParameterType> m_SpecializationConstants;
 	std::vector<std::shared_ptr<ShaderDefinition>> m_Shaders;
 };

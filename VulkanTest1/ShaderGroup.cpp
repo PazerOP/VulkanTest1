@@ -3,13 +3,15 @@
 
 #include "ShaderGroupData.h"
 #include "ShaderModule.h"
+#include "ShaderModuleDataManager.h"
 
 ShaderGroup::ShaderGroup(const std::shared_ptr<const ShaderGroupData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
 {
 	for (const auto& shaderDef : m_Data->GetShaderDefinitions())
 	{
-		m_Modules[Enums::value(shaderDef->m_Type.value())] = std::make_shared<ShaderModule>(shaderDef->m_Path, shaderDef->m_Type.value(), m_Device);
+		m_Modules[Enums::value(shaderDef->m_Type.value())] =
+			std::make_shared<ShaderModule>(ShaderModuleDataManager::Instance().Find(shaderDef->m_Path.string()), m_Device);
 	}
 }
 

@@ -76,10 +76,22 @@
     <Import Project="Shared_Release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
@@ -151,6 +163,8 @@
     <ClInclude Include="ShaderGroupDataManager.h" />
     <ClInclude Include="ShaderGroupManager.h" />
     <ClInclude Include="ShaderModule.h" />
+    <ClInclude Include="ShaderModuleData.h" />
+    <ClInclude Include="ShaderModuleDataManager.h" />
     <ClInclude Include="ShaderParameterType.h" />
     <ClInclude Include="ShaderType.h" />
     <ClInclude Include="SimpleVertex.h" />
@@ -202,6 +216,8 @@
     <ClCompile Include="ShaderGroupDataManager.cpp" />
     <ClCompile Include="ShaderGroupManager.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
+    <ClCompile Include="ShaderModuleData.cpp" />
+    <ClCompile Include="ShaderModuleDataManager.cpp" />
     <ClCompile Include="ShaderParameterType.cpp" />
     <ClCompile Include="ShaderType.cpp" />
     <ClCompile Include="stb_image.cpp" />
@@ -236,10 +252,10 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).spv;%(Outputs)</Outputs>
@@ -248,6 +264,10 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
     <CustomBuild Include="shaders\simple\simple.vert">
       <FileType>Document</FileType>
@@ -255,18 +275,22 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath).spv;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

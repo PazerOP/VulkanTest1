@@ -1,19 +1,18 @@
 #pragma once
-#include "ShaderType.h"
-
-#include <filesystem>
 
 class LogicalDevice;
+class ShaderModuleData;
 
 class ShaderModule
 {
 public:
-	ShaderModule(const std::filesystem::path& path, ShaderType type, LogicalDevice& device);
+	ShaderModule(const std::shared_ptr<const ShaderModuleData>& data, LogicalDevice& device);
 
-	const std::filesystem::path& GetPath() const { return m_Path; }
+	const ShaderModuleData& GetData() const { return *m_Data; }
+	const std::shared_ptr<const ShaderModuleData>& GetDataPtr() const { return m_Data; }
 
-	const LogicalDevice& GetDevice() const { assert(m_Device); return *m_Device; }
-	LogicalDevice& GetDevice() { assert(m_Device); return *m_Device; }
+	const LogicalDevice& GetDevice() const { m_Device; }
+	LogicalDevice& GetDevice() { m_Device; }
 
 	const vk::ShaderModule* operator->() const { return m_Shader.operator->(); }
 	//vk::ShaderModule* operator->() { return &m_Shader; }
@@ -21,12 +20,9 @@ public:
 	const vk::ShaderModule Get() const { return m_Shader.get(); }
 	vk::ShaderModule Get() { return m_Shader.get(); }
 
-	ShaderType GetType() const { return m_Type; }
-
 private:
-
 	vk::UniqueShaderModule m_Shader;
-	LogicalDevice* m_Device;
-	ShaderType m_Type;
-	std::filesystem::path m_Path;
+	LogicalDevice& m_Device;
+
+	std::shared_ptr<const ShaderModuleData> m_Data;
 };

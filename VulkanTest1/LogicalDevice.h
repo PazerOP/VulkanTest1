@@ -7,6 +7,7 @@
 #include "QueueType.h"
 #include "ShaderGroupManager.h"
 #include "ShaderGroupDataManager.h"
+#include "ShaderModuleDataManager.h"
 #include "Swapchain.h"
 #include "TestDrawable.h"
 #include "TextureManager.h"
@@ -81,6 +82,7 @@ private:
 	vk::UniqueDevice m_LogicalDevice;
 
 	// These need to be initialized in a specific order
+	std::optional<ShaderModuleDataManager> m_ShaderModuleDataManagerInstance;
 	std::optional<ShaderGroupManager> m_ShaderGroupManagerInstance;
 	std::optional<ShaderGroupDataManager> m_ShaderGroupDataManagerInstance;
 	std::optional<MaterialDataManager> m_MaterialDataManagerInstance;
