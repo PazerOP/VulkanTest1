@@ -13,8 +13,9 @@ public:
 	MaterialData(const JSONObject& json);
 
 	const auto& GetName() const { return m_Name; }
-	const auto& GetShaderGroup() const { return m_ShaderGroup; }
-	const auto& GetShaderGroupInputs() const { return m_ShaderGroupInputs; }
+	const auto& GetInputs() const { return m_Inputs; }
+	const ShaderGroup& GetShaderGroup() const { return *m_ShaderGroup; }
+	const auto& GetShaderGroupPtr() const { return m_ShaderGroup; }
 
 	class MaterialDataLoadException : public BaseException<>
 	{
@@ -37,5 +38,5 @@ public:
 private:
 	std::string m_Name;
 	std::shared_ptr<const ShaderGroup> m_ShaderGroup;
-	std::map<std::string, std::string> m_ShaderGroupInputs;
+	std::map<std::string, std::string> m_Inputs;
 };

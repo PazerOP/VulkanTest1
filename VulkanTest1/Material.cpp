@@ -9,15 +9,18 @@
 #include "MaterialData.h"
 #include "ShaderGroup.h"
 #include "ShaderGroupData.h"
+#include "ShaderModuleData.h"
 #include "SimpleVertex.h"
 #include "Texture.h"
 #include "TextureManager.h"
 #include "shaders/interop.h"
 
+#include <set>
+
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
 {
-	InitTextures();
+	InitResources();
 	InitDescriptorSetLayout();
 	InitGraphicsPipeline();
 	InitDescriptorSet();
@@ -35,25 +38,41 @@ void Material::Bind(const vk::CommandBuffer& cmdBuf) const
 	}
 }
 
-void Material::InitTextures()
+void Material::InitResources()
 {
-	const auto& paramDefs = m_Data->GetShaderGroup()->GetData()->GetParameters();
-
-	for (const auto& param : m_Data->GetShaderGroupInputs())
+	// For each material input parameter
+	for (const auto& inputParam : m_Data->GetInputs())
 	{
-		const auto& found = paramDefs.find(param.first);
-		if (found == paramDefs.end())
+		// For each shader definition in the shader group
+		bool used = false;
+		for (const auto& shaderDef : GetData().GetShaderGroup().GetData().GetShaderDefinitions())
 		{
-			Log::Msg("Shader param \"{0}\" (value \"{1}\") encountered in material \"{2}\" was not defined in shader \"{3}\"",
-					 param.first, param.second, m_Data->GetName(), m_Data->GetShaderGroup()->GetData()->GetName());
-			continue;
+			const auto& foundRealParamName = shaderDef->m_ParameterMap.find(inputParam.first);
+			if (foundRealParamName == shaderDef->m_ParameterMap.end())
+				continue;
+			else
+				used = true;
+
+			const auto& moduleData = shaderDef->m_ModuleData;
+			const auto& inputParamData = moduleData->GetInputParams().at(foundRealParamName->second);
+
+			switch (inputParamData.m_Type.basetype)
+			{
+			case spirv_cross::SPIRType::BaseType::Sampler:
+				m_Resources_[moduleData->GetType()].m_Textures.insert(std::make_pair(
+					inputParamData.m_BindingID, TextureManager::Instance().Find(inputParam.second)));
+				break;
+			default:
+				assert(!"Not hooked up for this type!");
+				break;
+			}
 		}
 
-		switch (found->second)
+		if (!used)
 		{
-		case ShaderParameterType::Texture:
-			LoadTexture(param.first, param.second);
-			break;
+			Log::Msg("Shader param \"{0}\" (value \"{1}\") encountered in material \"{2}\" was not defined in shader group \"{3}\"",
+				inputParam.first, inputParam.second, m_Data->GetName(), m_Data->GetShaderGroup().GetData().GetName());
+			continue;
 		}
 	}
 }
@@ -62,7 +81,7 @@ void Material::InitGraphicsPipeline()
 {
 	auto createInfo = std::make_shared<GraphicsPipelineCreateInfo>();
 
-	createInfo->m_ShaderGroup = m_Data->GetShaderGroup();
+	createInfo->m_ShaderGroup = m_Data->GetShaderGroupPtr();
 	createInfo->m_DescriptorSetLayouts = m_Device.GetBuiltinUniformBuffers().GetDescriptorSetLayoutsUint();
 	createInfo->m_DescriptorSetLayouts.insert(std::make_pair(Enums::value(BuiltinUniformBuffers::Set::Material), m_DescriptorSetLayout));
 
@@ -77,64 +96,42 @@ void Material::InitGraphicsPipeline()
 void Material::InitDescriptorSet()
 {
 	auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
+	createInfo->m_Layout = m_DescriptorSetLayout;
 
-	const auto& shaderGroupData = m_Data->GetShaderGroup()->GetData();
-
-	for (const auto& shaderDefinition : shaderGroupData->GetShaderDefinitions())
+	for (const auto& resource : m_Resources_)
 	{
-		const auto shaderStage = Enums::convert<vk::ShaderStageFlagBits>(shaderDefinition->m_Type);
-		for (const auto& shaderBinding : shaderDefinition->m_Bindings)
+		for (const auto& texture : resource.second.m_Textures)
 		{
-			// Try to see if there's an existing binding with the same name and
-			// binding index that we should add our stage flag to.
-			bool foundExisting = false;
-			for (auto& existingBinding : createInfo->m_Data)
-			{
-				if (existingBinding.m_BindingIndex == shaderBinding.m_BindingIndex &&
-					existingBinding.m_DebugName == shaderBinding.m_ParameterName)
-				{
-					existingBinding.m_Stages |= shaderStage;
-					foundExisting = true;
-					break;
-				}
-			}
-
-			if (!foundExisting)
-			{
-				DescriptorSetCreateInfo::Binding newBinding;
-
-				newBinding.m_DebugName = shaderBinding.m_ParameterName;
-				newBinding.m_Stages = shaderStage;
-				newBinding.m_Data = m_Textures.at(shaderBinding.m_ParameterName);
-				newBinding.m_BindingIndex = shaderBinding.m_BindingIndex.value();
-
-				createInfo->m_Data.push_back(std::move(newBinding));
-			}
+			createInfo->m_Data.emplace_back();
+			auto& binding = createInfo->m_Data.back();
+			binding.m_Stages = Enums::convert<vk::ShaderStageFlags>(resource.first);
+			binding.m_BindingIndex = texture.first;
+			binding.m_Data = texture.second;
+			binding.m_DebugName = __FUNCSIG__;
 		}
 	}
-
-	createInfo->m_Layout = m_DescriptorSetLayout;
 
 	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
 }
 
-void Material::LoadTexture(const std::string& paramName, const std::string& textureName)
-{
-	const auto& texture = TextureManager::Instance().Find(textureName);
-	assert(texture);
-	if (!texture)
-		return;
-
-	m_Textures.insert(std::make_pair(paramName, texture));
-}
-
 void Material::InitDescriptorSetLayout()
 {
-	if (!m_Textures.size())
-		return;
-
 	auto newCreateInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
 	newCreateInfo->m_DebugName = __FUNCSIG__;
+
+	for (const auto& shaderDef : GetData().GetShaderGroup().GetData().GetShaderDefinitions())
+	{
+		const auto stageFlagBits = Enums::convert<vk::ShaderStageFlagBits>(shaderDef->m_ModuleData->GetType());
+
+		// See what parameters this stage has
+		for (const auto& param : shaderDef->m_ParameterMap)
+		{
+			const auto& realParam = shaderDef->m_ModuleData->GetInputParams().at(param.second);
+
+			newCreateInfo->m_Bindings.emplace_back();
+
+		}
+	}
 
 	for (const auto& texture : m_Textures)
 	{

@@ -14,7 +14,8 @@ public:
 	std::shared_ptr<const ShaderModule> GetModule(ShaderType type) const;
 	std::shared_ptr<ShaderModule> GetModule(ShaderType type) { return std::const_pointer_cast<ShaderModule>(std::as_const(*this).GetModule(type)); }
 
-	const std::shared_ptr<const ShaderGroupData>& GetData() const { return m_Data; }
+	const ShaderGroupData& GetData() const { return *m_Data; }
+	const auto& GetDataPtr() const { return m_Data; }
 
 	const LogicalDevice& GetDevice() const { return m_Device; }
 	LogicalDevice& GetDevice() { return m_Device; }

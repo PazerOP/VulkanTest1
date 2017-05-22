@@ -56,15 +56,18 @@ void ShaderModuleData::LoadSpecConstants(const spirv_cross::Compiler& spirvComp)
 {
 	for (const auto& specConst : spirvComp.get_specialization_constants())
 	{
-		m_SpecConstants.emplace_back();
-		SpecConstant& newConstant = m_SpecConstants.back();
+		InputParam newConstant;
 
 		newConstant.m_BindingID = specConst.constant_id;
-		newConstant.m_Name = spirvComp.get_name(specConst.id);
 
 		const auto& constant = spirvComp.get_constant(specConst.id);
 		const auto& constant_type = constant.constant_type;
 
 		newConstant.m_Type = spirvComp.get_type(constant_type);
+
+		if (!m_InputParams.insert(std::make_pair(spirvComp.get_name(specConst.id), newConstant)).second)
+		{
+			assert(false);
+		}
 	}
 }

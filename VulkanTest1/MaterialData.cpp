@@ -27,17 +27,27 @@ MaterialData::MaterialData(const JSONObject& json)
 	if (!m_ShaderGroup)
 		throw MissingShaderGroupException(m_Name, shaderGroupName);
 
-	const auto& shaderGroupParameters = m_ShaderGroup->GetData()->GetParameters();
-
 	for (const auto& value : shaderGroup.GetObject("inputs"))
 	{
 		const auto& type = value.second.GetType();
 		const auto& name = value.first;
 		if (type == JSONDataType::String)
 		{
-			if (shaderGroupParameters.find(name) != shaderGroupParameters.end())
-				m_ShaderGroupInputs.insert(std::make_pair(value.first, value.second.GetString()));
-			else
+			// Search through all parameters of all shaders in this group, looking for
+			// a reference of this parameter. This is to just make sure you don't have
+			// misspelled parameters/non-hooked-up parameters sitting around in materials.
+			bool found = false;
+			for (const auto& shaderDef : m_ShaderGroup->GetData().GetShaderDefinitions())
+			{
+				if (shaderDef->m_ParameterMap.find(name) != shaderDef->m_ParameterMap.end())
+				{
+					m_Inputs.insert(std::make_pair(value.first, value.second.GetString()));
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
 				Log::Msg("Unknown shader group parameter \"{0}\" referenced in material \"{1}\"", name, m_Name);
 		}
 		else

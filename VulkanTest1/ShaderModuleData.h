@@ -6,12 +6,14 @@
 #include <spirv_common.hpp>
 
 #include <filesystem>
+#include <map>
 
 namespace spirv_cross
 {
 	class Compiler;
 }
 
+// Represents metadata that has been reflected from the actual SPIR-V module.
 class ShaderModuleData
 {
 public:
@@ -23,19 +25,18 @@ public:
 		InvalidShaderTypeException(const std::string& msg) : BaseException("InvalidShaderTypeException"s, msg) { }
 	};
 
-	// Specialization Constant
-	struct SpecConstant
+	struct InputParam
 	{
-		std::string m_Name;
 		uint32_t m_BindingID;
 		spirv_cross::SPIRType m_Type;
 	};
 
+	ShaderType GetType() const { return m_Type; }
 	const std::filesystem::path& GetPath() const { return m_Path; }
 	const std::vector<uint32_t>& GetCodeBytes() const { return m_CodeBytes; }
 
-	const std::vector<SpecConstant>& GetSpecConstants() const { return m_SpecConstants; }
-	const SpecConstant* FindTexModeConstant(const std::string& name) const;
+	const auto& GetInputParams() const { return m_InputParams; }
+	const auto& GetSpecConstants() const { return m_SpecConstants; }
 
 private:
 	void LoadShaderType(const spirv_cross::Compiler& spirvComp);
@@ -43,7 +44,8 @@ private:
 
 	std::vector<uint32_t> m_CodeBytes;
 
-	std::vector<SpecConstant> m_SpecConstants;
+	std::map<std::string, InputParam> m_InputParams;
+	std::map<std::string, InputParam> m_SpecConstants;
 
 	ShaderType m_Type;
 	std::filesystem::path m_Path;

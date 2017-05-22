@@ -24,24 +24,20 @@ public:
 
 	struct ShaderDefinition
 	{
-		std::shared_ptr<ShaderModuleData> m_ShaderModule;
-		std::map<std::string, std::string> m_Parameters;
+		std::shared_ptr<const ShaderModuleData> m_ModuleData;
+
+		// Mapping from material parameter names <---> shader parameter names
+		// aka "friendly" names <---> "real" names
+		std::map<std::string, std::string> m_ParameterMap;
 	};
 
 	const auto& GetName() const { return m_Name; }
-	const auto& GetShaderDefinitions() const { return m_Shaders; }
-
-	struct ParameterDependency
-	{
-		uint32_t m_BindingIndex;
-		std::shared_ptr<const ShaderDefinition> m_Definition;
-	};
-	std::vector<ParameterDependency> FindByParameterDependency(const std::string& paramName) const;
+	const auto& GetShaderDefinitions() const { return m_ShaderDefinitions; }
 
 private:
 	void LoadShaders(const JSONObject& root);
 
 	std::filesystem::path m_Path;
 	std::string m_Name;
-	std::vector<std::shared_ptr<ShaderDefinition>> m_Shaders;
+	std::array<std::shared_ptr<const ShaderDefinition>, Enums::count<ShaderType>()> m_ShaderDefinitions;
 };

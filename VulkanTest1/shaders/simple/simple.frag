@@ -8,6 +8,8 @@ layout(constant_id = 0) const bool _param_FrameBlending = true;
 layout(constant_id = 1) const bool _param_VertexColor = true;
 layout(constant_id = 2) const bool _param_SplitPixels = false;
 
+const bool SplitPixels = !_param_FrameBlending && _param_SplitPixels;
+
 //layout(set = SET_MATERIAL, binding = BINDING_MATERIAL_CONSTANTS) uniform MaterialConstants
 //{
 //	int baseTextureMode;
@@ -62,7 +64,7 @@ void main()
 			float minAlpha = 1;
 			float maxAlpha = 1;
 			
-			if (!_param_SplitPixels)
+			if (!SplitPixels)
 			{
 				float[9] alphaSamples =
 				{
