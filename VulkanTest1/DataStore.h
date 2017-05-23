@@ -101,7 +101,7 @@ inline std::shared_ptr<const ElementType> DataStore<ParentType, ElementType, Sto
 	if (found != m_Data.end())
 		return found->second.Get();
 
-	Log::Msg(__FUNCTION__ ": Unable to find a {0} named \"{1}\"", typeid(ParentType).name(), name);
+	Log::Msg(__FUNCTION__ ": Unable to find a {0} named \"{1}\"", typeid(ElementType).name(), name);
 	return nullptr;
 }
 

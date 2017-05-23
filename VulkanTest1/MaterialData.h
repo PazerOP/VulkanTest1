@@ -36,6 +36,8 @@ public:
 	};
 
 private:
+	static constexpr char TAG[] = "[MaterialData] ";
+
 	std::string m_Name;
 	std::shared_ptr<const ShaderGroup> m_ShaderGroup;
 	std::map<std::string, std::string> m_Inputs;

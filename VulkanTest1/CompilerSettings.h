@@ -23,6 +23,8 @@
 #pragma warning(disable : 5026)
 #pragma warning(disable : 5027)
 
+#pragma warning(error : 4002)		// too many actual parameters for macro 'identifier'
+#pragma warning(error : 4003)		// not enough actual parameters for macro 'identifier'
 #pragma warning(error : 4172)		// returning address of local variable or temporary
 #pragma warning(error : 4238)		// nonstandard extension used: class rvalue used as lvalue
 #pragma warning(error : 4265)		// 'class' : class has virtual functions, but destructor is not virtual

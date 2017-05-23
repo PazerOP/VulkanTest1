@@ -1,15 +1,10 @@
 {
 	"shaders": [
 		{
-			"file": "simple/simple.frag.spv",
-			"parameterMap": {
-				"baseTexture": "BaseTexture",
-				"splitPixels": "SplitPixels",
-				
-			}
+			"file": "simple/simple.vert.spv"
 		},
 		{
-			"file": "simple/simple.vert.spv"
+			"file": "simple/simple.frag.spv"
 		}
 	]
 }

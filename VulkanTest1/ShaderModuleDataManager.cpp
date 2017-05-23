@@ -31,6 +31,6 @@ void ShaderModuleDataManager::Reload()
 
 		std::shared_ptr<const ShaderModuleData> data(std::make_shared<ShaderModuleData>(path));
 
-		AddPair(data->GetPath().string(), data);
+		AddPair(data->GetName(), data);
 	}
 }

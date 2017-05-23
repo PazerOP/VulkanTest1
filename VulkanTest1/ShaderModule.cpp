@@ -15,8 +15,8 @@ ShaderModule::ShaderModule(const std::shared_ptr<const ShaderModuleData>& data, 
 
 	vk::ShaderModuleCreateInfo createInfo;
 
-	createInfo.setCodeSize(m_Data->GetCodeBytes().size());
-	createInfo.setPCode(m_Data->GetCodeBytes().data());
+	createInfo.setCodeSize(m_Data->GetCodeBytes().second);
+	createInfo.setPCode(m_Data->GetCodeBytes().first.data());
 
 	m_Shader = device->createShaderModuleUnique(createInfo);
 }

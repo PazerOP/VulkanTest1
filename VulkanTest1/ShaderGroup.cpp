@@ -9,13 +9,16 @@
 ShaderGroup::ShaderGroup(const std::shared_ptr<const ShaderGroupData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
 {
-	for (const auto& shaderDef : m_Data->GetShaderDefinitions())
+	for (const auto& shaderModuleData : m_Data->GetShaderModulesData())
 	{
-		m_Modules[Enums::value(shaderDef->m_ModuleData->GetType())] = std::make_shared<ShaderModule>(shaderDef->m_ModuleData, m_Device);
+		if (!shaderModuleData)
+			continue;
+
+		m_Modules[Enums::value(shaderModuleData->GetType())] = std::make_shared<ShaderModule>(shaderModuleData, m_Device);
 	}
 }
 
-std::shared_ptr<const ShaderModule> ShaderGroup::GetModule(ShaderType type) const
+std::shared_ptr<const ShaderModule> ShaderGroup::GetModulePtr(ShaderType type) const
 {
 	assert(Enums::validate(type));
 	return m_Modules[Enums::value(type)];

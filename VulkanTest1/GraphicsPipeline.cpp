@@ -169,7 +169,7 @@ void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) con
 
 	for (std::underlying_type_t<ShaderType> i = 0; i < Enums::count<ShaderType>(); i++)
 	{
-		const auto& current = m_CreateInfo->m_ShaderGroup->GetModule(Enums::index_to_value<ShaderType>(i));
+		const auto& current = m_CreateInfo->m_ShaderGroup->GetModulePtr(Enums::index_to_value<ShaderType>(i));
 		if (!current)
 			continue;
 

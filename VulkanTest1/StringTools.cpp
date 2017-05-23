@@ -18,6 +18,11 @@ void StringTools::UnitTests()
 	assert(IsEscaped(testString, 24));
 }
 
+bool StringTools::BeginsWith(const std::string& full, const std::string& beginning)
+{
+	return !full.compare(0, beginning.size(), beginning);
+}
+
 // See https://en.wikipedia.org/wiki/UTF-8#Description
 size_t StringTools::UTF8Size(const char* ptr, const char* endPtr)
 {

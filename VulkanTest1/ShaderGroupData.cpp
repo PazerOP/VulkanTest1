@@ -30,17 +30,12 @@ void ShaderGroupData::LoadShaders(const JSONObject& root)
 	{
 		const JSONObject& shaderObj = value.GetObject();
 
-		std::shared_ptr<ShaderDefinition> def = std::make_shared<ShaderDefinition>();
-		def->m_ModuleData = ShaderModuleDataManager::Instance().Find(shaderObj.GetString("file"));
+		const auto& file = shaderObj.GetString("file");
+		const auto moduleData = ShaderModuleDataManager::Instance().Find(file);
+		assert(moduleData);
 
-		const JSONObject* parametersArray = shaderObj.TryGetObject("parameters");
-		if (parametersArray)
-		{
-			for (const auto& value : *parametersArray)
-				def->m_ParameterMap.insert(std::make_pair(value.first, value.second.GetString()));
-		}
-
-		assert(!m_ShaderDefinitions[Enums::value(def->m_ModuleData->GetType())]);
-		m_ShaderDefinitions[Enums::value(def->m_ModuleData->GetType())] = def;
+		const auto index = Enums::value(moduleData->GetType());
+		assert(!m_ShaderModulesData[index]);
+		m_ShaderModulesData[index] = moduleData;
 	}
 }

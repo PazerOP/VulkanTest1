@@ -6,6 +6,10 @@
 #define constexpr const
 #endif
 
+constexpr int SET_FRAMEVIEW = 0;
+constexpr int SET_MATERIAL = 1;
+constexpr int SET_OBJECT = 2;
+
 constexpr int TEXTURE_MODE_INVALID = -1;
 constexpr int TEXTURE_MODE_1D = 0;
 constexpr int TEXTURE_MODE_2D = TEXTURE_MODE_1D + 1;

@@ -67,6 +67,7 @@ void DescriptorSet::CreateDescriptorSet()
 		case 0:	// buffer
 		{
 			auto buffer = std::get<std::shared_ptr<Buffer>>(data.m_Data);
+			assert(buffer);
 
 			bufferInfos.emplace_front();
 			vk::DescriptorBufferInfo& bufferInfo = bufferInfos.front();
@@ -81,6 +82,7 @@ void DescriptorSet::CreateDescriptorSet()
 		case 1:	// texture
 		{
 			auto texture = std::get<std::shared_ptr<Texture>>(data.m_Data);
+			assert(texture);
 
 			imageInfos.emplace_front();
 			vk::DescriptorImageInfo& imageInfo = imageInfos.front();

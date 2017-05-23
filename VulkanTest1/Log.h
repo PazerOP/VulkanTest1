@@ -18,7 +18,7 @@ public:
 	Log(Log&&) = delete;
 	~Log() = delete;
 
-	template<LogType type = LogType::Misc, class... Args> static void TagMsg(std::string tag, const std::string& fmt, Args... args)
+	template<LogType type = LogType::Misc, class... Args> static void TagMsg(std::string tag, const std::string& fmt, const Args&... args)
 	{
 		MsgRaw(type, tag.append(StringTools::CSFormat(fmt, args...)).append("\n"sv));
 	}

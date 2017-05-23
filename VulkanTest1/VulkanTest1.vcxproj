@@ -252,10 +252,10 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).spv;%(Outputs)</Outputs>
@@ -275,13 +275,13 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).spv;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath).spv;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Identity) to SPIR-V...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -fauto-bind-uniforms -o "%(FullPath).spv" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glslc -o "%(FullPath).spv" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Identity) to SPIR-V...</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)shared.glsl;%(RelativeDir)interop.h;%(RelativeDir)simple_interop.h;%(RelativeDir)simple_shared.glsl;%(AdditionalInputs)</AdditionalInputs>

@@ -87,6 +87,8 @@ public:
 	template<class CharT, class Traits, class Alloc> static bool IsEscaped(const std::basic_string<CharT, Traits, Alloc>& str, size_t offset, CharT escapeChar = '\\');
 	template<class CharT, class Traits> static bool IsEscaped(const std::basic_string_view<CharT, Traits>& str, size_t offset, CharT escapeChar = '\\');
 
+	static bool BeginsWith(const std::string& full, const std::string& beginning);
+
 	// Determines the number of bytes in a utf8 character.
 	static size_t UTF8Size(const char* ptr, const char* endPtr = nullptr);
 

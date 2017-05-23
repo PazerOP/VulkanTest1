@@ -3,7 +3,7 @@
 	"shaderGroup": {
 		"name": "simple/test_shader_group",
 		"inputs": {
-			"baseTexture": "invaders/invader_1"
+			"BaseTexture": "invaders/invader_1"
 		}
 	}
 }

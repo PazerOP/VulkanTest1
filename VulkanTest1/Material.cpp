@@ -20,10 +20,9 @@
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
 {
-	InitResources();
-	InitDescriptorSetLayout();
-	InitGraphicsPipeline();
+	InitInputs();
 	InitDescriptorSet();
+	InitGraphicsPipeline();
 }
 
 void Material::Bind(const vk::CommandBuffer& cmdBuf) const
@@ -38,28 +37,29 @@ void Material::Bind(const vk::CommandBuffer& cmdBuf) const
 	}
 }
 
-void Material::InitResources()
+void Material::InitInputs()
 {
 	// For each material input parameter
 	for (const auto& inputParam : m_Data->GetInputs())
 	{
-		// For each shader definition in the shader group
 		bool used = false;
-		for (const auto& shaderDef : GetData().GetShaderGroup().GetData().GetShaderDefinitions())
+		for (const auto& shaderModuleData : GetData().GetShaderGroup().GetData().GetShaderModulesData())
 		{
-			const auto& foundRealParamName = shaderDef->m_ParameterMap.find(inputParam.first);
-			if (foundRealParamName == shaderDef->m_ParameterMap.end())
+			if (!shaderModuleData)
 				continue;
-			else
-				used = true;
 
-			const auto& moduleData = shaderDef->m_ModuleData;
-			const auto& inputParamData = moduleData->GetInputParams().at(foundRealParamName->second);
+			const auto& foundInputTextureData = shaderModuleData->GetInputTextures().find(inputParam.first);
+			if (foundInputTextureData == shaderModuleData->GetInputTextures().end())
+				continue;
+
+			const auto& inputParamData = foundInputTextureData->second;
+
+			const auto& texture = TextureManager::Instance().Find(inputParam.second);
 
 			switch (inputParamData.m_Type.basetype)
 			{
-			case spirv_cross::SPIRType::BaseType::Sampler:
-				m_Resources_[moduleData->GetType()].m_Textures.insert(std::make_pair(
+			case ShaderParameterType::SampledImage:
+				m_Resources_[shaderModuleData->GetType()].m_Textures.insert(std::make_pair(
 					inputParamData.m_BindingID, TextureManager::Instance().Find(inputParam.second)));
 				break;
 			default:
@@ -71,7 +71,7 @@ void Material::InitResources()
 		if (!used)
 		{
 			Log::Msg("Shader param \"{0}\" (value \"{1}\") encountered in material \"{2}\" was not defined in shader group \"{3}\"",
-				inputParam.first, inputParam.second, m_Data->GetName(), m_Data->GetShaderGroup().GetData().GetName());
+					 inputParam.first, inputParam.second, m_Data->GetName(), m_Data->GetShaderGroup().GetData().GetName());
 			continue;
 		}
 	}
@@ -95,75 +95,115 @@ void Material::InitGraphicsPipeline()
 
 void Material::InitDescriptorSet()
 {
-	auto createInfo = std::make_shared<DescriptorSetCreateInfo>();
-	createInfo->m_Layout = m_DescriptorSetLayout;
+	m_Bindings.clear();
 
-	for (const auto& resource : m_Resources_)
+	for (const auto& shaderModuleData : GetData().GetShaderGroup().GetData().GetShaderModulesData())
 	{
-		for (const auto& texture : resource.second.m_Textures)
-		{
-			createInfo->m_Data.emplace_back();
-			auto& binding = createInfo->m_Data.back();
-			binding.m_Stages = Enums::convert<vk::ShaderStageFlags>(resource.first);
-			binding.m_BindingIndex = texture.first;
-			binding.m_Data = texture.second;
-			binding.m_DebugName = __FUNCSIG__;
-		}
-	}
+		if (!shaderModuleData)
+			continue;
 
-	m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, createInfo);
-}
-
-void Material::InitDescriptorSetLayout()
-{
-	auto newCreateInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
-	newCreateInfo->m_DebugName = __FUNCSIG__;
-
-	for (const auto& shaderDef : GetData().GetShaderGroup().GetData().GetShaderDefinitions())
-	{
-		const auto stageFlagBits = Enums::convert<vk::ShaderStageFlagBits>(shaderDef->m_ModuleData->GetType());
+		const auto stageFlagBits = Enums::convert<vk::ShaderStageFlagBits>(shaderModuleData->GetType());
 
 		// See what parameters this stage has
-		for (const auto& param : shaderDef->m_ParameterMap)
+		for (const auto& texture : shaderModuleData->GetInputTextures())
 		{
-			const auto& realParam = shaderDef->m_ModuleData->GetInputParams().at(param.second);
+			if (texture.second.m_SetID != SET_MATERIAL)
+				continue;
 
-			newCreateInfo->m_Bindings.emplace_back();
+			const auto texPtr = TextureManager::Instance().Find(GetData().GetInputs().at(texture.second.m_FriendlyName));
+			assert(texPtr);
+			if (!texPtr)
+				continue;
 
+			LayoutBinding newBinding;
+
+			if (texPtr->GetImageType() == vk::ImageType::e1D)
+			{
+				texture.second.m_Type.image.dim == spv::Dim::Dim1D
+			}
+
+			newBinding.m_Name =
 		}
+#if 0
+		for (const auto& param : shaderModuleData->GetInputVariables())
+		{
+			if (param.second.m_SetID != SET_MATERIAL)
+				continue;
+
+			LayoutBinding newBinding;
+			newBinding.m_Name = param.first;
+			newBinding.m_Binding.setDescriptorCount(1);
+			newBinding.m_Binding.setBinding(param.second.m_BindingID);
+			newBinding.m_Binding.setDescriptorType(param.second.m_DescriptorType);
+
+			switch (newBinding.m_Binding.descriptorType)
+			{
+			case vk::DescriptorType::eCombinedImageSampler:
+			{
+				static const std::string s_TexPrefixes[] =
+				{
+					"_tex1D_"s,
+					"_tex2D_"s,
+					"_tex3D_"s
+				};
+
+				std::string friendlyName;
+				for (const auto& prefix : s_TexPrefixes)
+				{
+					if (StringTools::BeginsWith(param.first, prefix))
+						friendlyName = param.first.substr(prefix.size());
+				}
+
+				const auto& value = GetData().GetInputs().at(friendlyName);
+
+				newBinding.m_Data = TextureManager::Instance().Find(value);
+				break;
+			}
+
+			case vk::DescriptorType::eUniformBuffer:
+
+			default:
+				assert(!"Fix this code");
+			}
+
+			// We are OK doing this const_cast because we're only touching the stageFlags, which
+			// are not part of the set's key.
+
+			const auto& inserted = m_Bindings.insert(std::move(newBinding));
+			const_cast<LayoutBinding&>(*inserted.first).m_Binding.stageFlags |= stageFlagBits;
+		}
+#endif
 	}
 
-	for (const auto& texture : m_Textures)
+	// Descriptor set layout
 	{
-		const auto& dependentStages = m_Data->GetShaderGroup()->GetData()->FindByParameterDependency(texture.first);
-		assert(!dependentStages.empty());
+		auto layoutCreateInfo = std::make_shared<DescriptorSetLayoutCreateInfo>();
+		layoutCreateInfo->m_DebugName = __FUNCSIG__;
 
-		std::map<uint32_t, vk::ShaderStageFlags> stages;
+		for (const auto& binding : m_Bindings)
+			layoutCreateInfo->m_Bindings.push_back(binding.m_Binding);
 
-		for (const auto& dependentStage : dependentStages)
-		{
-			const auto type = Enums::convert<vk::ShaderStageFlagBits>(dependentStage.m_Definition->m_Type);
-			auto found = stages.find(dependentStage.m_BindingIndex);
-			if (found != stages.end())
-				found->second |= Enums::convert<vk::ShaderStageFlagBits>(dependentStage.m_Definition->m_Type);
-			else
-				stages.insert(std::make_pair(dependentStage.m_BindingIndex, type));
-		}
-
-		for (const auto& groupedStage : stages)
-		{
-			vk::DescriptorSetLayoutBinding binding;
-
-			binding.setStageFlags(groupedStage.second);
-			binding.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-			binding.setDescriptorCount(1);
-			binding.setBinding(groupedStage.first);
-
-			newCreateInfo->m_Bindings.push_back(binding);
-		}
+		m_DescriptorSetLayout = std::make_shared<DescriptorSetLayout>(m_Device, layoutCreateInfo);
 	}
 
-	m_DescriptorSetLayout = std::make_shared<DescriptorSetLayout>(m_Device, newCreateInfo);
+	// Descriptor set
+	{
+		auto setCreateInfo = std::make_shared<DescriptorSetCreateInfo>();
+		setCreateInfo->m_Layout = m_DescriptorSetLayout;
+
+		for (const auto& inBinding : m_Bindings)
+		{
+			setCreateInfo->m_Data.emplace_back();
+			DescriptorSetCreateInfo::Binding& outBinding = setCreateInfo->m_Data.back();
+
+			outBinding.m_BindingIndex = inBinding.m_Binding.binding;
+			outBinding.m_DebugName = inBinding.m_Name;
+			outBinding.m_Stages = inBinding.m_Binding.stageFlags;
+			outBinding.m_Data = inBinding.m_Data.value();
+		}
+
+		m_DescriptorSet = std::make_shared<DescriptorSet>(m_Device, setCreateInfo);
+	}
 }
 
 // Breaks up all the descriptor sets that need to be bound for this material into
@@ -215,6 +255,9 @@ GraphicsPipelineCreateInfo::Specializations Material::SetupSpecializations() con
 
 	GraphicsPipelineCreateInfo::Specializations retVal;
 
+	throw not_implemented_error();
+
+#if 0
 	const auto& shaderGroupData = m_Data->GetShaderGroup()->GetData();
 
 	for (const auto& shaderParameter : shaderGroupData->GetParameters())
@@ -234,4 +277,17 @@ GraphicsPipelineCreateInfo::Specializations Material::SetupSpecializations() con
 	}
 
 	return retVal;
+#endif
+}
+
+size_t Material::LayoutBinding::hash::operator()(const LayoutBinding& x) const
+{
+	return std::hash<decltype(x.m_Name)>{}(x.m_Name);
+}
+
+bool Material::LayoutBinding::operator==(const LayoutBinding& rhs) const
+{
+	return (m_Name == rhs.m_Name &&
+			m_Binding == rhs.m_Binding &&
+			m_Data == rhs.m_Data);
 }

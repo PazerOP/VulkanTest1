@@ -4,6 +4,7 @@
 #include "ShaderGroup.h"
 #include "ShaderGroupData.h"
 #include "ShaderGroupManager.h"
+#include "ShaderModuleData.h"
 
 MaterialData::MaterialData(const std::filesystem::path& path) :
 	MaterialData(JSONSerializer::FromFile(path).GetObject())
@@ -37,9 +38,12 @@ MaterialData::MaterialData(const JSONObject& json)
 			// a reference of this parameter. This is to just make sure you don't have
 			// misspelled parameters/non-hooked-up parameters sitting around in materials.
 			bool found = false;
-			for (const auto& shaderDef : m_ShaderGroup->GetData().GetShaderDefinitions())
+			for (const auto& shaderDef : m_ShaderGroup->GetData().GetShaderModulesData())
 			{
-				if (shaderDef->m_ParameterMap.find(name) != shaderDef->m_ParameterMap.end())
+				if (!shaderDef)
+					continue;
+
+				if (shaderDef->HasInputFriendly(name))
 				{
 					m_Inputs.insert(std::make_pair(value.first, value.second.GetString()));
 					found = true;
@@ -48,10 +52,10 @@ MaterialData::MaterialData(const JSONObject& json)
 			}
 
 			if (!found)
-				Log::Msg("Unknown shader group parameter \"{0}\" referenced in material \"{1}\"", name, m_Name);
+				Log::TagMsg(TAG, "Warning: Unknown shader group parameter \"{0}\" referenced in material \"{1}\"", name, m_Name);
 		}
 		else
-			Log::Msg("Unknown shader group input \"{0}\" of type {1} in material \"{2}\"", value.first, type, m_Name);
+			Log::TagMsg(TAG, "Warning: Unknown shader group input \"{0}\" of type {1} in material \"{2}\"", value.first, type, m_Name);
 	}
 
 	if (!m_ShaderGroup)
