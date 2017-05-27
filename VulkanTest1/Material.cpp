@@ -246,7 +246,6 @@ void Material::SetupParamSpecConstants(GraphicsPipelineCreateInfo::Specializatio
 				Log::TagMsg(TAG, "Warning: Material \"{0}\" has input \"{1}\" of type {2}, but shader \"{3}\" expects that parameter to be of type {4}.", GetData().GetName(), found->first, actualInputType, shaderModule->GetName(), found->second.m_Type.basetype);
 			};
 
-			const auto test = get_implicit<uint32_t>(inputParam.second);
 			switch (inputParam.second.index())
 			{
 			case variant_type_index_v<bool, VariantType>:

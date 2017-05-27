@@ -5,12 +5,14 @@
 template<class T = std::runtime_error> class BaseException : public T
 {
 public:
-	BaseException(const std::string& type, const std::string& msg, const std::any& baseException = std::any()) :
-		T(msg),
-		m_InnerException(baseException)
+	BaseException(const std::string& msg, const std::any& baseException = std::any())
+		m_InnerException(baseException),
+		m_Message(msg)
 	{
-		Log::Msg<LogType::Exception>("{0}: {1}", type, msg);
 	}
 
+	virtual const char* what() override { return StringTools::CSFormat("{0}: {1}", type_name(type), m_Message); }
+
 	std::any m_InnerException;
+	std::string m_Message;
 };

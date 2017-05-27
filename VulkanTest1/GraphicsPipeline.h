@@ -46,6 +46,12 @@ public:
 		static std::string GenerateWhat(const std::type_info& inputType, BaseType outputType, uint32_t index, ShaderType type);
 	};
 
+	class SpecConstImplicitCastException : public Exception
+	{
+	public:
+		SpecConstImplicitCastException()
+	};
+
 private:
 	struct ShaderStageData
 	{
@@ -67,7 +73,15 @@ private:
 
 			vk::SpecializationInfo m_Info;
 			std::vector<vk::SpecializationMapEntry> m_MapEntries;
-			std::vector<std::variant<vk::Bool32, int, float>> m_Storage;
+
+			using StorageVariant = std::variant<
+				vk::Bool32,
+				int16_t, uint16_t,
+				int32_t, uint32_t,
+				int64_t, uint64_t,
+				float, double>;
+
+			std::vector<StorageVariant> m_Storage;
 		};
 
 		std::vector<vk::PipelineShaderStageCreateInfo> m_StageCreateInfos;
@@ -76,6 +90,8 @@ private:
 
 	void CreatePipeline();
 	void GenerateShaderStageCreateInfos(ShaderStageData& data) const;
+
+	template<class To, class From> To ImplicitCast(const GraphicsPipelineCreateInfo::SpecializationVariant& input);
 
 	LogicalDevice& m_Device;
 

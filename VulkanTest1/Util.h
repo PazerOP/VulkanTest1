@@ -160,26 +160,3 @@ template<class T> __forceinline std::string type_name()
 {
 	return typeid(T).name();
 }
-
-template<class... Args> const void* get_unsafe(const std::variant<Args...>& variant, size_t index)
-{
-	const void* ptrs[sizeof...(Args)];
-	detail::get_unsafe_impl(ptrs, variant, std::index_sequence_for<Args...>{});
-
-	return ptrs[index];
-}
-template<class... Args> void* get_unsafe(std::variant<Args...>& variant, size_t index)
-{
-	return const_cast<void*>(get_unsafe(const_cast<std::variant<Args...>&>(variant), index));
-}
-
-template<class T, class... Args> T get_implicit(const std::variant<Args...>& variant)
-{
-	constexpr bool is_convertible[] = { std::is_convertible_v<Args, T>... };
-
-	const auto index = variant.index();
-	if (is_convertible[variant.index()])
-		return *(T*)get_unsafe(variant, index);
-	else
-		throw std::bad_variant_access();
-}

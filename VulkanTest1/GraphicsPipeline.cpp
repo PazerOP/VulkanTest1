@@ -223,20 +223,24 @@ void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) con
 					stageSpecInfo.InsertData((vk::Bool32)std::get<bool>(inputSpecialization.second), outputEntry);
 					break;
 				}
-				case variant_type_index_v<int32_t, decltype(inputSpecialization.second)>:
+				case variant_type_index_v<int64_t, decltype(inputSpecialization.second)>:
 				{
-					stageSpecInfo.InsertData(std::get<int32_t>(inputSpecialization.second), outputEntry);
+					stageSpecInfo.InsertData(std::get<int64_t>(inputSpecialization.second), outputEntry);
 					break;
 				}
-				case variant_type_index_v<float, decltype(inputSpecialization.second)>:
+				case variant_type_index_v<uint64_t, decltype(inputSpecialization.second)>:
 				{
-
-					stageSpecInfo.InsertData(std::get<float>(inputSpecialization.second), outputEntry);
+					stageSpecInfo.InsertData(std::get<uint64_t>(inputSpecialization.second), outputEntry);
+					break;
+				}
+				case variant_type_index_v<double, decltype(inputSpecialization.second)>:
+				{
+					stageSpecInfo.InsertData(std::get<double>(inputSpecialization.second), outputEntry);
 					break;
 				}
 
 				default:
-					assert(false);
+					throw programmer_error("Should never get here"s);
 				}
 			}
 			stageSpecInfo.m_Info.setDataSize(stageSpecInfo.m_Storage.size() * sizeof(decltype(stageSpecInfo.m_Storage)::value_type));
@@ -249,6 +253,15 @@ void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) con
 			currentInfo.setPSpecializationInfo(&stageSpecInfo.m_Info);
 		}
 	}
+}
+
+template<class To, class From>
+inline To GraphicsPipeline::ImplicitCast(const GraphicsPipelineCreateInfo::SpecializationVariant& input)
+{
+	const From& inValue = std::get<From>(input);
+	if (inValue < std::numeric_limits<To>::min() || inValue > std::numeric_limits<From>::max())
+
+	return To();
 }
 
 std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts() const
