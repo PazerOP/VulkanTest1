@@ -1,0 +1,8 @@
+{
+	"shaderGroup": {
+		"name": "simple/test_shader_group",
+		"inputs": {
+			"BaseTexture": "invaders/invader_1_0"
+		}
+	}
+}

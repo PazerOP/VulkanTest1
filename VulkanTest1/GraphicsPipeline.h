@@ -1,7 +1,10 @@
 #pragma once
+#include "BaseException.h"
 #include "Buffer.h"
 #include "GraphicsPipelineCreateInfo.h"
 #include "ShaderType.h"
+
+#include <spirv_common.hpp>
 
 #include <forward_list>
 #include <functional>
@@ -27,15 +30,48 @@ public:
 
 	void RecreatePipeline();
 
+	class Exception : public BaseException<>
+	{
+	public:
+		Exception(const std::string& type, const std::string& msg) : BaseException(type, msg) { }
+	};
+
+	class ConflictingSpecConstTypeException : public Exception
+	{
+		using BaseType = spirv_cross::SPIRType::BaseType;
+	public:
+		ConflictingSpecConstTypeException(const std::type_info& inputType, BaseType outputType, uint32_t index, ShaderType type);
+
+	private:
+		static std::string GenerateWhat(const std::type_info& inputType, BaseType outputType, uint32_t index, ShaderType type);
+	};
+
 private:
 	struct ShaderStageData
 	{
 		ShaderStageData() = default;
 		ShaderStageData(const ShaderStageData& other) = delete;
 		ShaderStageData(ShaderStageData&& other) = delete;
+		ShaderStageData& operator=(const ShaderStageData&) = delete;
+		ShaderStageData& operator=(ShaderStageData&&) = delete;
+
+		struct SpecializationInfo
+		{
+			SpecializationInfo() = default;
+			SpecializationInfo(const SpecializationInfo&) = delete;
+			SpecializationInfo(SpecializationInfo&&) = delete;
+			SpecializationInfo& operator=(const SpecializationInfo&) = delete;
+			SpecializationInfo& operator=(SpecializationInfo&&) = delete;
+
+			template<class T> void InsertData(const T& input, vk::SpecializationMapEntry& entry);
+
+			vk::SpecializationInfo m_Info;
+			std::vector<vk::SpecializationMapEntry> m_MapEntries;
+			std::vector<std::variant<vk::Bool32, int, float>> m_Storage;
+		};
+
 		std::vector<vk::PipelineShaderStageCreateInfo> m_StageCreateInfos;
-		std::forward_list<std::pair<vk::SpecializationInfo, std::vector<vk::SpecializationMapEntry>>> m_SpecializationInfoStorage;
-		std::vector<std::variant<vk::Bool32, int, float>> m_Storage;
+		std::forward_list<SpecializationInfo> m_SpecializationInfos;
 	};
 
 	void CreatePipeline();

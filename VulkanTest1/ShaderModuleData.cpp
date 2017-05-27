@@ -118,7 +118,9 @@ void ShaderModuleData::LoadInputParams(const spirv_cross::Compiler& spirvComp)
 
 		const auto found = m_InputTextures.find(newParam.m_FriendlyName);
 		if (found != m_InputTextures.end())
+		{
 			found->second.m_Dimensions.push_back(newParam);
+		}
 		else
 		{
 			InputTexture newTexture;
@@ -147,7 +149,10 @@ void ShaderModuleData::LoadSpecConstants(const spirv_cross::Compiler& spirvComp)
 		newConstant.m_FullName = spirvComp.get_name(specConst.id);
 		newConstant.ParseFullName();
 
-		AssertAR(, m_InputConstants.insert(std::make_pair(newConstant.m_FriendlyName, newConstant)), .second);
+		if (Enums::has_flag(newConstant.m_Decoration, InputConstant::Decoration::Parameter))
+			AssertAR(, m_InputConstants.insert(std::make_pair(newConstant.m_FriendlyName, newConstant)), .second);
+		else
+			AssertAR(, m_InputConstants.insert(std::make_pair(newConstant.m_FullName, newConstant)), .second);
 	}
 }
 

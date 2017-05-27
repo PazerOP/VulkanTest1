@@ -60,7 +60,7 @@ int CALLBACK WinMain(
 	_In_ int nCmdShow)
 {
 	Log::BlockMsg(u8"{00} EPIC MEME START 🔥🔥🔥", u8"🔥🔥🔥");
-	
+
 	try
 	{
 		LocalMain().SetAppInstance(hInstance);

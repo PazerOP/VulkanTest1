@@ -9,8 +9,8 @@ class MaterialData
 {
 public:
 	MaterialData(const std::filesystem::path& path);
-	MaterialData(const std::string& str);
-	MaterialData(const JSONObject& json);
+	MaterialData(const std::string& name, const std::string& jsonStr);
+	MaterialData(const std::string& name, const JSONObject& json);
 
 	const auto& GetName() const { return m_Name; }
 	const auto& GetInputs() const { return m_Inputs; }
@@ -40,5 +40,5 @@ private:
 
 	std::string m_Name;
 	std::shared_ptr<const ShaderGroup> m_ShaderGroup;
-	std::map<std::string, std::string> m_Inputs;
+	std::map<std::string, std::variant<bool, double, std::string>> m_Inputs;
 };

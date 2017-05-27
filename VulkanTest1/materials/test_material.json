@@ -1,9 +1,10 @@
 {
-	"name": "test_material",
 	"shaderGroup": {
 		"name": "simple/test_shader_group",
 		"inputs": {
-			"BaseTexture": "invaders/invader_1"
+			"BaseTexture": "invaders/invader_1",
+			"VertexColor": true, 
+			"FrameBlending": false
 		}
 	}
 }

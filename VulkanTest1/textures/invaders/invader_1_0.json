@@ -1,5 +1,7 @@
 {
 	"sourceFiles": [
-		"invaders/invader_1.png"
-	]
+		"invaders/invader_1_0.png"
+	],
+	"filter": "nearest",
+	"addressMode": "clampBorder"
 }

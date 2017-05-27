@@ -10,6 +10,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <ForcedIncludeFiles>$(ProjectDir)CompilerSettings.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
     </ClCompile>
     <Link />
     <Link>

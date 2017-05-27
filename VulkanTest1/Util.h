@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <functional>
+#include <type_traits>
+#include <utility>
+#include <variant>
 
 #ifdef _DEBUG
 #include <cassert>
@@ -111,3 +114,72 @@ template<class T> __forceinline const std::weak_ptr<T>& weaken(const std::weak_p
 
 // Gets the relative path and removes the file extension.
 extern std::string name_from_path(const std::filesystem::path& basePath, const std::filesystem::path& fullPath, bool removeExt = true);
+
+namespace detail
+{
+	template<class T, class VariantType, size_t I>
+	class variant_type_index_impl
+	{
+		using DecayedVariantType = std::decay_t<VariantType>;
+
+	public:
+		static constexpr size_t value =
+			std::is_same_v<T, std::variant_alternative_t<I - 1, DecayedVariantType>> ? I - 1 : variant_type_index_impl<T, DecayedVariantType, I - 1>::value;
+	};
+	template<class T, class VariantType>
+	class variant_type_index_impl<T, VariantType, 0>
+	{
+		using DecayedVariantType = std::decay_t<VariantType>;
+	public:
+		static constexpr size_t value = std::is_same_v<T, std::variant_alternative_t<0, DecayedVariantType>> ? 0 : std::numeric_limits<size_t>::max();
+	};
+
+	template<class... Args, size_t... Indices>
+	inline const void* get_unsafe_impl(const void** ptrs, const std::variant<Args...>& variant, std::integer_sequence<size_t, Indices...> seq)
+	{
+		const void* ptrArray[] = { (variant.index() == Indices ? &std::get<Indices>(variant) : nullptr)... };
+		for (size_t i = 0; i < sizeof...(Args); i++)
+		{
+			if (ptrArray[i])
+				return ptrArray[i];
+		}
+
+		throw std::runtime_error();
+	}
+}
+
+template<class T, class VariantType>
+class variant_type_index : public std::integral_constant<size_t, detail::variant_type_index_impl<T, VariantType, std::variant_size_v<std::decay_t<VariantType>>>::value>
+{
+	static_assert(value != std::numeric_limits<size_t>::max(), "The specified type was not in this variant.");
+};
+
+template<class T, class VariantType> constexpr size_t variant_type_index_v = variant_type_index<T, VariantType>::value;
+
+template<class T> __forceinline std::string type_name()
+{
+	return typeid(T).name();
+}
+
+template<class... Args> const void* get_unsafe(const std::variant<Args...>& variant, size_t index)
+{
+	const void* ptrs[sizeof...(Args)];
+	detail::get_unsafe_impl(ptrs, variant, std::index_sequence_for<Args...>{});
+
+	return ptrs[index];
+}
+template<class... Args> void* get_unsafe(std::variant<Args...>& variant, size_t index)
+{
+	return const_cast<void*>(get_unsafe(const_cast<std::variant<Args...>&>(variant), index));
+}
+
+template<class T, class... Args> T get_implicit(const std::variant<Args...>& variant)
+{
+	constexpr bool is_convertible[] = { std::is_convertible_v<Args, T>... };
+
+	const auto index = variant.index();
+	if (is_convertible[variant.index()])
+		return *(T*)get_unsafe(variant, index);
+	else
+		throw std::bad_variant_access();
+}

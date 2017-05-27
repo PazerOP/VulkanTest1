@@ -12,7 +12,7 @@ class ShaderGroup;
 
 struct GraphicsPipelineCreateInfo
 {
-	using Specializations = std::map<ShaderType, std::map<uint32_t, std::variant<bool, int, float>>>;
+	using Specializations = std::map<ShaderType, std::map<uint32_t, std::variant<bool, int32_t, int64_t, uint32_t, uint64_t, float, double>>>;
 
 	std::shared_ptr<const ShaderGroup> m_ShaderGroup;
 	std::map<uint32_t, std::shared_ptr<DescriptorSetLayout>> m_DescriptorSetLayouts;

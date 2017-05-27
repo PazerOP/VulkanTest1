@@ -20,7 +20,7 @@ layout(set = SET_MATERIAL, binding = 0) uniform MaterialConstants
 #endif
 
 layout(set = SET_MATERIAL, binding = 1) uniform sampler2D _param_tex2D_BaseTexture;
-layout(set = SET_MATERIAL, binding = 2) uniform sampler3D _param_tex3D_BaseTexture;
+layout(set = SET_MATERIAL, binding = 1) uniform sampler3D _param_tex3D_BaseTexture;
 layout(constant_id = 3) const int _texMode_BaseTexture = TEXTURE_MODE_INVALID;
 
 layout(location = 0) in vec3 _input_Color;

@@ -3,6 +3,7 @@
 
 #include "simple_shared.glsl"
 
+#if 0
 ////////////
 // Inputs //
 ////////////
@@ -23,6 +24,20 @@ layout(location = _outputIndex_Color) out vec3 _output_Color;
 
 /*layout(constant_id = 4)*/ const uint _outputIndex_TexCoord = 1;
 layout(location = _outputIndex_TexCoord) out vec2 _output_TexCoord;
+#else
+////////////
+// Inputs //
+////////////
+layout(location = 0) in vec2 _input_Position;
+layout(location = 1) in vec3 _input_Color;
+layout(location = 2) in vec2 _input_TexCoord;
+
+/////////////
+// Outputs //
+/////////////
+layout(location = 0) out vec3 _output_Color;
+layout(location = 1) out vec2 _output_TexCoord;
+#endif
 
 out gl_PerVertex
 {

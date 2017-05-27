@@ -20,7 +20,6 @@
 Material::Material(const std::shared_ptr<const MaterialData>& data, LogicalDevice& device) :
 	m_Data(data), m_Device(device)
 {
-	InitInputs();
 	InitDescriptorSet();
 	InitGraphicsPipeline();
 }
@@ -34,46 +33,6 @@ void Material::Bind(const vk::CommandBuffer& cmdBuf) const
 	for (const auto& descriptorSetGroup : GetDescriptorSets())
 	{
 		cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetPipelineLayout(), descriptorSetGroup.first, descriptorSetGroup.second.size(), descriptorSetGroup.second.data(), 0, nullptr);
-	}
-}
-
-void Material::InitInputs()
-{
-	// For each material input parameter
-	for (const auto& inputParam : m_Data->GetInputs())
-	{
-		bool used = false;
-		for (const auto& shaderModuleData : GetData().GetShaderGroup().GetData().GetShaderModulesData())
-		{
-			if (!shaderModuleData)
-				continue;
-
-			const auto& foundInputTextureData = shaderModuleData->GetInputTextures().find(inputParam.first);
-			if (foundInputTextureData == shaderModuleData->GetInputTextures().end())
-				continue;
-
-			const auto& inputParamData = foundInputTextureData->second;
-
-			const auto& texture = TextureManager::Instance().Find(inputParam.second);
-
-			switch (inputParamData.m_Type.basetype)
-			{
-			case ShaderParameterType::SampledImage:
-				m_Resources_[shaderModuleData->GetType()].m_Textures.insert(std::make_pair(
-					inputParamData.m_BindingID, TextureManager::Instance().Find(inputParam.second)));
-				break;
-			default:
-				assert(!"Not hooked up for this type!");
-				break;
-			}
-		}
-
-		if (!used)
-		{
-			Log::Msg("Shader param \"{0}\" (value \"{1}\") encountered in material \"{2}\" was not defined in shader group \"{3}\"",
-					 inputParam.first, inputParam.second, m_Data->GetName(), m_Data->GetShaderGroup().GetData().GetName());
-			continue;
-		}
 	}
 }
 
@@ -104,75 +63,52 @@ void Material::InitDescriptorSet()
 
 		const auto stageFlagBits = Enums::convert<vk::ShaderStageFlagBits>(shaderModuleData->GetType());
 
-		// See what parameters this stage has
+		// See what textures this stage has
 		for (const auto& texture : shaderModuleData->GetInputTextures())
 		{
-			if (texture.second.m_SetID != SET_MATERIAL)
+			// Check to make sure this texture is actually part of the SET_MATERIAL descriptor set.
+			if (std::any_of(texture.second.m_Dimensions.begin(), texture.second.m_Dimensions.end(),
+							[](const ShaderModuleData::InputVariable& a) { return a.m_SetID != SET_MATERIAL; }))
+			{
+				assert(std::none_of(texture.second.m_Dimensions.begin(), texture.second.m_Dimensions.end(),
+									[](const ShaderModuleData::InputVariable& a) { return a.m_SetID == SET_MATERIAL; }));
 				continue;
+			}
 
-			const auto texPtr = TextureManager::Instance().Find(GetData().GetInputs().at(texture.second.m_FriendlyName));
+			const auto found = GetData().GetInputs().find(texture.first);
+			if (found == GetData().GetInputs().end())
+			{
+				Log::TagMsg(TAG, "Warning: Texture \"{0}\" in shader \"{1}\" of shader group \"{2}\" was not specified in material \"{3}\"",
+						 texture.first, shaderModuleData->GetName(), GetData().GetShaderGroup().GetData().GetName(), GetData().GetName());
+				continue;
+			}
+
+			const auto texPtr = TextureManager::Instance().Find(std::get<std::string>(found->second));
 			assert(texPtr);
 			if (!texPtr)
 				continue;
 
 			LayoutBinding newBinding;
-
-			if (texPtr->GetImageType() == vk::ImageType::e1D)
-			{
-				texture.second.m_Type.image.dim == spv::Dim::Dim1D
-			}
-
-			newBinding.m_Name =
-		}
-#if 0
-		for (const auto& param : shaderModuleData->GetInputVariables())
-		{
-			if (param.second.m_SetID != SET_MATERIAL)
-				continue;
-
-			LayoutBinding newBinding;
-			newBinding.m_Name = param.first;
+			newBinding.m_Data = texPtr;
 			newBinding.m_Binding.setDescriptorCount(1);
-			newBinding.m_Binding.setBinding(param.second.m_BindingID);
-			newBinding.m_Binding.setDescriptorType(param.second.m_DescriptorType);
+			newBinding.m_Binding.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
 
-			switch (newBinding.m_Binding.descriptorType)
+			for (const auto& dimension : texture.second.m_Dimensions)
 			{
-			case vk::DescriptorType::eCombinedImageSampler:
-			{
-				static const std::string s_TexPrefixes[] =
+				if (texPtr->GetImageType() == vk::ImageType::e1D && dimension.m_Type.image.dim == spv::Dim::Dim1D ||
+					texPtr->GetImageType() == vk::ImageType::e2D && dimension.m_Type.image.dim == spv::Dim::Dim2D ||
+					texPtr->GetImageType() == vk::ImageType::e3D && dimension.m_Type.image.dim == spv::Dim::Dim3D)
 				{
-					"_tex1D_"s,
-					"_tex2D_"s,
-					"_tex3D_"s
-				};
-
-				std::string friendlyName;
-				for (const auto& prefix : s_TexPrefixes)
-				{
-					if (StringTools::BeginsWith(param.first, prefix))
-						friendlyName = param.first.substr(prefix.size());
+					newBinding.m_Binding.setBinding(dimension.m_BindingID);
+					newBinding.m_FullName = dimension.m_FullName;
+					newBinding.m_FriendlyName = dimension.m_FriendlyName;
+					break;
 				}
-
-				const auto& value = GetData().GetInputs().at(friendlyName);
-
-				newBinding.m_Data = TextureManager::Instance().Find(value);
-				break;
 			}
-
-			case vk::DescriptorType::eUniformBuffer:
-
-			default:
-				assert(!"Fix this code");
-			}
-
-			// We are OK doing this const_cast because we're only touching the stageFlags, which
-			// are not part of the set's key.
 
 			const auto& inserted = m_Bindings.insert(std::move(newBinding));
 			const_cast<LayoutBinding&>(*inserted.first).m_Binding.stageFlags |= stageFlagBits;
 		}
-#endif
 	}
 
 	// Descriptor set layout
@@ -197,7 +133,7 @@ void Material::InitDescriptorSet()
 			DescriptorSetCreateInfo::Binding& outBinding = setCreateInfo->m_Data.back();
 
 			outBinding.m_BindingIndex = inBinding.m_Binding.binding;
-			outBinding.m_DebugName = inBinding.m_Name;
+			outBinding.m_DebugName = inBinding.m_FullName;
 			outBinding.m_Stages = inBinding.m_Binding.stageFlags;
 			outBinding.m_Data = inBinding.m_Data.value();
 		}
@@ -246,48 +182,126 @@ std::map<uint32_t, std::vector<vk::DescriptorSet>> Material::GetDescriptorSets()
 
 GraphicsPipelineCreateInfo::Specializations Material::SetupSpecializations() const
 {
-	static const std::map<vk::ImageType, int> s_TextureModeMap =
-	{
-		{ vk::ImageType::e1D, TEXTURE_MODE_1D },
-		{ vk::ImageType::e2D, TEXTURE_MODE_2D },
-		{ vk::ImageType::e3D, TEXTURE_MODE_3D },
-	};
-
 	GraphicsPipelineCreateInfo::Specializations retVal;
 
-	throw not_implemented_error();
-
-#if 0
-	const auto& shaderGroupData = m_Data->GetShaderGroup()->GetData();
-
-	for (const auto& shaderParameter : shaderGroupData->GetParameters())
-	{
-		if (shaderParameter.second != ShaderParameterType::Texture)
-			continue;
-
-		for (const auto& dependentShader : shaderGroupData->FindByParameterDependency(shaderParameter.first))
-		{
-			assert(false);
-
-			//const auto& found = dependentShader.
-
-			//retVal[dependentShader.m_Definition->m_Type.value()][CID_TEXTURE_MODE_START + dependentShader.m_BindingIndex] =
-			//	s_TextureModeMap.at(m_Textures.at(shaderParameter.first)->GetImageType());
-		}
-	}
+	SetupTexModeSpecConstants(retVal);
+	SetupParamSpecConstants(retVal);
 
 	return retVal;
-#endif
+}
+
+void Material::SetupTexModeSpecConstants(GraphicsPipelineCreateInfo::Specializations& retVal) const
+{
+	// Automatic _texMode spec constants
+	for (const auto& texBinding : m_Bindings)
+	{
+		static const std::map<vk::ImageType, int> s_TextureModeMap =
+		{
+			{ vk::ImageType::e1D, TEXTURE_MODE_1D },
+			{ vk::ImageType::e2D, TEXTURE_MODE_2D },
+			{ vk::ImageType::e3D, TEXTURE_MODE_3D },
+		};
+
+		if (texBinding.m_Binding.descriptorType != vk::DescriptorType::eCombinedImageSampler)
+			continue;	// Not a texture binding
+
+		const auto wat = variant_type_index_v<std::shared_ptr<Texture>, decltype(texBinding.m_Data.value())>;
+		assert(texBinding.m_Data.value().index() == wat);
+
+		const std::string texModeConstantName = "_texMode_" + texBinding.m_FriendlyName;
+
+		for (const auto& shaderModuleData : GetData().GetShaderGroup().GetData().GetShaderModulesData())
+		{
+			if (!shaderModuleData)
+				continue;
+
+			const auto found = shaderModuleData->GetInputSpecConstants().find(texModeConstantName);
+			if (found != shaderModuleData->GetInputSpecConstants().end())
+			{
+				AssertAR(, retVal[shaderModuleData->GetType()].insert(std::make_pair(found->second.m_BindingID, s_TextureModeMap.at(std::get<std::shared_ptr<Texture>>(texBinding.m_Data.value())->GetImageType()))), .second);
+			}
+		}
+	}
+}
+
+void Material::SetupParamSpecConstants(GraphicsPipelineCreateInfo::Specializations& retVal) const
+{
+	// User _param spec constants
+	for (const auto& shaderModule : GetData().GetShaderGroup().GetData().GetShaderModulesData())
+	{
+		if (!shaderModule)
+			continue;
+
+		for (const auto& inputParam : GetData().GetInputs())
+		{
+			const auto found = shaderModule->GetInputSpecConstants().find(inputParam.first);
+			if (found == shaderModule->GetInputSpecConstants().end())
+				continue;
+
+			using BaseType = spirv_cross::SPIRType::BaseType;
+			using VariantType = std::decay_t<decltype(GetData().GetInputs())>::value_type::second_type;
+
+			auto warningFn = [&](BaseType actualInputType)
+			{
+				Log::TagMsg(TAG, "Warning: Material \"{0}\" has input \"{1}\" of type {2}, but shader \"{3}\" expects that parameter to be of type {4}.", GetData().GetName(), found->first, actualInputType, shaderModule->GetName(), found->second.m_Type.basetype);
+			};
+
+			const auto test = get_implicit<uint32_t>(inputParam.second);
+			switch (inputParam.second.index())
+			{
+			case variant_type_index_v<bool, VariantType>:
+			{
+				if (found->second.m_Type.basetype == BaseType::Boolean)
+					AssertAR(, retVal[shaderModule->GetType()].insert(std::make_pair(found->second.m_BindingID, std::get<bool>(inputParam.second))), .second);
+				else
+					warningFn(BaseType::Boolean);
+
+				break;
+			}
+			case variant_type_index_v<double, VariantType>:
+			{
+				switch (found->second.m_Type.basetype)
+				{
+				case BaseType::Double:
+				case BaseType::Float:
+				case BaseType::Int:
+				case BaseType::Int64:
+				case BaseType::UInt:
+				case BaseType::UInt64:
+				{
+					const auto& inserted = retVal[shaderModule->GetType()].insert(std::make_pair(found->second.m_BindingID, std::get<double>(inputParam.second)));
+					assert(inserted.second);
+
+					// Fucking broken assert macro
+					constexpr auto index = variant_type_index_v<double, decltype(inserted.first->second)>;
+					assert(inserted.first->second.index() == index);
+					break;
+				}
+
+				default:
+					warningFn(BaseType::Double);
+				}
+				break;
+			}
+			case variant_type_index_v<std::string, VariantType>:
+				Log::TagMsg(TAG, "Warning: Material \"{0}\" has input \"{1}\" of type string, but shader \"{2}\" expects that parameter to be of type {3}.", GetData().GetName(), found->first, shaderModule->GetName(), found->second.m_Type.basetype);
+				break;
+
+			default:
+				assert(false);
+			}
+		}
+	}
 }
 
 size_t Material::LayoutBinding::hash::operator()(const LayoutBinding& x) const
 {
-	return std::hash<decltype(x.m_Name)>{}(x.m_Name);
+	return std::hash<decltype(x.m_FullName)>{}(x.m_FullName);
 }
 
 bool Material::LayoutBinding::operator==(const LayoutBinding& rhs) const
 {
-	return (m_Name == rhs.m_Name &&
+	return (m_FullName == rhs.m_FullName &&
 			m_Binding == rhs.m_Binding &&
 			m_Data == rhs.m_Data);
 }

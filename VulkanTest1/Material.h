@@ -35,7 +35,8 @@ public:
 	GraphicsPipeline& GetPipeline() { return m_GraphicsPipeline.value(); }
 
 private:
-	void InitInputs();
+	static constexpr char TAG[] = "[Material] ";
+
 	void InitDescriptorSet();
 	void InitGraphicsPipeline();
 
@@ -44,7 +45,8 @@ private:
 
 	struct LayoutBinding
 	{
-		std::string m_Name;
+		std::string m_FullName;
+		std::string m_FriendlyName;
 		vk::DescriptorSetLayoutBinding m_Binding;
 		std::optional<std::variant<std::shared_ptr<Buffer>, std::shared_ptr<Texture>>> m_Data;
 
@@ -58,25 +60,11 @@ private:
 
 	std::unordered_set<LayoutBinding, LayoutBinding::hash> m_Bindings;
 
-	struct ShaderResource
-	{
-		std::string m_DebugName;
-		uint32_t m_BindingIndex;
-		vk::ShaderStageFlags m_Stages;
-	};
-	std::vector<ShaderResource> m_Resources;
-
-	struct ShaderResourceData
-	{
-		using BindingIndex = uint32_t;
-		std::map<BindingIndex, std::shared_ptr<Texture>> m_Textures;
-		std::map<BindingIndex, std::variant<bool, int, float>> m_SpecConstants;
-	};
-	std::map<ShaderType, ShaderResourceData> m_Resources_;
-
 	std::map<uint32_t, std::vector<vk::DescriptorSet>> GetDescriptorSets() const;
 
 	GraphicsPipelineCreateInfo::Specializations SetupSpecializations() const;
+	void SetupTexModeSpecConstants(GraphicsPipelineCreateInfo::Specializations& specializations) const;
+	void SetupParamSpecConstants(GraphicsPipelineCreateInfo::Specializations& specializations) const;
 
 	std::shared_ptr<DescriptorSetLayout> m_DescriptorSetLayout;
 	std::shared_ptr<DescriptorSet> m_DescriptorSet;

@@ -7,7 +7,9 @@
 #include "LogicalDevice.h"
 #include "SimpleVertex.h"
 #include "ShaderGroup.h"
+#include "ShaderGroupData.h"
 #include "ShaderModule.h"
+#include "ShaderModuleData.h"
 #include "Swapchain.h"
 #include "Vulkan.h"
 
@@ -163,6 +165,17 @@ void GraphicsPipeline::CreatePipeline()
 	m_Pipeline = GetDevice()->createGraphicsPipelineUnique(nullptr, gpCreateInfo);
 }
 
+template<class T>
+inline void GraphicsPipeline::ShaderStageData::SpecializationInfo::InsertData(const T& input, vk::SpecializationMapEntry& entry)
+{
+	m_Storage.push_back(input);
+	entry.setSize(sizeof(T));
+
+	const auto offset = (char*)&std::get<T>(m_Storage.back()) - (char*)&m_Storage.front();
+	assert(offset < std::numeric_limits<uint32_t>::max());
+	entry.setOffset(uint32_t(offset));
+}
+
 void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) const
 {
 	const auto& inputSpecializations = m_CreateInfo->m_Specializations;
@@ -183,49 +196,57 @@ void GraphicsPipeline::GenerateShaderStageCreateInfos(ShaderStageData& data) con
 		const auto& foundInputSpecializations = inputSpecializations.find(ShaderType(i));
 		if (foundInputSpecializations != inputSpecializations.end())
 		{
-			data.m_SpecializationInfoStorage.emplace_front();
-			auto& outputSpecializations = data.m_SpecializationInfoStorage.front();
+			const auto& allSpecConstantsData = GetCreateInfo().m_ShaderGroup->GetData().GetShaderModulesData().at(i)->GetInputSpecConstants();
+
+			data.m_SpecializationInfos.emplace_front();
+			auto& stageSpecInfo = data.m_SpecializationInfos.front();
 
 			for (const auto& inputSpecialization : foundInputSpecializations->second)
 			{
-				outputSpecializations.second.emplace_back();
-				vk::SpecializationMapEntry& outputEntry = outputSpecializations.second.back();
+				stageSpecInfo.m_MapEntries.emplace_back();
+				vk::SpecializationMapEntry& outputEntry = stageSpecInfo.m_MapEntries.back();
 				outputEntry.setConstantID(inputSpecialization.first);
 
+				const auto& thisSpecConstantData = std::find_if(allSpecConstantsData.begin(), allSpecConstantsData.end(),
+					[&](const auto& pair) { return pair.second.m_BindingID == inputSpecialization.first; })->second;
+
+				using BaseType = spirv_cross::SPIRType::BaseType;
+
+				// Deal with implicit casts here
 				switch (inputSpecialization.second.index())
 				{
-				case 0:
+				case variant_type_index_v<bool, decltype(inputSpecialization.second)>:
 				{
-					data.m_Storage.push_back((vk::Bool32)std::get<bool>(inputSpecialization.second));
-					outputEntry.setSize(sizeof(vk::Bool32));
-					outputEntry.setOffset((char*)&std::get<vk::Bool32>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+					if (thisSpecConstantData.m_Type.basetype != BaseType::Boolean)
+						throw ConflictingSpecConstTypeException(typeid(bool), thisSpecConstantData.m_Type.basetype, inputSpecialization.first, ShaderType(i));
+
+					stageSpecInfo.InsertData((vk::Bool32)std::get<bool>(inputSpecialization.second), outputEntry);
 					break;
 				}
-				case 1:
+				case variant_type_index_v<int32_t, decltype(inputSpecialization.second)>:
 				{
-					data.m_Storage.push_back(std::get<int>(inputSpecialization.second));
-					outputEntry.setSize(sizeof(int));
-					outputEntry.setOffset((char*)&std::get<int>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+					stageSpecInfo.InsertData(std::get<int32_t>(inputSpecialization.second), outputEntry);
 					break;
 				}
-				case 2:
+				case variant_type_index_v<float, decltype(inputSpecialization.second)>:
 				{
-					data.m_Storage.push_back(std::get<float>(inputSpecialization.second));
-					outputEntry.setSize(sizeof(float));
-					outputEntry.setOffset((char*)&std::get<float>(data.m_Storage.back()) - (char*)&data.m_Storage.front());
+
+					stageSpecInfo.InsertData(std::get<float>(inputSpecialization.second), outputEntry);
 					break;
 				}
+
+				default:
+					assert(false);
 				}
 			}
-			outputSpecializations.first.setDataSize(data.m_Storage.size() * sizeof(decltype(data.m_Storage)::value_type));
+			stageSpecInfo.m_Info.setDataSize(stageSpecInfo.m_Storage.size() * sizeof(decltype(stageSpecInfo.m_Storage)::value_type));
 
-#pragma message("warning: Evil, evil, EVIL hack brought about by sleep deprivation: this pointer will become invalidated when the vector reallocates! need to have our own vector per specializationInfo!")
-			outputSpecializations.first.setPData(data.m_Storage.data());
+			stageSpecInfo.m_Info.setPData(stageSpecInfo.m_Storage.data());
 
-			outputSpecializations.first.setMapEntryCount(outputSpecializations.second.size());
-			outputSpecializations.first.setPMapEntries(outputSpecializations.second.data());
+			stageSpecInfo.m_Info.setMapEntryCount(stageSpecInfo.m_MapEntries.size());
+			stageSpecInfo.m_Info.setPMapEntries(stageSpecInfo.m_MapEntries.data());
 
-			currentInfo.setPSpecializationInfo(&outputSpecializations.first);
+			currentInfo.setPSpecializationInfo(&stageSpecInfo.m_Info);
 		}
 	}
 }
@@ -240,4 +261,15 @@ std::vector<vk::DescriptorSetLayout> GraphicsPipeline::GetDescriptorSetLayouts()
 		retVal[descSet.first] = descSet.second->Get();
 
 	return retVal;
+}
+
+GraphicsPipeline::ConflictingSpecConstTypeException::ConflictingSpecConstTypeException(const std::type_info& inputType, BaseType outputType, uint32_t index, ShaderType type) :
+	Exception("ConflictingSpecializationTypeException", GenerateWhat(inputType, outputType, index, type))
+{
+}
+
+std::string GraphicsPipeline::ConflictingSpecConstTypeException::GenerateWhat(const std::type_info& inputType, BaseType outputType, uint32_t index, ShaderType type)
+{
+	return StringTools::CSFormat("Unable to implicitly convert between input data of type {0} and output type {1} for {2} shader specialization constant {3}.",
+		inputType.name(), outputType, index, type);
 }
